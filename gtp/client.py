@@ -10,7 +10,14 @@ from board.stone import Stone
 
 
 class GtpClient:
+    """_Go Text Protocolクライアントの実装クラス
+    """
     def __init__(self, board_size):
+        """Go Text Protocolクライアントの初期化をする。
+
+        Args:
+            board_size (int): 碁盤の大きさ。
+        """
         self.gtp_commands = [
             "version",
             "protocol_version",
@@ -31,43 +38,87 @@ class GtpClient:
         self.board = GoBoard(board_size=board_size)
         self.coordinate = Coordinate(board_size=board_size)
 
-
     def _respond_success(self, response):
+        """コマンド処理成功時の応答メッセージを表示する。
+
+        Args:
+            response (str): 表示する応答メッセージ。
+        """
         print("= " + response + '\n')
 
     def _respond_failure(self, response):
+        """コマンド処理失敗時の応答メッセージを表示する。
+
+        Args:
+            response (str): 表示する応答メッセージ。
+        """
         print("= ? " + response + '\n')
         
     def _version(self):
+        """versionコマンドを処理する。
+        プログラムのバージョンを表示する。
+        """
         self._respond_success(VERSION)
 
     def _protocol_version(self):
+        """protocol_versionコマンドを処理する。
+        GTPのプロトコルバージョンを表示する。
+        """
         self._respond_success(PROTOCOL_VERSION)
 
     def _name(self):
+        """nameコマンドを処理する。
+        プログラム名を表示する。
+        """
         self._respond_success(PROGRAM_NAME)
 
     def _quit(self):
+        """quitコマンドを処理する。
+        プログラムを終了する。
+        """
         self._respond_success("")
         sys.exit(0)
 
     def _known_command(self, command):
+        """known_commandコマンドを処理する。
+        対応しているコマンドの場合は'true'を表示し、対応していないコマンドの場合は'unknown command'を表示する
+
+        Args:
+            command (str): 対応確認をしたいGTPコマンド。
+        """
         if command in self.gtp_commands:
             self._respond_success("true")
         else:
             self._respond_failure("unknown command")
 
     def _list_commands(self):
+        """list_commandsコマンドを処理する。
+        対応している全てのコマンドを表示する。
+        """
         response = ""
         for command in self.gtp_commands:
             response += '\n' + command
         self._respond_success(response)
 
     def _komi(self, s_komi):
+        """komiコマンドを処理する。
+        入力されたコミを設定する。
+        TODO
+
+        Args:
+            s_komi (str): 設定するコミ。
+        """
         komi = float(s_komi)
         self._respond_success("")
 
     def _play(self, color, pos):
+        """playコマンドを処理する。
+        入力された座標に指定された色の石を置く。
+
+        Args:
+            color (str): 手番の色。
+            pos (str): 着手する座標。
+        """
         if color.lower()[0] is 'b':
             play_color = Stone.BLACK
         elif color.lower()[0] is 'w':
@@ -87,6 +138,12 @@ class GtpClient:
         self._respond_success("")
 
     def _genmove(self, color):
+        """genmoveコマンドを処理する。
+        入力された手番で思考し、着手を生成する。
+
+        Args:
+            color (str): 手番の色。
+        """
         if color.lower()[0] is 'b':
             genmove_color = Stone.BLACK
         elif color.lower()[0] is 'w':
@@ -95,7 +152,7 @@ class GtpClient:
             self._respond_failure("genmove color")
             return
         
-
+        # ランダムに着手生成
         legal_pos = self.board.get_all_legal_pos(genmove_color)
 
         if len(legal_pos) > 0:
@@ -109,30 +166,54 @@ class GtpClient:
         self._respond_success(self.coordinate.convert_to_gtp_format(pos))
 
     def _boardsize(self, size):
+        """boardsizeコマンドを処理する。
+        指定したサイズの碁盤に設定する。
+
+        Args:
+            size (str): 設定する碁盤のサイズ。
+        """
         board_size = int(size)
         self.board = GoBoard(board_size=board_size)
         self.coordinate = Coordinate(board_size=board_size)
         self._respond_success("")
 
     def _clear_board(self):
+        """clear_boardコマンドを処理する。
+        盤面を初期化する。
+        """
         self.board.clear()
         self._respond_success("")
 
     def _time_settings(self):
+        """time_settingsコマンドを処理する。
+        TODO
+        """
         self._respond_success("")
 
     def _time_left(self):
+        """time_leftコマンドを処理する。
+        TODO
+        """
         self._respond_success("")
 
     def _get_komi(self):
+        """get_komiコマンドを処理する。
+        TODO
+        """
         self._respond_success("7.0")
 
     def _showboard(self):
+        """showboardコマンドを処理する。
+        現在の盤面を表示する。
+        """
         self.board.display()
         self._respond_success("")
 
             
     def run(self):
+        """Go Text Protocolのクライアントの実行処理。
+        入力されたコマンドに対応する処理を実行し、応答メッセージを表示する。
+        """
         while True:
             command = input()
 

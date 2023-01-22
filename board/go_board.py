@@ -8,8 +8,14 @@ import sys
 
 
 class GoBoard:
+    """碁盤クラス
+    """
     def __init__(self, board_size):
+        """碁盤クラスの初期化
 
+        Args:
+            board_size (int): 碁盤の大きさ。
+        """
         self.board_size = board_size
         self.board_size_with_ob = board_size + OB_SIZE * 2
 
@@ -22,13 +28,14 @@ class GoBoard:
 
 
     def clear(self):
+        """盤面の初期化
+        """
         self.moves = 1
         self.position_hash = 0
         self.prisoner = 0
         self.ko_move = 0
         self.ko_pos = 0
         self.prisoner = [0] * 2
-
 
         i = 0
         for y in range(1, self.board_size + OB_SIZE):
@@ -38,7 +45,6 @@ class GoBoard:
                 self.onboard_pos[i] = pos
                 i += 1
 
-        
         for y in range(self.board_size_with_ob):
             for x in range(OB_SIZE):
                 self.board[x + y * self.board_size_with_ob] = Stone.OUT_OF_BOARD
@@ -49,7 +55,12 @@ class GoBoard:
         self.strings.clear()
 
     def put_stone(self, pos, color):
+        """指定された座標に指定された色の石を石を置く。
 
+        Args:
+            pos (int): 石を置く座標。
+            color (Stone): 置く石の色。
+        """
         if pos == PASS:
             return
 
@@ -62,7 +73,6 @@ class GoBoard:
         connection = []
         prisoner = 0
 
-        
         for neighbor in neighbor4:
             if self.board[neighbor] == color:
                 self.strings.remove_liberty(neighbor, pos)
@@ -89,8 +99,17 @@ class GoBoard:
 
         self.moves += 1
 
-
     def _is_suicide(self, pos, color):
+        """自殺手か否かを判定する。
+        自殺手ならTrue、そうでなければFalseを返す。
+
+        Args:
+            pos (int): 確認する座標。
+            color (Stone): 着手する石の色。
+
+        Returns:
+            bool: 自殺手の判定結果。自殺手ならTrue、そうでなければFalse。
+        """
         other = Stone.get_opponent_color(color)
 
         neighbor4 = [pos - self.board_size_with_ob,
@@ -106,7 +125,16 @@ class GoBoard:
         return True
 
     def is_legal(self, pos, color):
+        """合法手か否かを判定する。
+        合法手ならTrue、そうでなければFalseを返す。
 
+        Args:
+            pos (int): 確認する座標。
+            color (Stone): 着手する石の色。
+
+        Returns:
+            bool: 合法手の判定結果。合法手ならTrue、そうでなければFalse。
+        """
         # 既に石がある
         if self.board[pos] != Stone.EMPTY:
             return False
@@ -129,6 +157,16 @@ class GoBoard:
         return True
 
     def is_eye(self, pos, color):
+        """眼形か否かを判定する。
+        上下左右が同一の色の石で囲われていれば、その色を返す。
+
+        Args:
+            pos (int): 確認する座標。
+            color (Stone): 手番の色。
+
+        Returns:
+            Stone: 眼を構成する石の色。眼でなければ空点を色として返す。
+        """
         other = Stone.get_opponent_color(color)
         neighbor4 = [pos - self.board_size_with_ob,
                      pos - 1, pos + 1,
@@ -147,8 +185,17 @@ class GoBoard:
         else:
             return Stone.EMPTY
 
-        
     def is_legal_not_eye(self, pos, color):
+        """合法手かつ眼でないか否かを確認する。
+        合法手かつ眼でなければTrue、そうでなければFalseを返す。
+
+        Args:
+            pos (int): 確認する座標。
+            color (Stone): 手番の色。
+
+        Returns:
+            bool: 判定結果。合法手かつ眼でなければTrue、そうでなければFalse。
+        """
         neighbor4 = [pos - self.board_size_with_ob,
                      pos - 1, pos + 1,
                      pos + self.board_size_with_ob]
@@ -163,6 +210,14 @@ class GoBoard:
             return False
 
     def get_all_legal_pos(self, color):
+        """全ての合法手の座標を取得する。ただし眼は除く。
+
+        Args:
+            color (Stone): 手番の色
+
+        Returns:
+            list[int]: 合法手の座標列。
+        """
         legal_pos = []
         for pos in self.onboard_pos:
             if self.is_legal_not_eye(pos, color):
@@ -170,6 +225,8 @@ class GoBoard:
         return legal_pos
 
     def display(self):
+        """盤面を表示する。
+        """
         board_string = "Move : {}\n".format(self.moves)
         board_string += "Prisoner(Black) : {}\nPrisoner(White) : {}\n".format(self.prisoner[0], self.prisoner[1])
         

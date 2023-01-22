@@ -4,8 +4,14 @@ from board.stone import Stone
 from common.print_console import print_err
 
 class String:
-    
+    """連の実装クラス。
+    """
     def __init__(self, board_size):
+        """連クラスのコンストラクタ。
+
+        Args:
+            board_size (int): 碁盤のサイズ。
+        """
         self.color = 0
         self.libs = 0
         self.lib = [0] * ((board_size + 2) ** 2)
@@ -16,12 +22,17 @@ class String:
         self.flag = False
 
     def initialize(self, pos, color):
+        """連の生成処理。
+
+        Args:
+            pos (int): 連を構成する石の座標。
+            color (Stone): 連を構成する石の色。
+        """
         for i in range(len(self.lib)):
             self.lib[i] = 0
 
         for i in range(len(self.neighbor)):
             self.neighbor[i] = 0
-        
         
         self.color = color
         self.lib[0] = LIBERTY_END
@@ -33,42 +44,108 @@ class String:
         self.flag = True
 
     def has_liberty(self, pos):
+        """指定した座標を呼吸点として持っているか確認する。
+
+        Args:
+            pos (int): 確認する座標。
+
+        Returns:
+            bool: 指定した座標を呼吸点として持つ場合はTrue、そうでなければFalse。
+        """
         return self.lib[pos] > 0
 
     def has_neighbor(self, neighbor):
+        """指定した連IDと隣接する敵連として持っているかを確認する。
+
+        Args:
+            neighbor (int): 確認する連ID
+
+        Returns:
+            _bool: 指定した連IDを敵連として持つ場合はTrue、そうでなければFalse。
+        """
         return self.neighbor[neighbor] != 0
 
     def remove(self):
+        """連を削除する。
+        """
         self.flag = False
         
     def add_stone(self):
+        """連を構成する石の数を1つ増やす。
+        """
         self.size += 1
 
     def add_liberty(self):
+        """呼吸点の数を1つ増やす。
+        """
         self.libs += 1
 
     def add_size(self, size):
+        """連を構成する石の個数を加算する。
+
+        Args:
+            size (int): 加算する石の個数。
+        """
         self.size += size
 
     def get_size(self):
+        """連を構成する石の個数を取得する。
+
+        Returns:
+            int: 連を構成する石の個数。
+        """
         return self.size
 
     def exist(self):
+        """連が存在するか確認する。
+
+        Returns:
+            bool: 連の存在フラグ。存在していればTrue、存在していなければFalse。
+        """
         return self.flag
 
     def get_num_liberties(self):
+        """連が持つ呼吸点の個数を取得する。
+
+        Returns:
+            int: 連が持つ呼吸点の個数。
+        """
         return self.libs
     
     def get_origin(self):
+        """連を構成する石の始点を取得する。
+
+        Returns:
+            int: 連を構成する石の始点の座標。
+        """
         return self.origin
 
     def get_neighbor_origin(self):
+        """隣接する敵連IDの最小値を取得する。
+
+        Returns:
+            int: 隣接する敵連IDの最小値。
+        """
         return self.neighbor[0]
 
     def set_origin(self, pos):
+        """連を構成する石の始点を設定する。
+
+        Args:
+            pos (int): 設定する始点の座標。
+        """
         self.origin = pos
 
     def add_liberty(self, pos, head):
+        """呼吸点を1つ追加する。
+
+        Args:
+            pos (int): 追加する呼吸点の座標。
+            head (int): 探索開始点
+
+        Returns:
+            int: 追加した呼吸点の座標。
+        """
         # 追加済みなので何もしない
         if self.has_liberty(pos):
             return pos
@@ -84,6 +161,11 @@ class String:
         return pos
 
     def remove_liberty(self, pos):
+        """指定した座標の呼吸点を取り除く。
+
+        Args:
+            pos (int): 取り除く座標。
+        """
         if not self.has_liberty(pos):
             return
 
@@ -94,9 +176,13 @@ class String:
         self.lib[lib] = self.lib[self.lib[lib]]
         self.lib[pos] = 0
         self.libs -= 1
-        
-    
+
     def add_neighbor(self, string_id):
+        """隣接する敵連IDを追加する。
+
+        Args:
+            string_id (int): 追加する敵連ID
+        """
         # 追加済みなので何もしない
         if self.neighbor[string_id] != 0:
             return
@@ -112,6 +198,11 @@ class String:
         self.neighbors += 1
 
     def remove_neighbor(self, remove_id):
+        """指定した隣接する敵連IDを除去する。
+
+        Args:
+            remove_id (int): 除去する隣接する敵連ID
+        """
         if self.neighbor[remove_id] == 0:
             return
 
@@ -123,11 +214,20 @@ class String:
         self.neighbor[remove_id] = 0
         self.neighbors -= 1
 
-
     def get_color(self):
+        """連を構成する石の色を取得する。
+
+        Returns:
+            Stone: 連を構成する石の色。
+        """
         return self.color
 
     def get_liberties(self):
+        """連が持つ呼吸点の座標を全て取得する。
+
+        Returns:
+            list[int]: 連が持つ呼吸の点の座標列。
+        """
         liberties = []
         lib = self.lib[0]
         while lib != LIBERTY_END:
@@ -136,17 +236,28 @@ class String:
         return liberties
 
     def get_neighbors(self):
+        """隣接する敵連IDを全て取得する。
+
+        Returns:
+            list[int]: 隣接する敵連ID列。
+        """
         neighbors = []
         neighbor = self.neighbor[0]
         while neighbor != NEIGHBOR_END:
             neighbors.append(neighbor)
             neighbor = self.neighbor[neighbor]
         return neighbors
-        
-        
-        
+
+
 class StringData:
+    """碁盤上の全ての連を感るするクラス
+    """
     def __init__(self, board_size):
+        """コンストラクタ。
+
+        Args:
+            board_size (int): 碁盤のサイズ。
+        """
         self.board_max = (board_size + 2) ** 2
         self.string = [String(board_size=board_size) for i in range(int(0.8 * board_size * (board_size - 1) + 5))]
         self.string_id = [0] * self.board_max
@@ -156,13 +267,30 @@ class StringData:
         self.coordinate = Coordinate(board_size=board_size)
 
     def clear(self):
+        """全ての連を削除する。
+        """
         for string in self.string:
             string.remove()
 
     def remove_liberty(self, pos, lib):
+        """指定した座標の連の呼吸点を除去する。
+
+        Args:
+            pos (int): 処理する連の座標。
+            lib (int): 除去する呼吸点の座標。
+        """
         self.string[self.get_id(pos)].remove_liberty(lib)
 
     def remove_string(self, board, remove_pos):
+        """連を盤上から除去する。
+
+        Args:
+            board (Stone): 碁盤上の交点の状態。
+            remove_pos (int): 削除する連の座標。
+
+        Returns:
+            int: 取り除いた連を構成していた石の個数。
+        """
         remove_id = self.get_id(remove_pos)
 
         pos = self.string[remove_id].get_origin()
@@ -197,13 +325,35 @@ class StringData:
         return self.string[remove_id].get_size()
 
     def get_id(self, pos):
+        """指定した座標の連IDを取得する。
+
+        Args:
+            pos (int): 連IDを取得したい座標。
+
+        Returns:
+            int: 連ID。
+        """
         return self.string_id[pos]
 
     def get_num_liberties(self, pos):
+        """指定した座標の連の呼吸点数を取得する。
+
+        Args:
+            pos (int): 呼吸点数を取得したい連の座標。
+
+        Returns:
+            int: 呼吸点数。
+        """
         return self.string[self.get_id(pos)].get_num_liberties()
 
-
     def make_string(self, board, pos, color):
+        """連を作成する。
+
+        Args:
+            board (Stone): 碁盤の交点の状態。
+            pos (int): 作成する連を構成する石の座標。
+            color (Stone): 作成する連の色。
+        """
         opponent_color = Stone.get_opponent_color(color)
         lib_add = 0
 
@@ -229,6 +379,12 @@ class StringData:
                 self.string[neighbor_id].add_neighbor(string_id)
 
     def _add_stone_to_string(self, string_id, pos):
+        """指定した座標を連に追加する。
+
+        Args:
+            string_id (int): 石を追加する連ID。
+            pos (int): 追加する石の座標。
+        """
         if pos == STRING_END:
             return
 
@@ -243,9 +399,16 @@ class StringData:
             self.string_next[str_pos] = pos
 
         self.string[string_id].add_stone()
-        
 
     def add_stone(self, board, pos, color, string_id):
+        """連に石を1つ追加する。
+
+        Args:
+            board (Stone): 碁盤の交点の状態。
+            pos (int): 追加する石の座標。
+            color (Stone): 追加する石の色。
+            string_id (int): 石を追加する連ID。
+        """
         opponent_color = Stone.get_opponent_color(color)
         self.string_id[pos] = string_id
 
@@ -264,6 +427,14 @@ class StringData:
                 self.string[neighbor_id].add_neighbor(string_id)
 
     def connect_string(self, board, pos, color, ids):
+        """連を接続する。
+
+        Args:
+            board (Stone): 碁盤の交点の座標。
+            pos (int): 追加する石の座標。
+            color (Stone): 追加する石の色。
+            ids (list[int]): 接続する連IDの候補列。
+        """
         unique_ids = sorted(list(set(ids)))
 
         self.add_stone(board, pos, color, unique_ids[0])
@@ -273,6 +444,12 @@ class StringData:
         
 
     def _merge_string(self, dst_id, src_ids):
+        """複数の連を接続する。
+
+        Args:
+            dst_id (int): 接続先の連ID
+            src_ids (list[int]): 接続元の連ID
+        """
         for src_id in src_ids:
             rm_id = self.get_id(self.string[src_id].get_origin())
             self._merge_liberty(dst_id, src_id)
@@ -281,6 +458,12 @@ class StringData:
             self.string[src_id].remove()
 
     def _merge_stones(self, dst_id, src_id):
+        """連を構成する石の座標を連結する。
+
+        Args:
+            dst_id (int): 接続先の連ID
+            src_id (int): 接続元の連ID
+        """
         dst_pos = self.string[dst_id].get_origin()
         src_pos = self.string[src_id].get_origin()
 
@@ -305,6 +488,12 @@ class StringData:
         self.string[dst_id].add_size(self.string[src_id].get_size())
 
     def _merge_liberty(self, dst_id, src_id):
+        """連が持つ呼吸点の座標を連結する。
+
+        Args:
+            dst_id (int): 接続先の連ID
+            src_id (int): 接続元の連ID
+        """
         dst_lib = 0
         src_lib = 0
 
@@ -318,6 +507,12 @@ class StringData:
             src_lib = self.string[src_id].lib[src_lib]
 
     def _merge_neighbor(self, dst_id, src_id):
+        """隣接する敵連IDを連結する。
+
+        Args:
+            dst_id (int): 接続先の連ID
+            src_id (int): 接続元の連ID
+        """
         src_neighbor = 0
         dst_neighbor = 0
 
@@ -337,12 +532,26 @@ class StringData:
 
 
     def _remove_neighbor_string(self, neighbor_id, remove_id):
+        """指定した敵連IDを削除する。
+
+        Args:
+            neighbor_id (int): 処理する連ID。
+            remove_id (int): 削除する連ID。
+        """
         self.string[neighbor_id].remove_neighbor(remove_id)
 
     def _add_neighbor(self, neighbor_id, add_id):
+        """隣接する敵連IDを追加する。
+
+        Args:
+            neighbor_id (int): 処理する連ID。
+            add_id (int): 追加する連ID。
+        """
         self.string[neighbor_id].add_neighbor(add_id)
 
     def display(self):
+        """盤上に存在する全ての連の情報を表示する。
+        """
         for string in self.string:
             if string.exist():
                 # 連ID
