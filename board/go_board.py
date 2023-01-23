@@ -1,10 +1,11 @@
+import sys
+
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
 from board.stone import Stone
 from board.string import StringData
 from common.print_console import print_err
 
-import sys
 
 
 class GoBoard:
@@ -23,6 +24,9 @@ class GoBoard:
         self.strings = StringData(board_size=board_size)
         self.onboard_pos = [0] * (self.board_size ** 2)
         self.coordinate = Coordinate(board_size=board_size)
+        self.ko_move = 0
+        self.ko_pos = PASS
+        self.prisoner = [0] * 2
 
         self.clear()
 
@@ -32,7 +36,6 @@ class GoBoard:
         """
         self.moves = 1
         self.position_hash = 0
-        self.prisoner = 0
         self.ko_move = 0
         self.ko_pos = 0
         self.prisoner = [0] * 2
@@ -81,12 +84,12 @@ class GoBoard:
                 self.strings.remove_liberty(neighbor, pos)
                 if self.strings.get_num_liberties(neighbor) == 0:
                     prisoner += self.strings.remove_string(self.board, neighbor)
-                    
+
         if color == Stone.BLACK:
             self.prisoner[0] += prisoner
         elif color == Stone.WHITE:
             self.prisoner[1] += prisoner
-        
+
         if len(connection) == 0:
             self.strings.make_string(self.board, pos, color)
             if prisoner == 1:
@@ -119,7 +122,7 @@ class GoBoard:
         for neighbor in neighbor4:
             if self.board[neighbor] == other and self.strings.get_num_liberties(neighbor) == 1:
                 return False
-            elif self.board[neighbor] == color and self.strings.get_num_liberties(neighbor) > 1:
+            if self.board[neighbor] == color and self.strings.get_num_liberties(neighbor) > 1:
                 return False
 
         return True
@@ -139,7 +142,7 @@ class GoBoard:
         if self.board[pos] != Stone.EMPTY:
             return False
 
-        # 自殺手 
+        # 自殺手
         neighbor4 = [pos - self.board_size_with_ob,
                      pos - 1, pos + 1,
                      pos + self.board_size_with_ob]
@@ -177,13 +180,13 @@ class GoBoard:
            (self.board[neighbor4[2]] == Stone.OUT_OF_BOARD or self.board[neighbor4[2]] == color) and \
            (self.board[neighbor4[3]] == Stone.OUT_OF_BOARD or self.board[neighbor4[3]] == color):
             return color
-        elif (self.board[neighbor4[0]] == Stone.OUT_OF_BOARD or self.board[neighbor4[0]] == other) and \
+        if (self.board[neighbor4[0]] == Stone.OUT_OF_BOARD or self.board[neighbor4[0]] == other) and \
              (self.board[neighbor4[1]] == Stone.OUT_OF_BOARD or self.board[neighbor4[1]] == other) and \
              (self.board[neighbor4[2]] == Stone.OUT_OF_BOARD or self.board[neighbor4[2]] == other) and \
              (self.board[neighbor4[3]] == Stone.OUT_OF_BOARD or self.board[neighbor4[3]] == other):
             return other
-        else:
-            return Stone.EMPTY
+
+        return Stone.EMPTY
 
     def is_legal_not_eye(self, pos, color):
         """合法手かつ眼でないか否かを確認する。
@@ -206,8 +209,8 @@ class GoBoard:
            self.strings.get_num_liberties(neighbor4[2]) == 1 or \
            self.strings.get_num_liberties(neighbor4[3]) == 1:
             return self.is_legal(pos, color)
-        else:
-            return False
+
+        return False
 
     def get_all_legal_pos(self, color):
         """全ての合法手の座標を取得する。ただし眼は除く。
@@ -227,9 +230,10 @@ class GoBoard:
     def display(self):
         """盤面を表示する。
         """
-        board_string = "Move : {}\n".format(self.moves)
-        board_string += "Prisoner(Black) : {}\nPrisoner(White) : {}\n".format(self.prisoner[0], self.prisoner[1])
-        
+        board_string = f"Move : {self.moves}\n"
+        board_string += f"Prisoner(Black) : {self.prisoner[0]}\n"
+        board_string += f"Prisoner(White) : {self.prisoner[1]}\n"
+
         board_string += "   "
         for i in range(self.board_size):
             board_string += " " + GTP_X_COORDINATE[i + 1]
@@ -244,9 +248,15 @@ class GoBoard:
                 output += " " + Stone.get_char(self.board[pos])
             output += " |\n"
             board_string += output
-        
+
         board_string += "  +" + "-" * (self.board_size * 2 + 1) + "+\n"
 
-        print(board_string, file=sys.stderr)
+        print_err(board_string)
 
+    def get_board_size(self):
+        """碁盤の大きさを取得する。
 
+        Returns:
+            int: 碁盤の大きさ
+        """
+        return self.board_size

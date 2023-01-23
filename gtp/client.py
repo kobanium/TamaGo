@@ -1,11 +1,13 @@
+import os
 import random
 import sys
 
 from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
-from board.constant import BOARD_SIZE, PASS, RESIGN
+from board.constant import PASS, RESIGN
 from board.coordinate import Coordinate
 from board.go_board import GoBoard
 from board.stone import Stone
+from sgf.reader import SGFReader
 
 
 
@@ -34,6 +36,7 @@ class GtpClient:
             "get_komi",
             "komi",
             "showboard",
+            "load_sgf"
         ]
         self.board = GoBoard(board_size=board_size)
         self.coordinate = Coordinate(board_size=board_size)
@@ -53,7 +56,7 @@ class GtpClient:
             response (str): 表示する応答メッセージ。
         """
         print("= ? " + response + '\n')
-        
+
     def _version(self):
         """versionコマンドを処理する。
         プログラムのバージョンを表示する。
@@ -119,14 +122,14 @@ class GtpClient:
             color (str): 手番の色。
             pos (str): 着手する座標。
         """
-        if color.lower()[0] is 'b':
+        if color.lower()[0] == 'b':
             play_color = Stone.BLACK
-        elif color.lower()[0] is 'w':
+        elif color.lower()[0] == 'w':
             play_color = Stone.WHITE
         else:
             self._respond_failure("play color pos")
             return
-        
+
         coord = self.coordinate.convert_from_gtp_format(pos)
 
         if not self.board.is_legal(coord, play_color):
@@ -144,14 +147,14 @@ class GtpClient:
         Args:
             color (str): 手番の色。
         """
-        if color.lower()[0] is 'b':
+        if color.lower()[0] == 'b':
             genmove_color = Stone.BLACK
-        elif color.lower()[0] is 'w':
+        elif color.lower()[0] == 'w':
             genmove_color = Stone.WHITE
         else:
             self._respond_failure("genmove color")
             return
-        
+
         # ランダムに着手生成
         legal_pos = self.board.get_all_legal_pos(genmove_color)
 
@@ -209,7 +212,27 @@ class GtpClient:
         self.board.display()
         self._respond_success("")
 
-            
+    def _load_sgf(self, arg_list):
+        if not os.path.exists(arg_list[0]):
+            self._respond_failure(f"cannot load {arg_list[0]}")
+
+
+        sgf_data = SGFReader(arg_list[0], board_size=self.board.get_board_size())
+
+        if len(arg_list) < 2:
+            moves = sgf_data.get_n_moves()
+        else:
+            moves = int(arg_list[1])
+
+        self.board.clear()
+
+        for i in range(moves):
+            pos = sgf_data.get_move_data(i)
+            color = sgf_data.get_color(i)
+            self.board.put_stone(pos, color)
+
+        self._respond_success("")
+
     def run(self):
         """Go Text Protocolのクライアントの実行処理。
         入力されたコマンドに対応する処理を実行し、応答メッセージを表示する。
@@ -220,7 +243,7 @@ class GtpClient:
             command_list = command.split(' ')
 
             input_gtp_command = command_list[0]
-            
+
             if input_gtp_command == "version":
                 self._version()
             elif input_gtp_command == "protocol_version":
@@ -251,9 +274,10 @@ class GtpClient:
                 self._get_komi()
             elif input_gtp_command == "showboard":
                 self._showboard()
+            elif input_gtp_command == "load_sgf":
+                self._load_sgf(command_list[1:])
             elif input_gtp_command == "showstring":
                 self.board.strings.display()
                 self._respond_success("")
             else:
                 self._respond_failure("unknown_command")
-
