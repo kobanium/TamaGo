@@ -1,7 +1,8 @@
 # TamaGo
 TamaGoはPythonで実装された囲碁の思考エンジンです。  
 人間の棋譜を利用した教師あり学習とGumbel AlphaZero方式の強化学習をお試しできるプログラムとなる予定です。  
-現在はランダムな着手を返すプログラムとなっています。
+現在はランダムな着手を返すプログラムとなっています。  
+Python 3.6で動作確認をしています。
 
 # Requirements
 |使用するパッケージ|用途|
@@ -22,7 +23,7 @@ TamaGoはPythonで実装された囲碁の思考エンジンです。
     - [ ] PUCT探索の実装
     - [ ] Sequential Halving applied to tree探索の実装
 - 学習の実装
-  - [ ] SGFファイルの読み込み処理の実装
+  - [x] SGFファイルの読み込み処理の実装
   - [ ] PyTorchを利用した教師あり学習の実装
   - [ ] PyTorchを利用したGumbel AlphaZero方式の強化学習の実装
 - GTPクライアントの実装
@@ -34,7 +35,7 @@ TamaGoはPythonで実装された囲碁の思考エンジンです。
     - [x] 着手 : play, genmove
     - [ ] コミの設定と取得 : komi, get_komi
     - [x] コマンドの確認 : known_command, list_commands
-    - [ ] SGFファイルの読み込み : load_sgf
+    - [x] SGFファイルの読み込み : load_sgf
   - 大会参加時に必要なコマンド
     - [ ] 持ち時間の初期化 : time_settings
     - [ ] 持ち時間の読み込み : time_left

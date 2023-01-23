@@ -23,19 +23,20 @@ class Coordinate:
         """
         if pos.upper() == "PASS":
             return PASS
-        elif pos.upper() == "RESIGN":
-            return RESIGN
-        else:
-            alphabet = pos.upper()[0]
-            x = 0
-            for i in range(self.board_size):
-                if GTP_X_COORDINATE[i + 1] is alphabet:
-                    x = i
-            y = self.board_size - int(pos[1:])
-            
-            pos = x + OB_SIZE + (y + OB_SIZE) * self.board_size_with_ob
 
-            return pos
+        if pos.upper() == "RESIGN":
+            return RESIGN
+
+        alphabet = pos.upper()[0]
+        x_coord = 0
+        for i in range(self.board_size):
+            if GTP_X_COORDINATE[i + 1] is alphabet:
+                x_coord = i
+        y_coord = self.board_size - int(pos[1:])
+
+        pos = x_coord + OB_SIZE + (y_coord + OB_SIZE) * self.board_size_with_ob
+
+        return pos
 
     def convert_to_gtp_format(self, pos):
         """プログラム内部の座標からGTP形式に変換する。
@@ -48,9 +49,11 @@ class Coordinate:
         """
         if pos == PASS:
             return "PASS"
-        elif pos == RESIGN:
+
+        if pos == RESIGN:
             return "RESIGN"
-        else:
-            x = pos % self.board_size_with_ob - OB_SIZE + 1
-            y = self.board_size - (pos // self.board_size_with_ob - OB_SIZE)
-            return (GTP_X_COORDINATE[x] + str(y))
+
+        x_coord = pos % self.board_size_with_ob - OB_SIZE + 1
+        y_coord = self.board_size - (pos // self.board_size_with_ob - OB_SIZE)
+
+        return GTP_X_COORDINATE[x_coord] + str(y_coord)
