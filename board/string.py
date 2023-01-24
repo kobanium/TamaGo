@@ -245,9 +245,9 @@ class String:
 
 
 class StringData:
-    """碁盤上の全ての連を感るするクラス
+    """碁盤上の全ての連を管理するクラス
     """
-    def __init__(self, board_size):
+    def __init__(self, board_size, pos_idx, get_neighbor4):
         """コンストラクタ。
 
         Args:
@@ -261,6 +261,8 @@ class StringData:
         self.board_size = board_size
         self.board_size_with_ob = board_size + OB_SIZE * 2
         self.coordinate = Coordinate(board_size=board_size)
+        self.POS = pos_idx
+        self.get_neighbor4 = get_neighbor4
 
     def clear(self):
         """全ての連を削除する。
@@ -291,13 +293,13 @@ class StringData:
 
         pos = self.string[remove_id].get_origin()
 
+        removed_stone = []
+
         while pos != STRING_END:
             board[pos] = Stone.EMPTY
+            removed_stone.append(pos)
 
-            neighbor4 = [pos - self.board_size_with_ob,
-                         pos - 1,
-                         pos + 1,
-                         pos + self.board_size_with_ob]
+            neighbor4 = self.get_neighbor4(pos)
 
             for neighbor_pos in neighbor4:
                 neighbor_id = self.get_id(neighbor_pos)
@@ -308,8 +310,6 @@ class StringData:
             self.string_next[pos] = 0
             self.string_id[pos] = 0
             pos = next_pos
-            #if pos == STRING_END:
-            #    break
 
         neighbor_id = self.string[remove_id].neighbor[0]
         while neighbor_id != NEIGHBOR_END:
@@ -318,7 +318,7 @@ class StringData:
 
         self.string[remove_id].remove()
 
-        return self.string[remove_id].get_size()
+        return removed_stone
 
     def get_id(self, pos):
         """指定した座標の連IDを取得する。
@@ -362,9 +362,7 @@ class StringData:
         self.string_id[pos] = string_id
         self.string_next[pos] = STRING_END
 
-        neighbor4 = [pos - self.board_size_with_ob,
-                     pos - 1, pos + 1,
-                     pos + self.board_size_with_ob]
+        neighbor4 = self.get_neighbor4(pos)
 
         for neighbor in neighbor4:
             if board[neighbor] == Stone.EMPTY:
@@ -410,9 +408,7 @@ class StringData:
 
         self._add_stone_to_string(string_id, pos)
 
-        neighbor4 = [pos - self.board_size_with_ob,
-                     pos - 1, pos + 1,
-                     pos + self.board_size_with_ob]
+        neighbor4 = self.get_neighbor4(pos)
 
         for neighbor in neighbor4:
             if board[neighbor] == Stone.EMPTY:

@@ -279,5 +279,9 @@ class GtpClient:
             elif input_gtp_command == "showstring":
                 self.board.strings.display()
                 self._respond_success("")
+            elif input_gtp_command == "showpattern":
+                coordinate = Coordinate(self.board.get_board_size())
+                self.board.pattern.display(coordinate.convert_from_gtp_format(command_list[1]))
+                self._respond_success("")
             else:
                 self._respond_failure("unknown_command")
