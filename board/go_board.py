@@ -1,12 +1,9 @@
-import sys
-
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
 from board.pattern import Pattern
 from board.stone import Stone
 from board.string import StringData
 from common.print_console import print_err
-
 
 
 class GoBoard:
@@ -52,20 +49,17 @@ class GoBoard:
         self.ko_pos = 0
         self.prisoner = [0] * 2
 
-        i = 0
-        for y in range(1, self.board_size + OB_SIZE):
-            for x in range(1, self.board_size + OB_SIZE):
-                pos = x + y * self.board_size_with_ob
-                self.board[pos] = Stone.EMPTY
-                self.onboard_pos[i] = pos
-                i += 1
+        for i, _ in enumerate(self.board):
+            self.board[i] = Stone.OUT_OF_BOARD
 
-        for y in range(self.board_size_with_ob):
-            for x in range(OB_SIZE):
-                self.board[self.POS(x, y)] = Stone.OUT_OF_BOARD
-                self.board[self.POS(y, x)] = Stone.OUT_OF_BOARD
-                self.board[self.POS(y, self.board_size_with_ob - 1 - x)] = Stone.OUT_OF_BOARD
-                self.board[self.POS(self.board_size_with_ob - 1 - x, y)] = Stone.OUT_OF_BOARD
+        idx = 0
+
+        for y_coord in range(1, self.board_size + OB_SIZE):
+            for x_coord in range(1, self.board_size + OB_SIZE):
+                pos = self.POS(x_coord, y_coord)
+                self.board[pos] = Stone.EMPTY
+                self.onboard_pos[idx] = pos
+                idx += 1
 
         self.pattern.clear()
         self.strings.clear()
@@ -158,11 +152,7 @@ class GoBoard:
             return False
 
         # 自殺手
-        neighbor4 = self.get_neighbor4(pos)
-        if self.board[neighbor4[0]] != Stone.EMPTY and \
-           self.board[neighbor4[1]] != Stone.EMPTY and \
-           self.board[neighbor4[2]] != Stone.EMPTY and \
-           self.board[neighbor4[3]] != Stone.EMPTY and \
+        if self.pattern.get_n_neighbors_empty(pos) == 0 and \
            self._is_suicide(pos, color):
             return False
 
@@ -171,33 +161,6 @@ class GoBoard:
             return False
 
         return True
-
-    def is_eye(self, pos, color):
-        """眼形か否かを判定する。
-        上下左右が同一の色の石で囲われていれば、その色を返す。
-
-        Args:
-            pos (int): 確認する座標。
-            color (Stone): 手番の色。
-
-        Returns:
-            Stone: 眼を構成する石の色。眼でなければ空点を色として返す。
-        """
-        other = Stone.get_opponent_color(color)
-        neighbor4 = self.get_neighbor4(pos)
-
-        if (self.board[neighbor4[0]] == Stone.OUT_OF_BOARD or self.board[neighbor4[0]] == color) and \
-           (self.board[neighbor4[1]] == Stone.OUT_OF_BOARD or self.board[neighbor4[1]] == color) and \
-           (self.board[neighbor4[2]] == Stone.OUT_OF_BOARD or self.board[neighbor4[2]] == color) and \
-           (self.board[neighbor4[3]] == Stone.OUT_OF_BOARD or self.board[neighbor4[3]] == color):
-            return color
-        if (self.board[neighbor4[0]] == Stone.OUT_OF_BOARD or self.board[neighbor4[0]] == other) and \
-             (self.board[neighbor4[1]] == Stone.OUT_OF_BOARD or self.board[neighbor4[1]] == other) and \
-             (self.board[neighbor4[2]] == Stone.OUT_OF_BOARD or self.board[neighbor4[2]] == other) and \
-             (self.board[neighbor4[3]] == Stone.OUT_OF_BOARD or self.board[neighbor4[3]] == other):
-            return other
-
-        return Stone.EMPTY
 
     def is_legal_not_eye(self, pos, color):
         """合法手かつ眼でないか否かを確認する。
@@ -211,8 +174,7 @@ class GoBoard:
             bool: 判定結果。合法手かつ眼でなければTrue、そうでなければFalse。
         """
         neighbor4 = self.get_neighbor4(pos)
-
-        if self.is_eye(pos, color) is not color or \
+        if self.pattern.get_eye_color(pos) is not color or \
            self.strings.get_num_liberties(neighbor4[0]) == 1 or \
            self.strings.get_num_liberties(neighbor4[1]) == 1 or \
            self.strings.get_num_liberties(neighbor4[2]) == 1 or \
@@ -250,10 +212,10 @@ class GoBoard:
 
         board_string += "  +" + "-" * (self.board_size * 2 + 1) + "+\n"
 
-        for y in range(1, self.board_size + 1):
-            output = "{:>2d}|".format(self.board_size - y + 1)
-            for x in range(1, self.board_size + 1):
-                pos = x + y * self.board_size_with_ob
+        for y_coord in range(1, self.board_size + 1):
+            output = "{:>2d}|".format(self.board_size - y_coord + 1)
+            for x_coord in range(1, self.board_size + 1):
+                pos = self.POS(x_coord, y_coord)
                 output += " " + Stone.get_char(self.board[pos])
             output += " |\n"
             board_string += output

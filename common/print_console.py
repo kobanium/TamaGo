@@ -1,3 +1,5 @@
+"""コンソール出力のラッパー
+"""
 import sys
 
 def print_out(message):

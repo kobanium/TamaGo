@@ -1,3 +1,5 @@
+"""SGF形式のファイル読み込み処理。
+"""
 from board.coordinate import Coordinate
 from board.constant import PASS, OB_SIZE
 from board.stone import Stone

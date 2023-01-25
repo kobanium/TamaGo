@@ -1,3 +1,5 @@
+"""対局結果の定数。
+"""
 from enum import Enum
 
 class MatchResult(Enum):

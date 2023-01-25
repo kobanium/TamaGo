@@ -1,16 +1,19 @@
+"""GTPクライアントのエントリーポイント。
+"""
+import click
+
 from gtp.client import GtpClient
 from board.constant import BOARD_SIZE
-from board.go_board import GoBoard
-from board.string import StringData
-from board.stone import Stone
-
-import click
 
 
 @click.command()
 @click.option('--size', type=click.IntRange(2, BOARD_SIZE), default=BOARD_SIZE, help="")
 def gtp_main(size):
-    #call_gtp_client()
+    """GTPクライアントの起動。
+
+    Args:
+        size (int): 碁盤の大きさ。
+    """
     client = GtpClient(size)
     client.run()
 
