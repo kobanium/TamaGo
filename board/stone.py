@@ -1,5 +1,6 @@
+"""交点の状態（色）の定数と処理定義。
+"""
 from enum import Enum
-
 
 class Stone(Enum):
     """石の色を表すクラス。

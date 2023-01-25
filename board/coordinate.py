@@ -1,3 +1,5 @@
+"""プログラム内部形式とGTP形式の座標変換処理。
+"""
 from board.constant import PASS, RESIGN, OB_SIZE, GTP_X_COORDINATE
 
 class Coordinate:

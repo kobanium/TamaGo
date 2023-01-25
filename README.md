@@ -7,6 +7,7 @@ Python 3.6で動作確認をしています。
 # Requirements
 |使用するパッケージ|用途|
 |---|---|
+|numpy|雑多な計算|
 |click|コマンドライン引数の実装|
 
 # License
@@ -14,18 +15,25 @@ Python 3.6で動作確認をしています。
 
 # Todo list
 - 碁盤の実装
-  - [x] 連のデータ構造の実装
-  - [ ] 3x3パターンのデータ構造の実装
-  - [ ] 着手履歴の実装
+  - [x] 連のデータ構造
+  - [x] 3x3パターンのデータ構造
+  - [ ] 着手履歴
+  - [ ] Zobrist Hash
+  - [ ] Super Koの判定処理
 - 探索部の実装
-  - [ ] 木とノードのデータ構造の実装
-  - [ ] モンテカルロ木探索の実装
-    - [ ] PUCT探索の実装
-    - [ ] Sequential Halving applied to tree探索の実装
+  - [ ] 木とノードのデータ構造
+  - [ ] モンテカルロ木探索
+    - [ ] クラシックなMCTS
+      - [ ] UCT
+      - [ ] RAVE
+      - [ ] ランダムシミュレーション
+    - [ ] PUCT探索
+    - [ ] Sequential Halving applied to tree探索
+    - [ ] CGOS対応
 - 学習の実装
-  - [x] SGFファイルの読み込み処理の実装
-  - [ ] PyTorchを利用した教師あり学習の実装
-  - [ ] PyTorchを利用したGumbel AlphaZero方式の強化学習の実装
+  - [x] SGFファイルの読み込み処理
+  - [ ] PyTorchを利用した教師あり学習
+  - [ ] PyTorchを利用したGumbel AlphaZero方式の強化学習
 - GTPクライアントの実装
   - 基本的なコマンド
     - [x] プログラム情報の表示 : name, version, protocol_version

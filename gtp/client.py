@@ -1,3 +1,5 @@
+"""Go Text Protocolクライアントの実装。
+"""
 import os
 import random
 import sys
@@ -7,6 +9,7 @@ from board.constant import PASS, RESIGN
 from board.coordinate import Coordinate
 from board.go_board import GoBoard
 from board.stone import Stone
+from common.print_console import print_err
 from sgf.reader import SGFReader
 
 
@@ -279,5 +282,13 @@ class GtpClient:
             elif input_gtp_command == "showstring":
                 self.board.strings.display()
                 self._respond_success("")
+            elif input_gtp_command == "showpattern":
+                coordinate = Coordinate(self.board.get_board_size())
+                self.board.pattern.display(coordinate.convert_from_gtp_format(command_list[1]))
+                self._respond_success("")
+            elif input_gtp_command == "eye":
+                coordinate = Coordinate(self.board.get_board_size())
+                coord = coordinate.convert_from_gtp_format(command_list[1])
+                print_err(self.board.pattern.get_eye_color(coord))
             else:
                 self._respond_failure("unknown_command")

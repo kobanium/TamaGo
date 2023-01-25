@@ -245,22 +245,22 @@ class String:
 
 
 class StringData:
-    """碁盤上の全ての連を感るするクラス
+    """碁盤上の全ての連を管理するクラス
     """
-    def __init__(self, board_size):
+    def __init__(self, board_size, pos_func, get_neighbor4):
         """コンストラクタ。
 
         Args:
             board_size (int): 碁盤のサイズ。
         """
-        self.board_max = (board_size + 2) ** 2
+        board_max = (board_size + OB_SIZE * 2) ** 2
         self.string = [String(board_size=board_size) \
             for i in range(int(0.8 * board_size * (board_size - 1) + 5))]
-        self.string_id = [0] * self.board_max
-        self.string_next = [0] * self.board_max
+        self.string_id = [0] * board_max
+        self.string_next = [0] * board_max
         self.board_size = board_size
-        self.board_size_with_ob = board_size + OB_SIZE * 2
-        self.coordinate = Coordinate(board_size=board_size)
+        self.POS = pos_func
+        self.get_neighbor4 = get_neighbor4
 
     def clear(self):
         """全ての連を削除する。
@@ -291,13 +291,13 @@ class StringData:
 
         pos = self.string[remove_id].get_origin()
 
+        removed_stone = []
+
         while pos != STRING_END:
             board[pos] = Stone.EMPTY
+            removed_stone.append(pos)
 
-            neighbor4 = [pos - self.board_size_with_ob,
-                         pos - 1,
-                         pos + 1,
-                         pos + self.board_size_with_ob]
+            neighbor4 = self.get_neighbor4(pos)
 
             for neighbor_pos in neighbor4:
                 neighbor_id = self.get_id(neighbor_pos)
@@ -308,8 +308,6 @@ class StringData:
             self.string_next[pos] = 0
             self.string_id[pos] = 0
             pos = next_pos
-            #if pos == STRING_END:
-            #    break
 
         neighbor_id = self.string[remove_id].neighbor[0]
         while neighbor_id != NEIGHBOR_END:
@@ -318,7 +316,7 @@ class StringData:
 
         self.string[remove_id].remove()
 
-        return self.string[remove_id].get_size()
+        return removed_stone
 
     def get_id(self, pos):
         """指定した座標の連IDを取得する。
@@ -362,9 +360,7 @@ class StringData:
         self.string_id[pos] = string_id
         self.string_next[pos] = STRING_END
 
-        neighbor4 = [pos - self.board_size_with_ob,
-                     pos - 1, pos + 1,
-                     pos + self.board_size_with_ob]
+        neighbor4 = self.get_neighbor4(pos)
 
         for neighbor in neighbor4:
             if board[neighbor] == Stone.EMPTY:
@@ -410,9 +406,7 @@ class StringData:
 
         self._add_stone_to_string(string_id, pos)
 
-        neighbor4 = [pos - self.board_size_with_ob,
-                     pos - 1, pos + 1,
-                     pos + self.board_size_with_ob]
+        neighbor4 = self.get_neighbor4(pos)
 
         for neighbor in neighbor4:
             if board[neighbor] == Stone.EMPTY:
@@ -514,7 +508,8 @@ class StringData:
             if not self.string[dst_id].has_neighbor(src_neighbor):
                 while self.string[dst_id].neighbor[dst_neighbor] < src_neighbor:
                     dst_neighbor = self.string[dst_id].neighbor[dst_neighbor]
-                self.string[dst_id].neighbor[src_neighbor] = self.string[dst_id].neighbor[dst_neighbor]
+                self.string[dst_id].neighbor[src_neighbor] = \
+                    self.string[dst_id].neighbor[dst_neighbor]
                 self.string[dst_id].neighbor[dst_neighbor] = src_neighbor
             src_neighbor = self.string[src_id].neighbor[src_neighbor]
 
@@ -546,6 +541,7 @@ class StringData:
     def display(self):
         """盤上に存在する全ての連の情報を表示する。（デバッグ用）
         """
+        coordinate = Coordinate(self.board_size)
         for string in self.string:
             if string.exist():
                 # 連ID
@@ -554,7 +550,7 @@ class StringData:
                 position = "\tPosition :"
                 pos = string.get_origin()
                 while pos != STRING_END:
-                    position += " " + self.coordinate.convert_to_gtp_format(pos)
+                    position += " " + coordinate.convert_to_gtp_format(pos)
                     pos = self.string_next[pos]
                 print_err(position)
                 color = string.get_color()
@@ -568,7 +564,7 @@ class StringData:
                     print_err("Error Color")
                 liberty = ""
                 for lib in liberties:
-                    liberty += " " + self.coordinate.convert_to_gtp_format(lib)
+                    liberty += " " + coordinate.convert_to_gtp_format(lib)
                 print_err(f"\tLiberty {len(liberties)} : {liberty}")
                 neighbor = ""
                 for nei in neighbors:
