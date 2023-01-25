@@ -7,6 +7,7 @@ Python 3.6で動作確認をしています。
 # Requirements
 |使用するパッケージ|用途|
 |---|---|
+|numpy|雑多な計算|
 |click|コマンドライン引数の実装|
 
 # License
