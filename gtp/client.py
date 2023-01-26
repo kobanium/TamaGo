@@ -280,6 +280,8 @@ class GtpClient:
                 self._showboard()
             elif input_gtp_command == "load_sgf":
                 self._load_sgf(command_list[1:])
+            elif input_gtp_command == "final_score":
+                self._respond_success("?")
             elif input_gtp_command == "showstring":
                 self.board.strings.display()
                 self._respond_success("")

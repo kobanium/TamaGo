@@ -41,7 +41,7 @@ class Pattern:
         for i, _ in enumerate(self.nb4_empty):
             if ((i >> 2) & 0x3) == 0:
                 self.nb4_empty[i] += 1
-            if ((i >> 4) & 0x3) == 0:
+            if ((i >> 6) & 0x3) == 0:
                 self.nb4_empty[i] += 1
             if ((i >> 8) & 0x3) == 0:
                 self.nb4_empty[i] += 1

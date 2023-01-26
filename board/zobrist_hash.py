@@ -35,6 +35,6 @@ def affect_string_hash(hash_value, pos_list, color):
         np.array: 作用後のハッシュ値。
     """
     for pos in pos_list:
-        hash_value = hash_value ^ hash_bit_mask[color.value][pos]
+        hash_value ^= hash_bit_mask[color.value][pos]
 
     return hash_value

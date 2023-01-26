@@ -94,9 +94,6 @@ class GoBoard:
 
         neighbor4 = self.get_neighbor4(pos)
 
-        # 着手の記録
-
-
         connection = []
         prisoner = 0
 
@@ -111,7 +108,7 @@ class GoBoard:
                     prisoner += len(removed_stones)
                     for removed_pos in removed_stones:
                         self.pattern.remove_stone(removed_pos)
-                    self.positional_hash = affect_stone_hash(self.positional_hash, \
+                    self.positional_hash = affect_string_hash(self.positional_hash, \
                         removed_stones, color)
 
         if color == Stone.BLACK:

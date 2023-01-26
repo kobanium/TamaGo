@@ -15,7 +15,6 @@ def gtp_main(size, superko):
     Args:
         size (int): 碁盤の大きさ。
     """
-    print(superko)
     client = GtpClient(size, superko)
     client.run()
 
