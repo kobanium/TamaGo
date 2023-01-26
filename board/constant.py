@@ -1,4 +1,5 @@
-# 碁盤に関する定数
+"""碁盤に関する定数
+"""
 # 碁盤のサイズ
 BOARD_SIZE = 9
 # 盤外のサイズ
@@ -25,3 +26,6 @@ PASS = 0
 RESIGN = -1
 # Go Text ProtocolのX座標の文字
 GTP_X_COORDINATE = 'IABCDEFGHJKLMNOPQRSTUVWXYZ'
+
+# 着手履歴の最大数
+MAX_RECORDS = (BOARD_SIZE ** 2) * 3

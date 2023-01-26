@@ -1,5 +1,6 @@
+"""交点の状態（色）の定数と処理定義。
+"""
 from enum import Enum
-
 
 class Stone(Enum):
     """石の色を表すクラス。
@@ -21,10 +22,11 @@ class Stone(Enum):
         """
         if color == Stone.BLACK:
             return Stone.WHITE
-        elif color == Stone.WHITE:
+
+        if color == Stone.WHITE:
             return Stone.BLACK
-        else:
-            return color
+
+        return color
 
     @classmethod
     def get_char(cls, color):
@@ -38,11 +40,14 @@ class Stone(Enum):
         """
         if color == Stone.EMPTY:
             return '+'
-        elif color == Stone.BLACK:
+
+        if color == Stone.BLACK:
             return '@'
-        elif color == Stone.WHITE:
+
+        if color == Stone.WHITE:
             return 'O'
-        elif color == Stone.OUT_OF_BOARD:
+
+        if color == Stone.OUT_OF_BOARD:
             return '#'
-        else:
-            return '!'
+
+        return '!'
