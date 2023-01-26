@@ -17,11 +17,12 @@ from sgf.reader import SGFReader
 class GtpClient:
     """_Go Text Protocolクライアントの実装クラス
     """
-    def __init__(self, board_size):
+    def __init__(self, board_size, superko):
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
             board_size (int): 碁盤の大きさ。
+            superko (bool): 超劫判定の有効化。
         """
         self.gtp_commands = [
             "version",
@@ -41,7 +42,8 @@ class GtpClient:
             "showboard",
             "load_sgf"
         ]
-        self.board = GoBoard(board_size=board_size)
+        self.superko = superko
+        self.board = GoBoard(board_size=board_size, check_superko=superko)
         self.coordinate = Coordinate(board_size=board_size)
 
     def _respond_success(self, response):
@@ -179,7 +181,7 @@ class GtpClient:
             size (str): 設定する碁盤のサイズ。
         """
         board_size = int(size)
-        self.board = GoBoard(board_size=board_size)
+        self.board = GoBoard(board_size=board_size, check_superko=self.superko)
         self.coordinate = Coordinate(board_size=board_size)
         self._respond_success("")
 
@@ -218,7 +220,6 @@ class GtpClient:
     def _load_sgf(self, arg_list):
         if not os.path.exists(arg_list[0]):
             self._respond_failure(f"cannot load {arg_list[0]}")
-
 
         sgf_data = SGFReader(arg_list[0], board_size=self.board.get_board_size())
 

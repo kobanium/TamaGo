@@ -26,3 +26,6 @@ PASS = 0
 RESIGN = -1
 # Go Text ProtocolのX座標の文字
 GTP_X_COORDINATE = 'IABCDEFGHJKLMNOPQRSTUVWXYZ'
+
+# 着手履歴の最大数
+MAX_RECORDS = (BOARD_SIZE ** 2) * 3

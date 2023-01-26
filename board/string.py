@@ -1,3 +1,5 @@
+"""連の定義と処理の実装。
+"""
 from board.constant import STRING_END, LIBERTY_END, NEIGHBOR_END, OB_SIZE
 from board.coordinate import Coordinate
 from board.stone import Stone
@@ -328,6 +330,24 @@ class StringData:
             int: 連ID。
         """
         return self.string_id[pos]
+
+    def get_stone_coordinates(self, string_id):
+        """連を構成する石の座標列を取得する。
+
+        Args:
+            string_id (int): 座標を取得したい連ID。
+
+        Returns:
+            list[int]: 連を構成する石の座標列。
+        """
+        pos = self.string[string_id].get_origin()
+        stones = []
+
+        while pos != STRING_END:
+            stones.append(pos)
+            pos = self.string_next[pos]
+
+        return stones
 
     def get_num_liberties(self, pos):
         """指定した座標の連の呼吸点数を取得する。
