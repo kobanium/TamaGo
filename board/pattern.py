@@ -131,10 +131,8 @@ class Pattern:
             pos (int): 打つ石の座標。
             color (Stone): 打つ石の色。
         """
-        if color == Stone.BLACK:
-            color_index = 1
-        elif color == Stone.WHITE:
-            color_index = 2
+        if color in (Stone.BLACK, Stone.WHITE):
+            color_index = color.value
         else:
             return
         for i, shift in enumerate(self.update_pos):

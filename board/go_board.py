@@ -1,19 +1,23 @@
+import numpy as np
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
 from board.pattern import Pattern
+from board.record import Record
 from board.stone import Stone
 from board.string import StringData
+from board.zobrist_hash import affect_stone_hash, affect_string_hash
 from common.print_console import print_err
 
 
 class GoBoard:
     """碁盤クラス
     """
-    def __init__(self, board_size):
+    def __init__(self, board_size, check_superko=False):
         """碁盤クラスの初期化
 
         Args:
             board_size (int): 碁盤の大きさ。
+            check_superko (bool): 超劫の判定有効化。
         """
         self.board_size = board_size
         self.board_size_with_ob = board_size + OB_SIZE * 2
@@ -27,11 +31,14 @@ class GoBoard:
         self.board = [Stone.EMPTY] * (self.board_size_with_ob ** 2)
         self.pattern = Pattern(board_size, pos)
         self.strings = StringData(board_size, pos, get_neighbor4)
+        self.record = Record()
         self.onboard_pos = [0] * (self.board_size ** 2)
         self.coordinate = Coordinate(board_size=board_size)
         self.ko_move = 0
         self.ko_pos = PASS
         self.prisoner = [0] * 2
+        self.positional_hash = np.zeros(1, dtype=np.uint64)
+        self.check_superko = check_superko
 
 
         self.POS = pos
@@ -48,6 +55,7 @@ class GoBoard:
         self.ko_move = 0
         self.ko_pos = 0
         self.prisoner = [0] * 2
+        self.positional_hash.fill(0)
 
         for i, _ in enumerate(self.board):
             self.board[i] = Stone.OUT_OF_BOARD
@@ -63,6 +71,7 @@ class GoBoard:
 
         self.pattern.clear()
         self.strings.clear()
+        self.record.clear()
 
     def put_stone(self, pos, color):
         """指定された座標に指定された色の石を石を置く。
@@ -72,14 +81,21 @@ class GoBoard:
             color (Stone): 置く石の色。
         """
         if pos == PASS:
+            self.record.save(self.moves, color, pos, self.positional_hash)
+            self.moves += 1
             return
 
         opponent_color = Stone.get_opponent_color(color)
 
+
         self.board[pos] = color
         self.pattern.put_stone(pos, color)
+        self.positional_hash = affect_stone_hash(self.positional_hash, pos, color)
 
         neighbor4 = self.get_neighbor4(pos)
+
+        # 着手の記録
+
 
         connection = []
         prisoner = 0
@@ -95,6 +111,8 @@ class GoBoard:
                     prisoner += len(removed_stones)
                     for removed_pos in removed_stones:
                         self.pattern.remove_stone(removed_pos)
+                    self.positional_hash = affect_stone_hash(self.positional_hash, \
+                        removed_stones, color)
 
         if color == Stone.BLACK:
             self.prisoner[0] += prisoner
@@ -111,6 +129,8 @@ class GoBoard:
         else:
             self.strings.connect_string(self.board, pos, color, connection)
 
+        # 着手した時に記録
+        self.record.save(self.moves, color, pos, self.positional_hash)
         self.moves += 1
 
     def _is_suicide(self, pos, color):
@@ -159,6 +179,26 @@ class GoBoard:
         # 劫
         if (self.ko_pos == pos) and (self.ko_move == (self.moves - 1)):
             return False
+
+        # 超劫の確認
+        if self.check_superko and pos != PASS:
+            opponent = Stone.get_opponent_color(color)
+            neighbor4 = self.get_neighbor4(pos)
+            neighbor_ids = [self.strings.get_id(neighbor) for neighbor in neighbor4]
+            unique_ids = list(set(neighbor_ids))
+            current_hash = self.positional_hash
+
+            # 打ち上げる石があれば打ち上げたと仮定
+            for string_id in unique_ids:
+                if self.strings.get_num_liberties(self.strings.string[string_id].get_origin) == 1:
+                    stones = self.strings.get_stone_coordinates(string_id)
+                    current_hash = affect_string_hash(stones, opponent)
+            # 石を置く
+            current_hash = affect_stone_hash(pos, color)
+
+            if self.record.has_same_hash(current_hash):
+                return False
+
 
         return True
 
