@@ -137,7 +137,7 @@ class GtpClient:
 
         coord = self.coordinate.convert_from_gtp_format(pos)
 
-        if not self.board.is_legal(coord, play_color):
+        if coord != PASS and not self.board.is_legal(coord, play_color):
             print("illigal {} {}".format(color, pos))
 
         if pos.upper != "RESIGN":
