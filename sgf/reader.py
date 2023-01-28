@@ -299,6 +299,15 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
+    def get_moves(self):
+        """最初から1つずつ着手を取得する。
+
+        Yields:
+            int: 着手の座標。
+        """
+        for i in range(self.moves):
+            yield self.get_move_data(i)
+
     def get_n_moves(self):
         """棋譜の着手数を取得する。
 

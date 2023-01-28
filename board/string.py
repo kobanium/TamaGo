@@ -267,6 +267,8 @@ class StringData:
     def clear(self):
         """全ての連を削除する。
         """
+        self.string_id = [0 for _ in self.string_id]
+        self.string_next = [0 for _ in self.string_next]
         for string in self.string:
             string.remove()
 

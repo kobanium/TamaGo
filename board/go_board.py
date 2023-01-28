@@ -299,22 +299,22 @@ class GoBoard:
             return self.POS(x_coord, y_coord)
         if sym == 1:
             # 左右対称
-            return self.POS(self.board_end + OB_SIZE - x_coord, y_coord)
+            return self.POS(self.board_size_with_ob - (x_coord + 1), y_coord)
         if sym == 2:
             # 上下対称
-            return self.POS(x_coord, self.board_end + OB_SIZE - y_coord)
+            return self.POS(x_coord, self.board_size_with_ob - (y_coord + 1))
         if sym == 3:
             # 上下左右対称
-            return self.POS(self.board_end + OB_SIZE - x_coord, self.board_end + OB_SIZE - y_coord)
+            return self.POS(self.board_size_with_ob - (x_coord + 1), self.board_size_with_ob - (y_coord + 1))
         if sym == 4:
             # 左上から右下方向の軸に対称
             return self.POS(y_coord, x_coord)
         if sym == 5:
             # 90度反時計回りに回転
-            return self.POS(y_coord, self.board_end + OB_SIZE - x_coord)
+            return self.POS(y_coord, self.board_size_with_ob - (x_coord + 1))
         if sym == 6:
             # 90度時計回りに回転
-            return self.POS(self.board_end + OB_SIZE - y_coord, x_coord)
+            return self.POS(self.board_size_with_ob - (y_coord + 1), x_coord)
         if sym == 7:
             # 左下から右上方向の軸に対称
-            return self.POS(self.board_end + OB_SIZE - y_coord, self.board_end + OB_SIZE - x_coord)
+            return self.POS(self.board_size_with_ob - (y_coord + 1), self.board_size_with_ob - (x_coord + 1))
