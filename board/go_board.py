@@ -39,10 +39,18 @@ class GoBoard:
         self.prisoner = [0] * 2
         self.positional_hash = np.zeros(1, dtype=np.uint64)
         self.check_superko = check_superko
-
+        self.board_start = OB_SIZE
+        self.board_end = board_size + OB_SIZE - 1
 
         self.POS = pos
         self.get_neighbor4 = get_neighbor4
+
+        idx = 0
+        for y_coord in range(self.board_start, self.board_end + 1):
+            for x_coord in range(self.board_start, self.board_end + 1):
+                position = self.POS(x_coord, y_coord)
+                self.onboard_pos[idx] = position
+                idx += 1
 
         self.clear()
 
@@ -60,14 +68,10 @@ class GoBoard:
         for i, _ in enumerate(self.board):
             self.board[i] = Stone.OUT_OF_BOARD
 
-        idx = 0
-
-        for y_coord in range(1, self.board_size + OB_SIZE):
-            for x_coord in range(1, self.board_size + OB_SIZE):
+        for y_coord in range(self.board_start, self.board_end + 1):
+            for x_coord in range(self.board_start, self.board_end + 1):
                 pos = self.POS(x_coord, y_coord)
                 self.board[pos] = Stone.EMPTY
-                self.onboard_pos[idx] = pos
-                idx += 1
 
         self.pattern.clear()
         self.strings.clear()
@@ -235,7 +239,7 @@ class GoBoard:
                 legal_pos.append(pos)
         return legal_pos
 
-    def display(self):
+    def display(self, sym=0):
         """盤面を表示する。
         """
         board_string = f"Move : {self.moves}\n"
@@ -249,10 +253,10 @@ class GoBoard:
 
         board_string += "  +" + "-" * (self.board_size * 2 + 1) + "+\n"
 
-        for y_coord in range(1, self.board_size + 1):
+        for y_coord in range(self.board_start, self.board_end + 1):
             output = "{:>2d}|".format(self.board_size - y_coord + 1)
-            for x_coord in range(1, self.board_size + 1):
-                pos = self.POS(x_coord, y_coord)
+            for x_coord in range(self.board_start, self.board_end + 1):
+                pos = self.get_symmetrical_coordinate(self.POS(x_coord, y_coord), sym)
                 output += " " + Stone.get_char(self.board[pos])
             output += " |\n"
             board_string += output
@@ -268,3 +272,49 @@ class GoBoard:
             int: 碁盤の大きさ
         """
         return self.board_size
+
+    def get_board_data(self, sym):
+        """ニューラルネットワークの入力用の碁盤情報を取得する。
+
+        Returns:
+            list[int]: 空点は0, 黒石は1, 白石は2のリスト。
+        """
+        return [self.board[self.get_symmetrical_coordinate(pos, sym)].value \
+            for pos in self.onboard_pos]
+
+    def get_symmetrical_coordinate(self, pos, sym):
+        """8対称のいずれかの座標を取得する。
+
+        Args:
+            pos (int): 元の座標。 
+            sym (int): 対称形の指定。（0〜7）
+
+        Returns:
+            int: 指定した対称の座標。
+        """
+        x_coord = pos % self.board_size_with_ob
+        y_coord = pos // self.board_size_with_ob
+        if sym == 0:
+            # そのまま
+            return self.POS(x_coord, y_coord)
+        if sym == 1:
+            # 左右対称
+            return self.POS(self.board_end + OB_SIZE - x_coord, y_coord)
+        if sym == 2:
+            # 上下対称
+            return self.POS(x_coord, self.board_end + OB_SIZE - y_coord)
+        if sym == 3:
+            # 上下左右対称
+            return self.POS(self.board_end + OB_SIZE - x_coord, self.board_end + OB_SIZE - y_coord)
+        if sym == 4:
+            # 左上から右下方向の軸に対称
+            return self.POS(y_coord, x_coord)
+        if sym == 5:
+            # 90度反時計回りに回転
+            return self.POS(y_coord, self.board_end + OB_SIZE - x_coord)
+        if sym == 6:
+            # 90度時計回りに回転
+            return self.POS(self.board_end + OB_SIZE - y_coord, x_coord)
+        if sym == 7:
+            # 左下から右上方向の軸に対称
+            return self.POS(self.board_end + OB_SIZE - y_coord, self.board_end + OB_SIZE - x_coord)
