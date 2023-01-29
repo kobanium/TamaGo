@@ -1,7 +1,7 @@
 
 """Dual Networkの実装。
 """
-from typing import Tuple
+from typing import NoReturn, Tuple
 from torch import nn
 import torch
 
@@ -15,7 +15,7 @@ class DualNet(nn.Module):
     """Dual Networkの実装クラス。
     """
 
-    def __init__(self, board_size: int=BOARD_SIZE):
+    def __init__(self, board_size: int=BOARD_SIZE) -> NoReturn:
         """Dual Networkの初期化処理
 
         Args:
@@ -38,15 +38,13 @@ class DualNet(nn.Module):
         self.policy_head = PolicyHead(board_size, filters)
         self.value_head = ValueHead(board_size, filters)
 
-        self.log_softmax = nn.LogSoftmax(dim=1)
         self.softmax = nn.Softmax(dim=1)
-
 
     def forward(self, input_plane: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """前向き伝搬処理を実行する。
 
         Args:
-            input_plane (torch.Tensor): 入力特徴
+            input_plane (torch.Tensor): 入力特徴テンソル。
 
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: PolicyとValueのlogit。
@@ -62,3 +60,15 @@ class DualNet(nn.Module):
         value = self.value_head(hidden6)
 
         return policy, value
+
+    def forward_with_softmax(self, input_plane: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """前向き伝搬処理を実行する。
+
+        Args:
+            input_plane (torch.Tensor): 入力特徴テンソル。
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: Policy, Valueの推論結果。
+        """
+        policy, value = self.forward(input_plane)
+        return self.softmax(policy), self.softmax(value)

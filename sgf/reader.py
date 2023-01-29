@@ -1,5 +1,6 @@
 """SGF形式のファイル読み込み処理。
 """
+from typing import NoReturn
 from board.coordinate import Coordinate
 from board.constant import PASS, OB_SIZE
 from board.stone import Stone
@@ -32,7 +33,7 @@ sgf_coord_map = {
 class SGFReader:
     """SGFファイル読み込み。
     """
-    def __init__(self, filename, board_size):
+    def __init__(self, filename: str, board_size: int) -> NoReturn:
         """コンストラクタ
 
         Args:
@@ -109,7 +110,7 @@ class SGFReader:
             else:
                 cursor += 1
 
-    def _get_size(self, sgf_text, cursor):
+    def _get_size(self, sgf_text: str, cursor: int) -> int:
         """SZタグから碁盤の大きさを読み込む。
 
         Args:
@@ -130,7 +131,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def _get_komi(self, sgf_text, cursor):
+    def _get_komi(self, sgf_text: str, cursor: int) -> int:
         """KMタグからコミの値を読み込む。
 
         Args:
@@ -149,7 +150,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def _get_comment(self, sgf_text, cursor):
+    def _get_comment(self, sgf_text: str, cursor: int) -> int:
         """Cタグからコメントを読み込む。
 
         Args:
@@ -168,7 +169,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def _get_event(self, sgf_text, cursor):
+    def _get_event(self, sgf_text: str, cursor: int) -> int:
         """EVタグからイベント名を読み込む。
 
         Args:
@@ -187,7 +188,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def _get_player_name(self, sgf_text, cursor, color):
+    def _get_player_name(self, sgf_text: str, cursor: int, color: Stone) -> int:
         """PBタグ、PWタグからプレイヤの名前を読み込む。
 
         Args:
@@ -210,7 +211,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def _get_application(self, sgf_text, cursor):
+    def _get_application(self, sgf_text: str, cursor: int) -> int:
         """APタグからアプリケーション名を読み込む。
 
         Args:
@@ -229,7 +230,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def _get_copyright(self, sgf_text, cursor):
+    def _get_copyright(self, sgf_text: str, cursor: int) -> int:
         """CPタグからコピーライトを読み込む。
 
         Args:
@@ -248,7 +249,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def _get_result(self, sgf_text, cursor):
+    def _get_result(self, sgf_text: str, cursor: int) -> int:
         """REタグから対局結果を読み込む。
 
         Args:
@@ -274,7 +275,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def _get_move(self, sgf_text, cursor, color):
+    def _get_move(self, sgf_text: str, cursor: int, color: Stone) -> int:
         """Bタグ、Wタグから着手を読み込む。
 
         Args:
@@ -299,7 +300,7 @@ class SGFReader:
 
         return cursor + tmp_cursor
 
-    def get_moves(self):
+    def get_moves(self) -> int:
         """最初から1つずつ着手を取得する。
 
         Yields:
@@ -308,7 +309,7 @@ class SGFReader:
         for i in range(self.moves):
             yield self.get_move_data(i)
 
-    def get_n_moves(self):
+    def get_n_moves(self) -> int:
         """棋譜の着手数を取得する。
 
         Returns:
@@ -316,7 +317,7 @@ class SGFReader:
         """
         return self.moves
 
-    def get_move_data(self, index):
+    def get_move_data(self, index: int) -> int:
         """指定手数の着手の座標を取得する。
 
         Args:
@@ -335,7 +336,7 @@ class SGFReader:
 
         return x_coord + (OB_SIZE - 1) + (y_coord + (OB_SIZE - 1)) * self.board_size_with_ob
 
-    def get_color(self, index):
+    def get_color(self, index: int) -> Stone:
         """指定手数の手番を取得する。
 
         Args:
@@ -352,7 +353,7 @@ class SGFReader:
 
         return color
 
-    def display(self):
+    def display(self) -> NoReturn:
         """読み込んだSGFファイルの情報を表示する。（デバッグ用）
         """
         message = ""
@@ -378,8 +379,7 @@ class SGFReader:
         print_err(message)
 
 
-
-def _is_ignored_char(char):
+def _is_ignored_char(char: str) -> bool:
     """SGFの無視する文字か否かを判定する。
 
     Args:
@@ -391,7 +391,7 @@ def _is_ignored_char(char):
     return  (char in '') or (char in '\t') or (char in '\n') or \
             (char in '\r') or (char in ';') or (char in '(') or (char in ')')
 
-def _parse_coordinate(char):
+def _parse_coordinate(char: str) -> int:
     """SGF形式の座標をプログラム内部の座標に変換する。
 
     Args:
@@ -405,7 +405,7 @@ def _parse_coordinate(char):
 
     return 0
 
-def _skip_data(sgf_text, cursor):
+def _skip_data(sgf_text: str, cursor: int) -> int:
     """無視するタグをスキップする。
 
     Args:

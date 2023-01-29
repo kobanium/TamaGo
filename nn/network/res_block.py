@@ -1,6 +1,7 @@
 
 """Residual Blockの実装。
 """
+from typing import NoReturn
 import torch
 from torch import nn
 
@@ -9,7 +10,7 @@ from torch import nn
 class ResidualBlock(nn.Module):
     """Residual Blockの実装クラス。
     """
-    def __init__(self, channels: int, momentum: float=0.01):
+    def __init__(self, channels: int, momentum: float=0.01) -> NoReturn:
         """各レイヤの初期化処理。
 
         Args:

@@ -1,5 +1,6 @@
 """Value headの実装。
 """
+from typing import NoReturn
 import torch
 from torch import nn
 
@@ -7,7 +8,7 @@ from torch import nn
 class ValueHead(nn.Module):
     """Value headの実装クラス。
     """
-    def __init__(self, board_size: int, channels: int, momentum:float=0.01):
+    def __init__(self, board_size: int, channels: int, momentum: float=0.01) -> NoReturn:
         """Value headの初期化処理。
 
         Args:

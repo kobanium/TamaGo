@@ -3,6 +3,7 @@
 import os
 import random
 import sys
+from typing import List, NoReturn
 
 from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
 from board.constant import PASS, RESIGN
@@ -17,7 +18,7 @@ from sgf.reader import SGFReader
 class GtpClient:
     """_Go Text Protocolクライアントの実装クラス
     """
-    def __init__(self, board_size, superko):
+    def __init__(self, board_size: int, superko: bool) -> NoReturn:
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -46,7 +47,7 @@ class GtpClient:
         self.board = GoBoard(board_size=board_size, check_superko=superko)
         self.coordinate = Coordinate(board_size=board_size)
 
-    def _respond_success(self, response):
+    def _respond_success(self, response: str) -> NoReturn:
         """コマンド処理成功時の応答メッセージを表示する。
 
         Args:
@@ -54,7 +55,7 @@ class GtpClient:
         """
         print("= " + response + '\n')
 
-    def _respond_failure(self, response):
+    def _respond_failure(self, response: str) -> NoReturn:
         """コマンド処理失敗時の応答メッセージを表示する。
 
         Args:
@@ -62,32 +63,32 @@ class GtpClient:
         """
         print("= ? " + response + '\n')
 
-    def _version(self):
+    def _version(self) -> NoReturn:
         """versionコマンドを処理する。
         プログラムのバージョンを表示する。
         """
         self._respond_success(VERSION)
 
-    def _protocol_version(self):
+    def _protocol_version(self) -> NoReturn:
         """protocol_versionコマンドを処理する。
         GTPのプロトコルバージョンを表示する。
         """
         self._respond_success(PROTOCOL_VERSION)
 
-    def _name(self):
+    def _name(self) -> NoReturn:
         """nameコマンドを処理する。
         プログラム名を表示する。
         """
         self._respond_success(PROGRAM_NAME)
 
-    def _quit(self):
+    def _quit(self) -> NoReturn:
         """quitコマンドを処理する。
         プログラムを終了する。
         """
         self._respond_success("")
         sys.exit(0)
 
-    def _known_command(self, command):
+    def _known_command(self, command: str) -> NoReturn:
         """known_commandコマンドを処理する。
         対応しているコマンドの場合は'true'を表示し、対応していないコマンドの場合は'unknown command'を表示する
 
@@ -99,7 +100,7 @@ class GtpClient:
         else:
             self._respond_failure("unknown command")
 
-    def _list_commands(self):
+    def _list_commands(self) -> NoReturn:
         """list_commandsコマンドを処理する。
         対応している全てのコマンドを表示する。
         """
@@ -108,7 +109,7 @@ class GtpClient:
             response += '\n' + command
         self._respond_success(response)
 
-    def _komi(self, s_komi):
+    def _komi(self, s_komi: str) -> NoReturn:
         """komiコマンドを処理する。
         入力されたコミを設定する。
         TODO
@@ -119,7 +120,7 @@ class GtpClient:
         komi = float(s_komi)
         self._respond_success("")
 
-    def _play(self, color, pos):
+    def _play(self, color: str, pos: str) -> NoReturn:
         """playコマンドを処理する。
         入力された座標に指定された色の石を置く。
 
@@ -138,14 +139,14 @@ class GtpClient:
         coord = self.coordinate.convert_from_gtp_format(pos)
 
         if coord != PASS and not self.board.is_legal(coord, play_color):
-            print("illigal {} {}".format(color, pos))
+            print(f"illigal {color} {pos}")
 
         if pos.upper != "RESIGN":
             self.board.put_stone(coord, play_color)
 
         self._respond_success("")
 
-    def _genmove(self, color):
+    def _genmove(self, color: str) -> NoReturn:
         """genmoveコマンドを処理する。
         入力された手番で思考し、着手を生成する。
 
@@ -173,7 +174,7 @@ class GtpClient:
 
         self._respond_success(self.coordinate.convert_to_gtp_format(pos))
 
-    def _boardsize(self, size):
+    def _boardsize(self, size: str) -> NoReturn:
         """boardsizeコマンドを処理する。
         指定したサイズの碁盤に設定する。
 
@@ -185,39 +186,45 @@ class GtpClient:
         self.coordinate = Coordinate(board_size=board_size)
         self._respond_success("")
 
-    def _clear_board(self):
+    def _clear_board(self) -> NoReturn:
         """clear_boardコマンドを処理する。
         盤面を初期化する。
         """
         self.board.clear()
         self._respond_success("")
 
-    def _time_settings(self):
+    def _time_settings(self) -> NoReturn:
         """time_settingsコマンドを処理する。
         TODO
         """
         self._respond_success("")
 
-    def _time_left(self):
+    def _time_left(self) -> NoReturn:
         """time_leftコマンドを処理する。
         TODO
         """
         self._respond_success("")
 
-    def _get_komi(self):
+    def _get_komi(self) -> NoReturn:
         """get_komiコマンドを処理する。
         TODO
         """
         self._respond_success("7.0")
 
-    def _showboard(self):
+    def _showboard(self) -> NoReturn:
         """showboardコマンドを処理する。
         現在の盤面を表示する。
         """
         self.board.display()
         self._respond_success("")
 
-    def _load_sgf(self, arg_list):
+    def _load_sgf(self, arg_list: List[str]) -> NoReturn:
+        """load_sgfコマンドを処理する。
+        指定したSGFファイルの指定手番まで進めた局面にする。
+
+        Args:
+            arg_list (List[str]): コマンドの引数リスト（ファイル名（必須）、手数（任意））
+        """
         if not os.path.exists(arg_list[0]):
             self._respond_failure(f"cannot load {arg_list[0]}")
 
@@ -237,7 +244,7 @@ class GtpClient:
 
         self._respond_success("")
 
-    def run(self):
+    def run(self) -> NoReturn:
         """Go Text Protocolのクライアントの実行処理。
         入力されたコマンドに対応する処理を実行し、応答メッセージを表示する。
         """

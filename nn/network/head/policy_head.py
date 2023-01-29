@@ -1,14 +1,14 @@
 """Policy headの実装。
 """
+from typing import NoReturn
 import torch
 from torch import nn
-
 
 
 class PolicyHead(nn.Module):
     """Policy headの実装クラス。
     """
-    def __init__(self, board_size: int, channels: int, momentum: float=0.01):
+    def __init__(self, board_size: int, channels: int, momentum: float=0.01) -> NoReturn:
         """Policy headの初期化処理。
 
         Args:

@@ -1,5 +1,6 @@
 """碁盤のデータ定義と操作処理。
 """
+from typing import List, NoReturn
 import numpy as np
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
@@ -14,7 +15,7 @@ from common.print_console import print_err
 class GoBoard:
     """碁盤クラス
     """
-    def __init__(self, board_size, check_superko=False):
+    def __init__(self, board_size: int, check_superko: bool=False) -> NoReturn:
         """碁盤クラスの初期化
 
         Args:
@@ -77,7 +78,7 @@ class GoBoard:
         self.clear()
 
 
-    def clear(self):
+    def clear(self) -> NoReturn:
         """盤面の初期化
         """
         self.moves = 1
@@ -99,7 +100,7 @@ class GoBoard:
         self.strings.clear()
         self.record.clear()
 
-    def put_stone(self, pos, color):
+    def put_stone(self, pos: int, color: Stone) -> NoReturn:
         """指定された座標に指定された色の石を石を置く。
 
         Args:
@@ -156,7 +157,7 @@ class GoBoard:
         self.record.save(self.moves, color, pos, self.positional_hash)
         self.moves += 1
 
-    def _is_suicide(self, pos, color):
+    def _is_suicide(self, pos: int, color: Stone) -> bool:
         """自殺手か否かを判定する。
         自殺手ならTrue、そうでなければFalseを返す。
 
@@ -179,7 +180,7 @@ class GoBoard:
 
         return True
 
-    def is_legal(self, pos, color):
+    def is_legal(self, pos: int, color: Stone) -> bool:
         """合法手か否かを判定する。
         合法手ならTrue、そうでなければFalseを返す。
 
@@ -225,7 +226,7 @@ class GoBoard:
 
         return True
 
-    def is_legal_not_eye(self, pos, color):
+    def is_legal_not_eye(self, pos: int, color: Stone) -> bool:
         """合法手かつ眼でないか否かを確認する。
         合法手かつ眼でなければTrue、そうでなければFalseを返す。
 
@@ -246,7 +247,7 @@ class GoBoard:
 
         return False
 
-    def get_all_legal_pos(self, color):
+    def get_all_legal_pos(self, color: Stone) -> List[int]:
         """全ての合法手の座標を取得する。ただし眼は除く。
 
         Args:
@@ -261,7 +262,7 @@ class GoBoard:
                 legal_pos.append(pos)
         return legal_pos
 
-    def display(self, sym=0):
+    def display(self, sym: int=0) -> NoReturn:
         """盤面を表示する。
         """
         board_string = f"Move : {self.moves}\n"
@@ -287,7 +288,7 @@ class GoBoard:
 
         print_err(board_string)
 
-    def get_board_size(self):
+    def get_board_size(self) -> NoReturn:
         """碁盤の大きさを取得する。
 
         Returns:
@@ -295,7 +296,7 @@ class GoBoard:
         """
         return self.board_size
 
-    def get_board_data(self, sym):
+    def get_board_data(self, sym: int) -> List[int]:
         """ニューラルネットワークの入力用の碁盤情報を取得する。
 
         Returns:
