@@ -44,7 +44,8 @@ def generate_input_planes(board: GoBoard, color: Stone, sym: int=0) -> np.ndarra
     else:
         color_plane = np.zeros(shape=(1, board_size ** 2))
 
-    input_data = np.concatenate([board_plane, history_plane, color_plane]).reshape(5, board_size, board_size)
+    input_data = np.concatenate([board_plane, history_plane, color_plane]) \
+        .reshape(5, board_size, board_size).astype(np.float32)
 
     return input_data
 
@@ -60,12 +61,9 @@ def generate_target_data(board:GoBoard, target_pos: int, sym: int=0) -> np.ndarr
     Returns:
         np.ndarray: _description_
     """
-    target = [1 if target_pos == board.get_symmetrical_coordinate(pos, sym) \
-        else 0 for pos in board.onboard_pos]
+    target = [1 if target_pos == board.get_symmetrical_coordinate(pos, sym) else 0 \
+        for pos in board.onboard_pos]
     # パスだけ対称形から外れた末尾に挿入する。
-    if target_pos == PASS:
-        target.append(1)
-    else:
-        target.append(0)
+    target.append(1 if target_pos == PASS else 0)
 
     return np.array(target)

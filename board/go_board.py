@@ -1,3 +1,5 @@
+"""碁盤のデータ定義と操作処理。
+"""
 import numpy as np
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
@@ -41,6 +43,7 @@ class GoBoard:
         self.check_superko = check_superko
         self.board_start = OB_SIZE
         self.board_end = board_size + OB_SIZE - 1
+        self.sym_map = [[0] * self.board_size_with_ob ** 2] * 8
 
         self.POS = pos
         self.get_neighbor4 = get_neighbor4
@@ -48,8 +51,27 @@ class GoBoard:
         idx = 0
         for y_coord in range(self.board_start, self.board_end + 1):
             for x_coord in range(self.board_start, self.board_end + 1):
-                position = self.POS(x_coord, y_coord)
-                self.onboard_pos[idx] = position
+                coord = pos(x_coord, y_coord)
+                self.onboard_pos[idx] = coord
+
+                # そのまま
+                self.sym_map[0][coord] = coord
+                # 左右対称
+                self.sym_map[1][coord] = pos(self.board_size_with_ob - (x_coord + 1), y_coord)
+                # 上下対称
+                self.sym_map[2][coord] = pos(x_coord, self.board_size_with_ob - (y_coord + 1))
+                # 上下左右対称
+                self.sym_map[3][coord] = pos(self.board_size_with_ob - (x_coord + 1),\
+                    self.board_size_with_ob - (y_coord + 1))
+                # 左上から右下方向の軸に対称
+                self.sym_map[4][coord] = pos(x_coord=y_coord, y_coord=x_coord)
+                # 90度反時計回りに回転
+                self.sym_map[5][coord] = pos(y_coord, self.board_size_with_ob - (x_coord + 1))
+                # 90度時計回りに回転
+                self.sym_map[6][coord] = pos(self.board_size_with_ob - (y_coord + 1), x_coord)
+                # 左下から右上方向の軸に対称
+                self.sym_map[7][coord] = pos(self.board_size_with_ob - (y_coord + 1),\
+                    self.board_size_with_ob - (x_coord + 1))
                 idx += 1
 
         self.clear()
@@ -193,9 +215,9 @@ class GoBoard:
             for string_id in unique_ids:
                 if self.strings.get_num_liberties(self.strings.string[string_id].get_origin) == 1:
                     stones = self.strings.get_stone_coordinates(string_id)
-                    current_hash = affect_string_hash(stones, opponent)
+                    current_hash = affect_string_hash(current_hash, stones, opponent)
             # 石を置く
-            current_hash = affect_stone_hash(pos, color)
+            current_hash = affect_stone_hash(current_hash, pos=pos, color=color)
 
             if self.record.has_same_hash(current_hash):
                 return False
@@ -282,39 +304,14 @@ class GoBoard:
         return [self.board[self.get_symmetrical_coordinate(pos, sym)].value \
             for pos in self.onboard_pos]
 
-    def get_symmetrical_coordinate(self, pos, sym):
+    def get_symmetrical_coordinate(self, pos: int, sym: int) -> int:
         """8対称のいずれかの座標を取得する。
 
         Args:
-            pos (int): 元の座標。 
+            pos (int): 元の座標。
             sym (int): 対称形の指定。（0〜7）
 
         Returns:
             int: 指定した対称の座標。
         """
-        x_coord = pos % self.board_size_with_ob
-        y_coord = pos // self.board_size_with_ob
-        if sym == 0:
-            # そのまま
-            return self.POS(x_coord, y_coord)
-        if sym == 1:
-            # 左右対称
-            return self.POS(self.board_size_with_ob - (x_coord + 1), y_coord)
-        if sym == 2:
-            # 上下対称
-            return self.POS(x_coord, self.board_size_with_ob - (y_coord + 1))
-        if sym == 3:
-            # 上下左右対称
-            return self.POS(self.board_size_with_ob - (x_coord + 1), self.board_size_with_ob - (y_coord + 1))
-        if sym == 4:
-            # 左上から右下方向の軸に対称
-            return self.POS(y_coord, x_coord)
-        if sym == 5:
-            # 90度反時計回りに回転
-            return self.POS(y_coord, self.board_size_with_ob - (x_coord + 1))
-        if sym == 6:
-            # 90度時計回りに回転
-            return self.POS(self.board_size_with_ob - (y_coord + 1), x_coord)
-        if sym == 7:
-            # 左下から右上方向の軸に対称
-            return self.POS(self.board_size_with_ob - (y_coord + 1), self.board_size_with_ob - (x_coord + 1))
+        return self.sym_map[sym][pos]
