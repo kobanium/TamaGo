@@ -353,6 +353,18 @@ class SGFReader:
 
         return color
 
+    def get_value_label(self) -> int:
+        """Valueの学習ラベルを取得する。
+
+        Returns:
+            int: Valueのラベル。黒勝ちは2、白勝ちは0、持碁は1。
+        """
+        if self.result == Stone.BLACK:
+            return 2
+        if self.result == Stone.WHITE:
+            return 1
+        return 0
+
     def display(self) -> NoReturn:
         """読み込んだSGFファイルの情報を表示する。（デバッグ用）
         """

@@ -7,8 +7,9 @@ Python 3.6で動作確認をしています。
 # Requirements
 |使用するパッケージ|用途|
 |---|---|
-|numpy|雑多な計算|
 |click|コマンドライン引数の実装|
+|numpy|雑多な計算|
+|pytorch|Neural Networkの構成と学習の実装|
 
 # License
 ライセンスはApache License ver 2.0です。
@@ -32,6 +33,15 @@ Python 3.6で動作確認をしています。
     - [ ] CGOS対応
 - 学習の実装
   - [x] SGFファイルの読み込み処理
+  - [ ] 学習データ生成
+    - [x] 教師あり学習のデータ生成
+      - [x] 入力特徴生成
+      - [x] Policyの生成
+      - [x] npz形式での保存処理
+    - [ ] 強化学習のデータ生成
+      - [x] 入力特徴生成
+      - [ ] Improved Policyの生成
+      - [ ] npz形式での保存処理
   - [ ] PyTorchを利用した教師あり学習
   - [ ] PyTorchを利用したGumbel AlphaZero方式の強化学習
 - GTPクライアントの実装
