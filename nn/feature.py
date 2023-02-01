@@ -6,6 +6,7 @@ from board.constant import PASS
 from board.go_board import GoBoard
 from board.stone import Stone
 
+
 def generate_input_planes(board: GoBoard, color: Stone, sym: int=0) -> np.ndarray:
     """ニューラルネットワークの入力データを生成する。
 
@@ -31,21 +32,27 @@ def generate_input_planes(board: GoBoard, color: Stone, sym: int=0) -> np.ndarra
 
     # 直前の着手を取得
     _, previous_move, _ = board.record.get(board.moves - 1)
+
     # 直前の着手の座標
-    if previous_move == PASS:
+    #     着手 : 4枚目の入力面
+    #     パス : 5枚目の入力面
+    if board.moves > 1 and previous_move == PASS:
         history_plane = np.zeros(shape=(1, board_size ** 2))
+        pass_plane = np.ones(shape=(1, board_size ** 2))
     else:
         previous_move_data = [1 if previous_move == board.get_symmetrical_coordinate(pos, sym) \
             else 0 for pos in board.onboard_pos]
         history_plane = np.array(previous_move_data).reshape(1, board_size**2)
+        pass_plane = np.zeros(shape=(1, board_size ** 2))
 
-    if color == Stone.BLACK:
-        color_plane = np.ones(shape=(1, board_size ** 2))
-    else:
-        color_plane = np.zeros(shape=(1, board_size ** 2))
+    # 手番の色 (6番目の入力面)
+    # 黒番は1、白番は-1
+    color_plane = np.ones(shape=(1, board_size**2))
+    if color == Stone.WHITE:
+        color_plane = color_plane * -1
 
-    input_data = np.concatenate([board_plane, history_plane, color_plane]) \
-        .reshape(5, board_size, board_size).astype(np.float32)
+    input_data = np.concatenate([board_plane, history_plane, pass_plane, color_plane]) \
+        .reshape(6, board_size, board_size).astype(np.float32)
 
     return input_data
 
