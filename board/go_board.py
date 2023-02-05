@@ -44,7 +44,7 @@ class GoBoard:
         self.check_superko = check_superko
         self.board_start = OB_SIZE
         self.board_end = board_size + OB_SIZE - 1
-        self.sym_map = [[0] * self.board_size_with_ob ** 2] * 8
+        self.sym_map = [[0 for i in range(self.board_size_with_ob ** 2)] for j in range(8)]
 
         self.POS = pos
         self.get_neighbor4 = get_neighbor4
