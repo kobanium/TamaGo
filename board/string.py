@@ -6,7 +6,7 @@ from board.coordinate import Coordinate
 from board.stone import Stone
 from common.print_console import print_err
 
-class String:
+class String: # pylint: disable=R0902
     """連の実装クラス。
     """
     def __init__(self, board_size: int) -> NoReturn:
@@ -262,7 +262,7 @@ class StringData:
         self.string_id = [0] * board_max
         self.string_next = [0] * board_max
         self.board_size = board_size
-        self.POS = pos_func
+        self.POS = pos_func # pylint: disable=C0103
         self.get_neighbor4 = get_neighbor4
 
     def clear(self) -> NoReturn:

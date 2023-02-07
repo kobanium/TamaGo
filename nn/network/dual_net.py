@@ -11,7 +11,8 @@ from nn.network.res_block import ResidualBlock
 from nn.network.head.policy_head import PolicyHead
 from nn.network.head.value_head import ValueHead
 
-class DualNet(nn.Module):
+
+class DualNet(nn.Module): # pylint: disable=R0902
     """Dual Networkの実装クラス。
     """
 
@@ -24,7 +25,7 @@ class DualNet(nn.Module):
         super().__init__()
         filters = 32
 
-        self.conv_layer = nn.Conv2d(in_channels=5, out_channels=filters, \
+        self.conv_layer = nn.Conv2d(in_channels=6, out_channels=filters, \
             kernel_size=3, padding=1, bias=False)
         self.bn_layer = nn.BatchNorm2d(num_features=filters)
         self.relu = nn.ReLU()
@@ -56,10 +57,19 @@ class DualNet(nn.Module):
         hidden5 = self.res_block_4(hidden4)
         hidden6 = self.res_block_5(hidden5)
 
-        policy = self.policy_head(hidden6)
-        value = self.value_head(hidden6)
+        return self.policy_head(hidden6), self.value_head(hidden6)
 
-        return policy, value
+    def forward_for_sl(self, input_plane: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """前向き伝搬処理を実行する。教師有り学習で利用する。
+
+        Args:
+            input_plane (torch.Tensor): 入力特徴テンソル。
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: Softmaxを通したPolicyと, Valueのlogit
+        """
+        policy, value = self.forward(input_plane)
+        return self.softmax(policy), value
 
     def forward_with_softmax(self, input_plane: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """前向き伝搬処理を実行する。

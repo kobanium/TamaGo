@@ -7,7 +7,7 @@ from board.go_board import GoBoard
 from board.stone import Stone
 from nn.feature import generate_input_planes, generate_target_data
 from sgf.reader import SGFReader
-from learning_param import DATA_SET_SIZE
+from learning_param import BATCH_SIZE, DATA_SET_SIZE
 
 
 def _save_data(save_file_path: str, input_data: np.ndarray, policy_data: np.ndarray,\
@@ -46,7 +46,7 @@ def generate_supervised_learning_data(program_dir: str, kifu_dir: str, board_siz
     kifu_counter = 1
     data_counter = 0
 
-    for kifu_path in glob.glob(os.path.join(kifu_dir, "*.sgf")):
+    for kifu_path in sorted(glob.glob(os.path.join(kifu_dir, "*.sgf"))):
         board.clear()
         sgf = SGFReader(kifu_path, board_size)
         color = Stone.BLACK
@@ -72,3 +72,10 @@ def generate_supervised_learning_data(program_dir: str, kifu_dir: str, board_siz
             data_counter += 1
 
         kifu_counter += 1
+
+    # 端数の出力
+    n_batches = len(value_data) // BATCH_SIZE
+    if n_batches > 0:
+        _save_data(os.path.join(program_dir, "data", f"sl_data_{data_counter}"), \
+            input_data[0:n_batches*BATCH_SIZE], policy_data[0:n_batches*BATCH_SIZE], \
+            value_data[0:n_batches*BATCH_SIZE], kifu_counter)

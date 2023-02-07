@@ -30,10 +30,10 @@ sgf_coord_map = {
 }
 
 
-class SGFReader:
+class SGFReader: # pylint: disable=R0902
     """SGFファイル読み込み。
     """
-    def __init__(self, filename: str, board_size: int) -> NoReturn:
+    def __init__(self, filename: str, board_size: int) -> NoReturn: # pylint: disable=R0912
         """コンストラクタ
 
         Args:
@@ -105,7 +105,7 @@ class SGFReader:
                  sgf_text[cursor:cursor+3] == "TB[" or \
                  sgf_text[cursor:cursor+3] == "TW[" or \
                  sgf_text[cursor:cursor+3] == "BR[" or \
-                 sgf_text[cursor:cursor+3] == "WR[":
+                 sgf_text[cursor:cursor+3] == "WR[": # pylint: disable=R0912
                 cursor = _skip_data(sgf_text, cursor)
             else:
                 cursor += 1

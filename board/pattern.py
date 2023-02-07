@@ -32,7 +32,7 @@ class Pattern:
         self.board_size = board_size
         board_size_with_ob = board_size + OB_SIZE * 2
         self.pat3 = np.empty(shape=board_size_with_ob ** 2, dtype=np.uint32)
-        self.POS = pos_func
+        self.POS = pos_func # pylint: disable=C0103
         self.update_pos = [
             -board_size_with_ob - 1, -board_size_with_ob, -board_size_with_ob + 1,
             -1, 1, board_size_with_ob - 1, board_size_with_ob, board_size_with_ob + 1

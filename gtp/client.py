@@ -5,25 +5,34 @@ import random
 import sys
 from typing import List, NoReturn
 
+import torch
+
 from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
 from board.constant import PASS, RESIGN
 from board.coordinate import Coordinate
 from board.go_board import GoBoard
 from board.stone import Stone
 from common.print_console import print_err
+from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution
+from nn.feature import generate_input_planes
+from nn.network.dual_net import DualNet
+from nn.utility import get_torch_device
 from sgf.reader import SGFReader
 
 
 
-class GtpClient:
+class GtpClient: # pylint: disable=R0903
     """_Go Text Protocolクライアントの実装クラス
     """
-    def __init__(self, board_size: int, superko: bool) -> NoReturn:
+    def __init__(self, board_size: int, superko: bool, \
+        model_file_path: str, use_gpu: bool) -> NoReturn:
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
             board_size (int): 碁盤の大きさ。
             superko (bool): 超劫判定の有効化。
+            model_file_path (str): ネットワークパラメータファイルパス。
+            use_gpu (bool): GPU使用フラグ。
         """
         self.gtp_commands = [
             "version",
@@ -41,11 +50,25 @@ class GtpClient:
             "get_komi",
             "komi",
             "showboard",
-            "load_sgf"
+            "load_sgf",
+            "gogui-analyze_commands"
         ]
         self.superko = superko
         self.board = GoBoard(board_size=board_size, check_superko=superko)
         self.coordinate = Coordinate(board_size=board_size)
+        self.gogui_analyze_command = [
+            GoguiAnalyzeCommand("cboard", "Display policy distribution", "display_policy"),
+        ]
+
+        try:
+            self.network = DualNet(board_size=board_size)
+            self.network.to(get_torch_device(use_gpu=use_gpu))
+            self.network.load_state_dict(torch.load(model_file_path))
+            self.use_network = True
+        except:
+            print_err(f"Failed to load {model_file_path}")
+            self.use_network = False
+
 
     def _respond_success(self, response: str) -> NoReturn:
         """コマンド処理成功時の応答メッセージを表示する。
@@ -162,12 +185,27 @@ class GtpClient:
             return
 
         # ランダムに着手生成
-        legal_pos = self.board.get_all_legal_pos(genmove_color)
+        if self.use_network:
+            board_size = self.board.get_board_size()
+            input_plane = generate_input_planes(self.board, genmove_color)
+            print(input_plane, type(input_plane), input_plane.shape)
+            input_data = torch.tensor(input_plane.reshape(1, 6, board_size, board_size))
+            policy, value = self.network.forward_with_softmax(input_data)
+            print(policy, policy.shape)
+            print(value)
+            legal_pos = self.board.get_all_legal_pos(genmove_color)
 
-        if len(legal_pos) > 0:
-            pos = random.choice(legal_pos)
+            if len(legal_pos) > 0:
+                pos = random.choice(legal_pos)
+            else:
+                pos = PASS
         else:
-            pos = PASS
+            legal_pos = self.board.get_all_legal_pos(genmove_color)
+
+            if len(legal_pos) > 0:
+                pos = random.choice(legal_pos)
+            else:
+                pos = PASS
 
         if pos != RESIGN:
             self.board.put_stone(pos, genmove_color)
@@ -244,7 +282,7 @@ class GtpClient:
 
         self._respond_success("")
 
-    def run(self) -> NoReturn:
+    def run(self) -> NoReturn: # pylint: disable=R0912,R0915
         """Go Text Protocolのクライアントの実行処理。
         入力されたコマンドに対応する処理を実行し、応答メッセージを表示する。
         """
@@ -300,5 +338,10 @@ class GtpClient:
                 coordinate = Coordinate(self.board.get_board_size())
                 coord = coordinate.convert_from_gtp_format(command_list[1])
                 print_err(self.board.pattern.get_eye_color(coord))
+            elif input_gtp_command == "gogui-analyze_commands":
+                self._respond_success(self.gogui_analyze_command[0].get_command_information())
+            elif input_gtp_command == "display_policy":
+                self._respond_success(display_policy_distribution(
+                    self.network, self.board, Stone.BLACK))
             else:
                 self._respond_failure("unknown_command")

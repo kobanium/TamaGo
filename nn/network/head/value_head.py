@@ -20,7 +20,7 @@ class ValueHead(nn.Module):
 
         self.conv_layer = nn.Conv2d(in_channels=channels, out_channels=1, \
             kernel_size=1, padding=0, bias=False)
-        self.bn_layer = nn.BatchNorm2d(num_features=2, eps=2e-5, momentum=momentum)
+        self.bn_layer = nn.BatchNorm2d(num_features=1, eps=2e-5, momentum=momentum)
         self.fc_layer = nn.Linear(board_size ** 2, 3)
         self.relu = nn.ReLU()
 

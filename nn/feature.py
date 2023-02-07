@@ -52,7 +52,7 @@ def generate_input_planes(board: GoBoard, color: Stone, sym: int=0) -> np.ndarra
         color_plane = color_plane * -1
 
     input_data = np.concatenate([board_plane, history_plane, pass_plane, color_plane]) \
-        .reshape(6, board_size, board_size).astype(np.float32)
+        .reshape(6, board_size, board_size).astype(np.float32) # pylint: disable=E1121
 
     return input_data
 
@@ -66,11 +66,12 @@ def generate_target_data(board:GoBoard, target_pos: int, sym: int=0) -> np.ndarr
         sym (int, optional): 対称系の指定. Defaults to 0.
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: Policyのターゲットラベル。
     """
     target = [1 if target_pos == board.get_symmetrical_coordinate(pos, sym) else 0 \
         for pos in board.onboard_pos]
     # パスだけ対称形から外れた末尾に挿入する。
     target.append(1 if target_pos == PASS else 0)
-
+    #target_index = np.where(np.array(target) > 0)
+    #return target_index[0]
     return np.array(target)

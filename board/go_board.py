@@ -12,7 +12,7 @@ from board.zobrist_hash import affect_stone_hash, affect_string_hash
 from common.print_console import print_err
 
 
-class GoBoard:
+class GoBoard: # pylint: disable=R0902
     """碁盤クラス
     """
     def __init__(self, board_size: int, check_superko: bool=False) -> NoReturn:
@@ -46,7 +46,7 @@ class GoBoard:
         self.board_end = board_size + OB_SIZE - 1
         self.sym_map = [[0 for i in range(self.board_size_with_ob ** 2)] for j in range(8)]
 
-        self.POS = pos
+        self.POS = pos # pylint: disable=C0103
         self.get_neighbor4 = get_neighbor4
 
         idx = 0
@@ -277,7 +277,7 @@ class GoBoard:
         board_string += "  +" + "-" * (self.board_size * 2 + 1) + "+\n"
 
         for y_coord in range(self.board_start, self.board_end + 1):
-            output = "{:>2d}|".format(self.board_size - y_coord + 1)
+            output = f"{self.board_size - y_coord + 1:>2d}|"
             for x_coord in range(self.board_start, self.board_end + 1):
                 pos = self.get_symmetrical_coordinate(self.POS(x_coord, y_coord), sym)
                 output += " " + Stone.get_char(self.board[pos])
