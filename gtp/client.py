@@ -13,7 +13,8 @@ from board.coordinate import Coordinate
 from board.go_board import GoBoard
 from board.stone import Stone
 from common.print_console import print_err
-from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution
+from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution, \
+    display_policy_score
 from nn.feature import generate_input_planes
 from nn.network.dual_net import DualNet
 from nn.utility import get_torch_device
@@ -57,7 +58,14 @@ class GtpClient: # pylint: disable=R0903
         self.board = GoBoard(board_size=board_size, check_superko=superko)
         self.coordinate = Coordinate(board_size=board_size)
         self.gogui_analyze_command = [
-            GoguiAnalyzeCommand("cboard", "Display policy distribution", "display_policy"),
+            GoguiAnalyzeCommand("cboard", "Display policy distribution (Black)", \
+                "display_policy_black_color"),
+            GoguiAnalyzeCommand("cboard", "Display policy distribution (White)", \
+                "display_policy_white_color"),
+            GoguiAnalyzeCommand("sboard", "Display policy score (Black)", \
+                "display_policy_black"),
+            GoguiAnalyzeCommand("sboard", "Display policy score (White)", \
+                "display_policy_white"),
         ]
 
         try:
@@ -65,6 +73,8 @@ class GtpClient: # pylint: disable=R0903
             self.network.to(get_torch_device(use_gpu=use_gpu))
             self.network.load_state_dict(torch.load(model_file_path))
             self.use_network = True
+            torch.set_grad_enabled(False)
+            self.network.eval()
         except:
             print_err(f"Failed to load {model_file_path}")
             self.use_network = False
@@ -188,11 +198,8 @@ class GtpClient: # pylint: disable=R0903
         if self.use_network:
             board_size = self.board.get_board_size()
             input_plane = generate_input_planes(self.board, genmove_color)
-            print(input_plane, type(input_plane), input_plane.shape)
             input_data = torch.tensor(input_plane.reshape(1, 6, board_size, board_size))
             policy, value = self.network.forward_with_softmax(input_data)
-            print(policy, policy.shape)
-            print(value)
             legal_pos = self.board.get_all_legal_pos(genmove_color)
 
             if len(legal_pos) > 0:
@@ -339,9 +346,23 @@ class GtpClient: # pylint: disable=R0903
                 coord = coordinate.convert_from_gtp_format(command_list[1])
                 print_err(self.board.pattern.get_eye_color(coord))
             elif input_gtp_command == "gogui-analyze_commands":
-                self._respond_success(self.gogui_analyze_command[0].get_command_information())
-            elif input_gtp_command == "display_policy":
+                response = ""
+                for cmd in self.gogui_analyze_command:
+                    response += cmd.get_command_information() + '\n'
+                self._respond_success(response)
+            elif input_gtp_command == "display_policy_black_color":
                 self._respond_success(display_policy_distribution(
                     self.network, self.board, Stone.BLACK))
+            elif input_gtp_command == "display_policy_white_color":
+                self._respond_success(display_policy_distribution(
+                    self.network, self.board, Stone.WHITE))
+            elif input_gtp_command == "display_policy_black":
+                self._respond_success(display_policy_score(
+                    self.network, self.board, Stone.BLACK
+                ))
+            elif input_gtp_command == "display_policy_white":
+                self._respond_success(display_policy_score(
+                    self.network, self.board, Stone.WHITE
+                ))
             else:
                 self._respond_failure("unknown_command")

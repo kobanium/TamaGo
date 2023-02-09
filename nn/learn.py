@@ -57,6 +57,7 @@ def train(program_dir: str, board_size: int, batch_size: \
                 "value": 0.0,
             }
             iteration = 0
+            dual_net.train()
             epoch_time = time.time()
             for i in range(0, len(value_data) - batch_size + 1, batch_size):
                 with torch.cuda.amp.autocast(enabled=True):

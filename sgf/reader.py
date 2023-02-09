@@ -359,11 +359,14 @@ class SGFReader: # pylint: disable=R0902
         Returns:
             int: Valueのラベル。黒勝ちは2、白勝ちは0、持碁は1。
         """
-        if self.result == Stone.BLACK:
+        if self.result is MatchResult.BLACK_WIN:
             return 2
-        if self.result == Stone.WHITE:
+        if self.result is MatchResult.WHITE_WIN:
+            return 0
+        if self.result is MatchResult.DRAW:
             return 1
-        return 0
+        print_err(f"Invalid value label {self.result}")
+        return 1
 
     def display(self) -> NoReturn:
         """読み込んだSGFファイルの情報を表示する。（デバッグ用）

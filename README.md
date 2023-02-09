@@ -42,7 +42,7 @@ Python 3.6で動作確認をしています。
       - [x] 入力特徴生成
       - [ ] Improved Policyの生成
       - [ ] npz形式での保存処理
-  - [ ] PyTorchを利用した教師あり学習
+  - [x] PyTorchを利用した教師あり学習
   - [ ] PyTorchを利用したGumbel AlphaZero方式の強化学習
 - GTPクライアントの実装
   - 基本的なコマンド
@@ -58,5 +58,7 @@ Python 3.6で動作確認をしています。
     - [ ] 持ち時間の初期化 : time_settings
     - [ ] 持ち時間の読み込み : time_left
   - 分析用のコマンド
+    - [x] Policyの数値の表示
+    - [x] Policyの分布を色で表示
 
 etc...

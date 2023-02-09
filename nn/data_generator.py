@@ -29,7 +29,7 @@ def _save_data(save_file_path: str, input_data: np.ndarray, policy_data: np.ndar
     }
     np.savez_compressed(save_file_path, **save_data)
 
-def generate_supervised_learning_data(program_dir: str, kifu_dir: str, board_size: int=9):
+def generate_supervised_learning_data(program_dir: str, kifu_dir: str, board_size: int=9): # pylint: disable=R0914
     """教師あり学習のデータを生成して保存する。
 
     Args:

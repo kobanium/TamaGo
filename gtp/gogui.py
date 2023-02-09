@@ -73,3 +73,33 @@ def display_policy_distribution(model: DualNet, board: GoBoard, color: Stone) ->
             response += "\n"
 
     return response
+
+
+def display_policy_score(model: DualNet, board: GoBoard, color: Stone) -> str:
+    """Policyを数値で表示するための文字列を生成する。（GoGui解析コマンド）
+
+    Args:
+        model (DualNet): Policyを出力するニューラルネットワーク。
+        board (GoBoard): 評価する局面情報。
+        color (Stone): 評価する手番の色。
+
+    Returns:
+        str: 表示用文字列。
+    """
+    board_size = board.get_board_size()
+    input_plane = generate_input_planes(board, color)
+    input_plane = torch.tensor(input_plane.reshape(1, 6, board_size, board_size))
+    policy_predict, _ = model.forward_with_softmax(input_plane)
+    policies = [policy_predict[0][i] for i in range(board_size ** 2)]
+    response = ""
+
+    for i, policy in enumerate(policies):
+        pos = board.onboard_pos[i]
+        if board.is_legal(pos, color):
+            response += f"\"{policy:.04f}\" "
+        else:
+            response += "\"\" "
+        if (i + 1) % board_size == 0:
+            response += "\n"
+
+    return response
