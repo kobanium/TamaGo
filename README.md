@@ -4,11 +4,63 @@ TamaGoはPythonで実装された囲碁の思考エンジンです。
 現在はランダムな着手を返すプログラムとなっています。  
 Python 3.6で動作確認をしています。
 
+* [使用する前提パッケージ](#requirements)
+* [セットアップ手順](#installation)
+* [思考エンジンとしての使い方](#how-to-execute-gtp-engine)
+* [教師あり学習の実行](#how-to-execute-supervised-learning)
+* [ライセンス](#license)
+
 # Requirements
 |使用するパッケージ|用途|
 |---|---|
-|numpy|雑多な計算|
 |click|コマンドライン引数の実装|
+|numpy|雑多な計算|
+|pytorch|Neural Networkの構成と学習の実装|
+
+# Installation
+Python 3.6が使える環境で下記コマンドで前提パッケージをインストールします。
+```
+pip install -r requirements.txt
+```
+CPUのみでも動作しますが、学習を実行する場合はGPUを使えるようセットアップすることをお勧めします。
+
+# How to execute GTP engine
+GTP対応のGUI (GoGui, Sabaki, Lizzieなど) を使用する場合は下記コマンドで思考エンジンとして使用できます。
+```
+python main.py
+```
+コマンドラインオプションとしては下記のものがあるので必要に応じて設定してください。コマンドラインオプションはclickを使用して実装しています。
+
+| オプション | 概要 | 設定する値 | 設定値の例 | デフォルト値 | 備考 |
+|---|---|---|---|---|---|
+| --size | 碁盤のサイズ | 2以上BOARD_SIZE以下 | 9 | BOARD_SIZE | BOARD_SIZEはboard/constant.pyに定義してあります。|
+| --superko | 超劫ルールの有効化 | true または false | true | false | Positional super koのみ対応しています。|
+| --model | ネットワークモデルファイルパス | 学習済みモデルファイルパス | model/model.bin | なし | TamaGoのホームディレクトリからの相対パスで指定してください。指定がない場合はニューラルネットワークを使用せずにランダムに着手します。 |
+| --use-gpu | GPU使用フラグ | true または false | true | false | |
+
+### プログラムの実行例は下記のとおりです
+1) 碁盤のサイズを5、model/model.binを学習済みモデルとして使用し、GPUを使用せずに実行するケース
+```
+python main.py --size 5 --model model/model.bin --use-gpu false
+```
+2) 超劫を着手禁止にするケース
+```
+python main.py --superko true
+```
+
+# How to execute supervised learning
+教師あり学習の実行方法については[こちら](doc/ja/supervised_learning.md)をご参照ください。
+
+
+# GoGui analyze commands
+[GoGui](https://sourceforge.net/projects/gogui/)を使用すると現局面のPolicyの値を表示したり、Policyの値の大きさに応じた色付けをできます。  
+Policyの値は0.0〜1.0の範囲で表示されます。
+
+![Policyの値の表示](img/gogui_analyze_policy.png)
+
+
+Policyの値による色付けはPolicyの値が大きいほど赤く、小さいほど青く表示されます。
+![Policyの値で色付け](img/gogui_analyze_policy_color.png)
 
 # License
 ライセンスはApache License ver 2.0です。
@@ -32,7 +84,16 @@ Python 3.6で動作確認をしています。
     - [ ] CGOS対応
 - 学習の実装
   - [x] SGFファイルの読み込み処理
-  - [ ] PyTorchを利用した教師あり学習
+  - [ ] 学習データ生成
+    - [x] 教師あり学習のデータ生成
+      - [x] 入力特徴生成
+      - [x] Policyの生成
+      - [x] npz形式での保存処理
+    - [ ] 強化学習のデータ生成
+      - [x] 入力特徴生成
+      - [ ] Improved Policyの生成
+      - [ ] npz形式での保存処理
+  - [x] PyTorchを利用した教師あり学習
   - [ ] PyTorchを利用したGumbel AlphaZero方式の強化学習
 - GTPクライアントの実装
   - 基本的なコマンド
@@ -48,5 +109,7 @@ Python 3.6で動作確認をしています。
     - [ ] 持ち時間の初期化 : time_settings
     - [ ] 持ち時間の読み込み : time_left
   - 分析用のコマンド
+    - [x] Policyの数値の表示
+    - [x] Policyの分布を色で表示
 
 etc...

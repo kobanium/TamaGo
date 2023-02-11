@@ -1,15 +1,16 @@
 """Zobrist Hashの実装。
 """
+from typing import List
 import numpy as np
 
 from board.constant import BOARD_SIZE, OB_SIZE
-
+from board.stone import Stone
 
 hash_bit_mask = np.random.randint(low=0, high=np.iinfo(np.uint64).max, \
     size=[4, (BOARD_SIZE + OB_SIZE * 2) ** 2], dtype=np.uint64)
 
 
-def affect_stone_hash(hash_value, pos, color):
+def affect_stone_hash(hash_value: np.array, pos: int, color: Stone) -> np.array:
     """1つの石のハッシュ値を作用させる。
 
     Args:
@@ -23,7 +24,7 @@ def affect_stone_hash(hash_value, pos, color):
     return hash_value ^ hash_bit_mask[color.value][pos]
 
 
-def affect_string_hash(hash_value, pos_list, color):
+def affect_string_hash(hash_value: np.array, pos_list: List[int], color: Stone) -> np.array:
     """複数の石のハッシュ値を作用させる。
 
     Args:

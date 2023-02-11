@@ -1,5 +1,6 @@
 """着手の履歴の保持。
 """
+from typing import NoReturn, Tuple
 import numpy as np
 
 from board.constant import PASS, MAX_RECORDS
@@ -10,21 +11,21 @@ from common.print_console import print_err
 class Record:
     """着手の履歴を保持するクラス。
     """
-    def __init__(self):
+    def __init__(self) -> NoReturn:
         """Recordクラスのコンストラクタ。
         """
         self.color = [Stone.EMPTY] * MAX_RECORDS
         self.pos = [PASS] * MAX_RECORDS
         self.hash_value = np.zeros(shape=MAX_RECORDS, dtype=np.uint64)
 
-    def clear(self):
+    def clear(self) -> NoReturn:
         """データを初期化する。
         """
         self.color = [Stone.EMPTY] * MAX_RECORDS
         self.pos = [PASS] * MAX_RECORDS
         self.hash_value.fill(0)
 
-    def save(self, moves, color, pos, hash_value):
+    def save(self, moves: int, color: Stone, pos: int, hash_value: np.array) -> NoReturn:
         """着手の履歴の記録する。
 
         Args:
@@ -40,7 +41,7 @@ class Record:
         else:
             print_err("Cannnot save move record.")
 
-    def has_same_hash(self, hash_value):
+    def has_same_hash(self, hash_value: np.array) -> bool:
         """同じハッシュ値があるかを確認する。
 
         Args:
@@ -51,7 +52,7 @@ class Record:
         """
         return np.any(self.hash_value == hash_value)
 
-    def get(self, moves):
+    def get(self, moves: int) -> Tuple[Stone, int, np.array]:
         """指定した着手を取得する。
 
         Args:

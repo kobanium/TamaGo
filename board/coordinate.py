@@ -1,11 +1,12 @@
 """プログラム内部形式とGTP形式の座標変換処理。
 """
+from typing import NoReturn
 from board.constant import PASS, RESIGN, OB_SIZE, GTP_X_COORDINATE
 
 class Coordinate:
     """座標変換処理クラス
     """
-    def __init__(self, board_size):
+    def __init__(self, board_size: int) -> NoReturn:
         """座標変換処理の初期化。
 
         Args:
@@ -14,7 +15,7 @@ class Coordinate:
         self.board_size = board_size
         self.board_size_with_ob = board_size + OB_SIZE * 2
 
-    def convert_from_gtp_format(self, pos):
+    def convert_from_gtp_format(self, pos: str) -> int:
         """GTP形式の座標からプログラム内部表現の座標に変換する。
 
         Args:
@@ -40,7 +41,7 @@ class Coordinate:
 
         return pos
 
-    def convert_to_gtp_format(self, pos):
+    def convert_to_gtp_format(self, pos: int) -> str:
         """プログラム内部の座標からGTP形式に変換する。
 
         Args:

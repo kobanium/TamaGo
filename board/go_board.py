@@ -1,3 +1,6 @@
+"""碁盤のデータ定義と操作処理。
+"""
+from typing import List, NoReturn
 import numpy as np
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
@@ -9,10 +12,10 @@ from board.zobrist_hash import affect_stone_hash, affect_string_hash
 from common.print_console import print_err
 
 
-class GoBoard:
+class GoBoard: # pylint: disable=R0902
     """碁盤クラス
     """
-    def __init__(self, board_size, check_superko=False):
+    def __init__(self, board_size: int, check_superko: bool=False) -> NoReturn:
         """碁盤クラスの初期化
 
         Args:
@@ -39,15 +42,43 @@ class GoBoard:
         self.prisoner = [0] * 2
         self.positional_hash = np.zeros(1, dtype=np.uint64)
         self.check_superko = check_superko
+        self.board_start = OB_SIZE
+        self.board_end = board_size + OB_SIZE - 1
+        self.sym_map = [[0 for i in range(self.board_size_with_ob ** 2)] for j in range(8)]
 
-
-        self.POS = pos
+        self.POS = pos # pylint: disable=C0103
         self.get_neighbor4 = get_neighbor4
+
+        idx = 0
+        for y_coord in range(self.board_start, self.board_end + 1):
+            for x_coord in range(self.board_start, self.board_end + 1):
+                coord = pos(x_coord, y_coord)
+                self.onboard_pos[idx] = coord
+
+                # そのまま
+                self.sym_map[0][coord] = coord
+                # 左右対称
+                self.sym_map[1][coord] = pos(self.board_size_with_ob - (x_coord + 1), y_coord)
+                # 上下対称
+                self.sym_map[2][coord] = pos(x_coord, self.board_size_with_ob - (y_coord + 1))
+                # 上下左右対称
+                self.sym_map[3][coord] = pos(self.board_size_with_ob - (x_coord + 1),\
+                    self.board_size_with_ob - (y_coord + 1))
+                # 左上から右下方向の軸に対称
+                self.sym_map[4][coord] = pos(x_coord=y_coord, y_coord=x_coord)
+                # 90度反時計回りに回転
+                self.sym_map[5][coord] = pos(y_coord, self.board_size_with_ob - (x_coord + 1))
+                # 90度時計回りに回転
+                self.sym_map[6][coord] = pos(self.board_size_with_ob - (y_coord + 1), x_coord)
+                # 左下から右上方向の軸に対称
+                self.sym_map[7][coord] = pos(self.board_size_with_ob - (y_coord + 1),\
+                    self.board_size_with_ob - (x_coord + 1))
+                idx += 1
 
         self.clear()
 
 
-    def clear(self):
+    def clear(self) -> NoReturn:
         """盤面の初期化
         """
         self.moves = 1
@@ -60,20 +91,16 @@ class GoBoard:
         for i, _ in enumerate(self.board):
             self.board[i] = Stone.OUT_OF_BOARD
 
-        idx = 0
-
-        for y_coord in range(1, self.board_size + OB_SIZE):
-            for x_coord in range(1, self.board_size + OB_SIZE):
+        for y_coord in range(self.board_start, self.board_end + 1):
+            for x_coord in range(self.board_start, self.board_end + 1):
                 pos = self.POS(x_coord, y_coord)
                 self.board[pos] = Stone.EMPTY
-                self.onboard_pos[idx] = pos
-                idx += 1
 
         self.pattern.clear()
         self.strings.clear()
         self.record.clear()
 
-    def put_stone(self, pos, color):
+    def put_stone(self, pos: int, color: Stone) -> NoReturn:
         """指定された座標に指定された色の石を石を置く。
 
         Args:
@@ -130,7 +157,7 @@ class GoBoard:
         self.record.save(self.moves, color, pos, self.positional_hash)
         self.moves += 1
 
-    def _is_suicide(self, pos, color):
+    def _is_suicide(self, pos: int, color: Stone) -> bool:
         """自殺手か否かを判定する。
         自殺手ならTrue、そうでなければFalseを返す。
 
@@ -153,7 +180,7 @@ class GoBoard:
 
         return True
 
-    def is_legal(self, pos, color):
+    def is_legal(self, pos: int, color: Stone) -> bool:
         """合法手か否かを判定する。
         合法手ならTrue、そうでなければFalseを返す。
 
@@ -189,9 +216,9 @@ class GoBoard:
             for string_id in unique_ids:
                 if self.strings.get_num_liberties(self.strings.string[string_id].get_origin) == 1:
                     stones = self.strings.get_stone_coordinates(string_id)
-                    current_hash = affect_string_hash(stones, opponent)
+                    current_hash = affect_string_hash(current_hash, stones, opponent)
             # 石を置く
-            current_hash = affect_stone_hash(pos, color)
+            current_hash = affect_stone_hash(current_hash, pos=pos, color=color)
 
             if self.record.has_same_hash(current_hash):
                 return False
@@ -199,7 +226,7 @@ class GoBoard:
 
         return True
 
-    def is_legal_not_eye(self, pos, color):
+    def is_legal_not_eye(self, pos: int, color: Stone) -> bool:
         """合法手かつ眼でないか否かを確認する。
         合法手かつ眼でなければTrue、そうでなければFalseを返す。
 
@@ -220,7 +247,7 @@ class GoBoard:
 
         return False
 
-    def get_all_legal_pos(self, color):
+    def get_all_legal_pos(self, color: Stone) -> List[int]:
         """全ての合法手の座標を取得する。ただし眼は除く。
 
         Args:
@@ -235,7 +262,7 @@ class GoBoard:
                 legal_pos.append(pos)
         return legal_pos
 
-    def display(self):
+    def display(self, sym: int=0) -> NoReturn:
         """盤面を表示する。
         """
         board_string = f"Move : {self.moves}\n"
@@ -249,10 +276,10 @@ class GoBoard:
 
         board_string += "  +" + "-" * (self.board_size * 2 + 1) + "+\n"
 
-        for y_coord in range(1, self.board_size + 1):
-            output = "{:>2d}|".format(self.board_size - y_coord + 1)
-            for x_coord in range(1, self.board_size + 1):
-                pos = self.POS(x_coord, y_coord)
+        for y_coord in range(self.board_start, self.board_end + 1):
+            output = f"{self.board_size - y_coord + 1:>2d}|"
+            for x_coord in range(self.board_start, self.board_end + 1):
+                pos = self.get_symmetrical_coordinate(self.POS(x_coord, y_coord), sym)
                 output += " " + Stone.get_char(self.board[pos])
             output += " |\n"
             board_string += output
@@ -261,10 +288,31 @@ class GoBoard:
 
         print_err(board_string)
 
-    def get_board_size(self):
+    def get_board_size(self) -> NoReturn:
         """碁盤の大きさを取得する。
 
         Returns:
             int: 碁盤の大きさ
         """
         return self.board_size
+
+    def get_board_data(self, sym: int) -> List[int]:
+        """ニューラルネットワークの入力用の碁盤情報を取得する。
+
+        Returns:
+            list[int]: 空点は0, 黒石は1, 白石は2のリスト。
+        """
+        return [self.board[self.get_symmetrical_coordinate(pos, sym)].value \
+            for pos in self.onboard_pos]
+
+    def get_symmetrical_coordinate(self, pos: int, sym: int) -> int:
+        """8対称のいずれかの座標を取得する。
+
+        Args:
+            pos (int): 元の座標。
+            sym (int): 対称形の指定。（0〜7）
+
+        Returns:
+            int: 指定した対称の座標。
+        """
+        return self.sym_map[sym][pos]
