@@ -82,7 +82,7 @@ def save_model(network: torch.nn.Module, path: str) -> NoReturn:
         network (torch.nnModel): ニューラルネットワークのモデル。
         path (str): パラメータファイルパス。
     """
-    torch.save(network.state_dict(), path)
+    torch.save(network.to("cpu").state_dict(), path)
 
 
 def load_data_set(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -10,14 +10,13 @@ BATCH_SIZE = 256
 # 学習器のモーメンタムパラメータ
 MOMENTUM=0.9
 
-#
+# L2正則化の重み
 WEIGHT_DECAY = 1e-4
 
 EPOCHS = 15
 
-# 学習率を変更するエポック数と辺豪語の学習率
+# 学習率を変更するエポック数と変更後の学習率
 LEARNING_SCHEDULE = {
-    "decay_epoch": [5, 8, 10],
     "learning_rate": {
         5: 0.002,
         8: 0.0002,

@@ -113,7 +113,7 @@ def train(program_dir: str, board_size: int, batch_size: \
 
         print_evaluation_information(test_loss, epoch, test_iteration, testing_time)
 
-        if epoch in LEARNING_SCHEDULE["decay_epoch"]:
+        if epoch in LEARNING_SCHEDULE["learning_rate"]:
             previous_lr = current_lr
             for group in optimizer.param_groups:
                 group["lr"] = LEARNING_SCHEDULE["learning_rate"][epoch]
