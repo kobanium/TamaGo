@@ -38,7 +38,7 @@ python main.py
 | --model | ネットワークモデルファイルパス | 学習済みモデルファイルパス | model/model.bin | なし | TamaGoのホームディレクトリからの相対パスで指定してください。指定がない場合はニューラルネットワークを使用せずにランダムに着手します。 |
 | --use-gpu | GPU使用フラグ | true または false | true | false | |
 
-### プログラムの実行例は下記のとおりです
+## プログラムの実行例は下記のとおりです
 1) 碁盤のサイズを5、model/model.binを学習済みモデルとして使用し、GPUを使用せずに実行するケース
 ```
 python main.py --size 5 --model model/model.bin --use-gpu false
@@ -47,6 +47,10 @@ python main.py --size 5 --model model/model.bin --use-gpu false
 ```
 python main.py --superko true
 ```
+
+## 学習済みモデルファイルについて
+学習済みのモデルファイルについては[こちら](https://github.com/kobanium/TamaGo/releases)から取得してください。modelフォルダ以下にmodel.binファイルを配置するとコマンドラインオプションの指定無しで動かせます。ニューラルネットワークの構造と学習済みモデルファイルが一致しないとロードできないので、取得したモデルファイルのリリースバージョンとTamaGoのバージョンが一致しているかに注意してください。  
+Version 0.2.0時点のモデルはGNUGo Level 10に対して約80eloほど強いです。
 
 # How to execute supervised learning
 教師あり学習の実行方法については[こちら](doc/ja/supervised_learning.md)をご参照ください。

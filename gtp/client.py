@@ -15,7 +15,7 @@ from board.stone import Stone
 from common.print_console import print_err
 from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution, \
     display_policy_score
-from nn.feature import generate_input_planes
+from nn.policy_player import generate_move_from_policy
 from nn.network.dual_net import DualNet
 from nn.utility import get_torch_device
 from sgf.reader import SGFReader
@@ -68,16 +68,20 @@ class GtpClient: # pylint: disable=R0903
                 "display_policy_white"),
         ]
 
+        self.use_network = False
+
         try:
-            self.network = DualNet(board_size=board_size)
-            self.network.to(get_torch_device(use_gpu=use_gpu))
+            device = get_torch_device(use_gpu=use_gpu)
+            self.network = DualNet(device)
+            self.network.to(device)
             self.network.load_state_dict(torch.load(model_file_path))
-            self.use_network = True
             torch.set_grad_enabled(False)
             self.network.eval()
-        except:
+            self.use_network = True
+        except FileNotFoundError:
+            print_err(f"Model file {model_file_path} is not found")
+        except RuntimeError:
             print_err(f"Failed to load {model_file_path}")
-            self.use_network = False
 
 
     def _respond_success(self, response: str) -> NoReturn:
@@ -194,19 +198,14 @@ class GtpClient: # pylint: disable=R0903
             self._respond_failure("genmove color")
             return
 
-        # ランダムに着手生成
         if self.use_network:
-            board_size = self.board.get_board_size()
-            input_plane = generate_input_planes(self.board, genmove_color)
-            input_data = torch.tensor(input_plane.reshape(1, 6, board_size, board_size))
-            policy, value = self.network.forward_with_softmax(input_data)
-            legal_pos = self.board.get_all_legal_pos(genmove_color)
-
-            if len(legal_pos) > 0:
-                pos = random.choice(legal_pos)
-            else:
+            # Policy Networkから着手生成
+            pos = generate_move_from_policy(self.network, self.board, genmove_color)
+            _, previous_move, _ = self.board.record.get(self.board.moves - 1)
+            if self.board.moves > 1 and previous_move == PASS:
                 pos = PASS
         else:
+            # ランダムに着手生成
             legal_pos = self.board.get_all_legal_pos(genmove_color)
 
             if len(legal_pos) > 0:
