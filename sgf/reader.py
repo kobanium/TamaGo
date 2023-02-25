@@ -89,23 +89,7 @@ class SGFReader: # pylint: disable=R0902
                 cursor = self._get_application(sgf_text, cursor)
             elif sgf_text[cursor:cursor+3] == "CP[":
                 cursor = self._get_copyright(sgf_text, cursor)
-            elif sgf_text[cursor:cursor+3] == "GM[" or \
-                 sgf_text[cursor:cursor+3] == "HA[" or \
-                 sgf_text[cursor:cursor+3] == "AB[" or \
-                 sgf_text[cursor:cursor+3] == "PL[" or \
-                 sgf_text[cursor:cursor+3] == "RU[" or \
-                 sgf_text[cursor:cursor+3] == "CP[" or \
-                 sgf_text[cursor:cursor+3] == "GM[" or \
-                 sgf_text[cursor:cursor+3] == "FF[" or \
-                 sgf_text[cursor:cursor+3] == "DT[" or \
-                 sgf_text[cursor:cursor+3] == "PC[" or \
-                 sgf_text[cursor:cursor+3] == "CA[" or \
-                 sgf_text[cursor:cursor+3] == "TM[" or \
-                 sgf_text[cursor:cursor+3] == "OT[" or \
-                 sgf_text[cursor:cursor+3] == "TB[" or \
-                 sgf_text[cursor:cursor+3] == "TW[" or \
-                 sgf_text[cursor:cursor+3] == "BR[" or \
-                 sgf_text[cursor:cursor+3] == "WR[": # pylint: disable=R0912
+            elif _is_ignored_tag(sgf_text, cursor):
                 cursor = _skip_data(sgf_text, cursor)
             else:
                 cursor += 1
@@ -405,6 +389,11 @@ def _is_ignored_char(char: str) -> bool:
     """
     return  (char in '') or (char in '\t') or (char in '\n') or \
             (char in '\r') or (char in ';') or (char in '(') or (char in ')')
+
+def _is_ignored_tag(text: str, cursor: int) -> bool:
+    return text[cursor:cursor+3] in ["GM[", "HA[", "AB[", "PL[", "RU[", \
+        "CP[", "GM[", "FF[", "DT[", "PC[", "CA[", "TM[", "OT[", "TB[", \
+        "TW[", "BR[", "WR["]
 
 def _parse_coordinate(char: str) -> int:
     """SGF形式の座標をプログラム内部の座標に変換する。

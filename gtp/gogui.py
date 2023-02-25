@@ -47,7 +47,7 @@ def display_policy_distribution(model: DualNet, board: GoBoard, color: Stone) ->
     """
     board_size = board.get_board_size()
     input_plane = generate_input_planes(board, color)
-    input_plane = torch.tensor(input_plane.reshape(1, 6, board_size, board_size))
+    input_plane = torch.tensor(input_plane.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
     policy, _ = model.forward_with_softmax(input_plane)
 
     max_policy, min_policy = 0, 1
@@ -88,7 +88,7 @@ def display_policy_score(model: DualNet, board: GoBoard, color: Stone) -> str:
     """
     board_size = board.get_board_size()
     input_plane = generate_input_planes(board, color)
-    input_plane = torch.tensor(input_plane.reshape(1, 6, board_size, board_size))
+    input_plane = torch.tensor(input_plane.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
     policy_predict, _ = model.forward_with_softmax(input_plane)
     policies = [policy_predict[0][i] for i in range(board_size ** 2)]
     response = ""

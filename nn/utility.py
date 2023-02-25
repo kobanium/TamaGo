@@ -1,6 +1,6 @@
 """深層学習に関するユーティリティ。
 """
-from typing import NoReturn, Dict, Tuple
+from typing import NoReturn, Dict, List, Tuple
 import time
 import torch
 import numpy as np
@@ -98,3 +98,23 @@ def load_data_set(path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     perm = np.random.permutation(len(data["value"]))
     return data["input"][perm], data["policy"][perm].astype(np.float32), \
         data["value"][perm].astype(np.int64)
+
+
+def split_train_test_set(file_list: List[str], train_data_ratio: float) \
+    -> Tuple[List[str], List[str]]:
+    """学習に使用するデータと検証に使用するデータファイルを分割する。
+
+    Args:
+        file_list (List[str]): 学習に使用するnpzファイルリスト。
+        train_data_ratio (float): 学習に使用するデータの割合。
+
+    Returns:
+        Tuple[List[str], List[str]]: 学習データセットと検証データセット。
+    """
+    train_data_set = file_list[:int(len(file_list) * train_data_ratio)]
+    test_data_set = file_list[int(len(file_list) * train_data_ratio):]
+
+    print(f"Training data set : {train_data_set}")
+    print(f"Testing data set  : {test_data_set}")
+
+    return train_data_set, test_data_set

@@ -256,11 +256,7 @@ class GoBoard: # pylint: disable=R0902
         Returns:
             list[int]: 合法手の座標列。
         """
-        legal_pos = []
-        for pos in self.onboard_pos:
-            if self.is_legal_not_eye(pos, color):
-                legal_pos.append(pos)
-        return legal_pos
+        return [pos for pos in self.onboard_pos if self.is_legal_not_eye(pos, color)]
 
     def display(self, sym: int=0) -> NoReturn:
         """盤面を表示する。
