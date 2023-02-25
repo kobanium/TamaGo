@@ -1,5 +1,6 @@
 """配石パターンの実装。
 """
+from typing import List, NoReturn
 import numpy as np
 
 from board.constant import OB_SIZE
@@ -21,7 +22,7 @@ pattern_mask = np.array([
 class Pattern:
     """配石パターンクラス。
     """
-    def __init__(self, board_size, pos_func):
+    def __init__(self, board_size: int, pos_func) -> NoReturn:
         """Patternクラスのコンストラクタ。
 
         Args:
@@ -31,7 +32,7 @@ class Pattern:
         self.board_size = board_size
         board_size_with_ob = board_size + OB_SIZE * 2
         self.pat3 = np.empty(shape=board_size_with_ob ** 2, dtype=np.uint32)
-        self.POS = pos_func
+        self.POS = pos_func # pylint: disable=C0103
         self.update_pos = [
             -board_size_with_ob - 1, -board_size_with_ob, -board_size_with_ob + 1,
             -1, 1, board_size_with_ob - 1, board_size_with_ob, board_size_with_ob + 1
@@ -98,7 +99,7 @@ class Pattern:
 
         self.clear()
 
-    def clear(self):
+    def clear(self) -> NoReturn:
         """周囲の石のパターンを初期状態にする。
         """
         board_start = OB_SIZE
@@ -115,7 +116,7 @@ class Pattern:
             self.pat3[self.POS(board_start, y_pos)] = \
                 self.pat3[self.POS(board_start, y_pos)] | 0x0cc3
 
-    def remove_stone(self, pos):
+    def remove_stone(self, pos: int) -> NoReturn:
         """周囲の石のパターンから石を取り除く。
 
         Args:
@@ -124,7 +125,7 @@ class Pattern:
         for i, shift in enumerate(self.update_pos):
             self.pat3[pos + shift] = self.pat3[pos + shift] & pattern_mask[i][0]
 
-    def put_stone(self, pos, color):
+    def put_stone(self, pos: int, color: Stone) -> NoReturn:
         """周囲の石のパターンの石を追加する。
 
         Args:
@@ -138,7 +139,7 @@ class Pattern:
         for i, shift in enumerate(self.update_pos):
             self.pat3[pos + shift] = self.pat3[pos + shift] | pattern_mask[i][color_index]
 
-    def get_n_neighbors_empty(self, pos):
+    def get_n_neighbors_empty(self, pos: int) -> int:
         """指定した座標の上下左右の空点数を取得する。
 
         Args:
@@ -149,7 +150,7 @@ class Pattern:
         """
         return self.nb4_empty[self.pat3[pos]]
 
-    def get_eye_color(self, pos):
+    def get_eye_color(self, pos: int) -> Stone:
         """指定した座標の眼の色を取得する。
 
         Args:
@@ -160,7 +161,7 @@ class Pattern:
         """
         return self.eye[self.pat3[pos]]
 
-    def display(self, pos):
+    def display(self, pos: int) -> NoReturn:
         """指定した座標の周囲の石のパターンを表示する。（デバッグ用)
 
         Args:
@@ -170,7 +171,7 @@ class Pattern:
         print_err(get_pat3_string(self.pat3[pos]))
 
 
-def get_pat3_string(pat3):
+def get_pat3_string(pat3: int) -> str:
     """3x3配石パターンの文字列を生成する。
 
     Args:
@@ -195,7 +196,7 @@ def get_pat3_string(pat3):
     return message
 
 
-def rev(bit):
+def rev(bit: int) -> int:
     """ビット列操作。
 
     Args:
@@ -207,7 +208,7 @@ def rev(bit):
     return (bit >> 2) | ((bit & 0x3) << 2)
 
 
-def rev3(bit):
+def rev3(bit: int) -> int:
     """ビット列操作。
 
     Args:
@@ -218,7 +219,7 @@ def rev3(bit):
     """
     return (bit >> 4) | (bit & 0xC) | ((bit & 0x3) << 4)
 
-def pat3_reverse(pat3):
+def pat3_reverse(pat3: int) -> int:
     """石の色を入れ替えたパターンを生成する。
 
     Args:
@@ -230,7 +231,7 @@ def pat3_reverse(pat3):
     return (pat3 >> 1) & 0x5555 | ((pat3 & 0x5555) << 1)
 
 
-def pat3_vertical_mirror(pat3):
+def pat3_vertical_mirror(pat3: int) -> int:
     """左右対象の配石パターンを生成する。
 
     Args:
@@ -242,7 +243,7 @@ def pat3_vertical_mirror(pat3):
     return ((pat3 & 0xfc00) >> 10) | (pat3 & 0x03C0) | ((pat3 & 0x003f) << 10)
 
 
-def pat3_horizontal_mirror(pat3):
+def pat3_horizontal_mirror(pat3: int) -> int:
     """上下対象の配石パターンを生成する。
 
     Args:
@@ -256,7 +257,7 @@ def pat3_horizontal_mirror(pat3):
       | rev3((pat3 & 0x003F))
 
 
-def pat3_rotate_90(pat3):
+def pat3_rotate_90(pat3: int) -> int:
     """90度回転した配石パターンを生成する。
     1 2 3    3 5 8
     4 * 5 -> 2 * 7
@@ -276,14 +277,14 @@ def pat3_rotate_90(pat3):
         | ((pat3 & 0xc000) >> 10)
 
 
-def get_pat3_symmetry8(pat3):
+def get_pat3_symmetry8(pat3: int) -> List[int]:
     """8対称の配石パターンを生成する。
 
     Args:
         pat3 (int): 配石パターンのビット列。
 
     Returns:
-        list[int]:  8対象の配石パターンのビット列リスト。
+        List[int]:  8対象の配石パターンのビット列リスト。
     """
     symmetries = [0] * 8
     symmetries[0] = pat3

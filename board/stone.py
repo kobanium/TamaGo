@@ -29,7 +29,7 @@ class Stone(Enum):
         return color
 
     @classmethod
-    def get_char(cls, color):
+    def get_char(cls, color) -> str:
         """色に対応する文字を取得する。
 
         Args:
