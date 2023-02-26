@@ -36,6 +36,6 @@ class ResidualBlock(nn.Module):
             torch.Tensor: ブロックの出力テンソル。
         """
         hidden_1 = self.relu(self.bn1(self.conv1(input_plane)))
-        hidden_2 = self.relu(self.bn2(self.conv2(hidden_1)))
+        hidden_2 = self.bn2(self.conv2(hidden_1))
 
-        return input_plane + hidden_2
+        return self.relu(input_plane + hidden_2)
