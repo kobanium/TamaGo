@@ -1,5 +1,6 @@
 """連の定義と処理の実装。
 """
+import copy
 from typing import List, NoReturn
 from board.constant import STRING_END, LIBERTY_END, NEIGHBOR_END, OB_SIZE
 from board.coordinate import Coordinate
@@ -268,8 +269,8 @@ class StringData:
     def clear(self) -> NoReturn:
         """全ての連を削除する。
         """
-        self.string_id = [0 for _ in self.string_id]
-        self.string_next = [0 for _ in self.string_next]
+        self.string_id = [0] * len(self.string_id)
+        self.string_next = [0] * len(self.string_next)
         for string in self.string:
             string.remove()
 
@@ -594,3 +595,26 @@ class StringData:
                 for nei in neighbors:
                     neighbor += " " + str(nei)
                 print_err(f"\tNeighbor {len(neighbors)} : {neighbors}")
+
+
+def copy_string(dst: String, src: String) -> NoReturn:
+    dst.color = src.color
+    dst.libs = src.libs
+    dst.lib = [lib for lib in src.lib]
+    dst.neighbors = src.neighbors
+    dst.neighbor = [neighbor for neighbor in src.neighbor]
+    dst.origin = src.origin
+    dst.size = src.size
+    dst.flag = True
+
+def copy_strings(dst: StringData, src: StringData) -> NoReturn:
+    #dst.string_id = copy.copy(src.string_id)
+    dst.string_id = [string_id for string_id in src.string_id]
+    #dst.string_next = copy.copy(src.string_next)
+    dst.string_next = [string_next for string_next in src.string_next]
+
+    for i, string in enumerate(src.string):
+        if string.exist():
+            copy_string(dst.string[i], string)
+        else:
+            dst.string[i].flag = False

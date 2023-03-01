@@ -297,3 +297,7 @@ def get_pat3_symmetry8(pat3: int) -> List[int]:
     symmetries[7] = pat3_rotate_90(symmetries[3])
 
     return symmetries
+
+
+def copy_pattern(dst: Pattern, src: Pattern) -> NoReturn:
+    dst.pat3 = src.pat3.copy()

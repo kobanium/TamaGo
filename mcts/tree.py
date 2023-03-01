@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 from board.constant import PASS
-from board.go_board import GoBoard
+from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 from common.print_console import print_err
 from nn.feature import generate_input_planes
@@ -48,22 +48,21 @@ class MCTSTree:
 
         # 探索結果と探索にかかった時間を表示する
         self.node[self.current_root].print_search_result(board)
-        print_err(f"{time.time() - start_time:.2f} seconds")
+        search_time = time.time() - start_time
+        po_per_sec = self.node[self.current_root].node_visits / search_time
+        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f}")
 
         return next_move
 
 
     def search(self, board: GoBoard, color: Stone) -> NoReturn:
-
-        for _ in range(100):
-            copy_board = copy.deepcopy(board)
-            copy_color = copy.copy(color)
-            self.search_mcts(copy_board, copy_color, self.current_root, [])
+        search_board = copy.deepcopy(board)
+        for _ in range(1000):
+            copy_board(dst=search_board,src=board)
+            start_color = copy.copy(color)
+            self.search_mcts(search_board, start_color, self.current_root, [])
 
             
-
-
-
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, path: List[Tuple[int, int]]) -> NoReturn:
 
         # UCB値最大の手を求める

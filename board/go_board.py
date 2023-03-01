@@ -1,13 +1,14 @@
 """碁盤のデータ定義と操作処理。
 """
+import copy
 from typing import List, NoReturn
 import numpy as np
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
-from board.pattern import Pattern
-from board.record import Record
+from board.pattern import Pattern, copy_pattern
+from board.record import Record, copy_record
 from board.stone import Stone
-from board.string import StringData
+from board.string import StringData, copy_strings
 from board.zobrist_hash import affect_stone_hash, affect_string_hash
 from common.print_console import print_err
 
@@ -312,3 +313,19 @@ class GoBoard: # pylint: disable=R0902
             int: 指定した対称の座標。
         """
         return self.sym_map[sym][pos]
+
+
+
+
+def copy_board(dst: GoBoard, src: GoBoard):
+    dst.board = copy.copy(src.board)
+    copy_pattern(dst.pattern, src.pattern)
+    copy_strings(dst.strings, src.strings)
+    #dst.strings = copy.deepcopy(src.strings)
+    copy_record(dst.record, src.record)
+    #dst.record = copy.deepcopy(src.record)
+    dst.ko_move = src.ko_move
+    dst.ko_pos = src.ko_pos
+    dst.prisoner = copy.copy(src.prisoner)
+    dst.positional_hash = src.positional_hash.copy()
+    dst.moves = src.moves
