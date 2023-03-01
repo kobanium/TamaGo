@@ -15,6 +15,7 @@ from board.stone import Stone
 from common.print_console import print_err
 from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution, \
     display_policy_score
+from mcts.tree import MCTSTree
 from nn.policy_player import generate_move_from_policy
 from nn.network.dual_net import DualNet
 from nn.utility import get_torch_device
@@ -82,6 +83,8 @@ class GtpClient: # pylint: disable=R0903
             print_err(f"Model file {model_file_path} is not found")
         except RuntimeError:
             print_err(f"Failed to load {model_file_path}")
+
+        self.mcts = MCTSTree()
 
 
     def _respond_success(self, response: str) -> NoReturn:
@@ -199,16 +202,18 @@ class GtpClient: # pylint: disable=R0903
             return
 
         if self.use_network:
+            """
             # Policy Networkから着手生成
             pos = generate_move_from_policy(self.network, self.board, genmove_color)
             _, previous_move, _ = self.board.record.get(self.board.moves - 1)
             if self.board.moves > 1 and previous_move == PASS:
                 pos = PASS
+            """
+            pos = self.mcts.search_best_move(self.board, genmove_color, self.network)
         else:
             # ランダムに着手生成
-            legal_pos = self.board.get_all_legal_pos(genmove_color)
-
-            if len(legal_pos) > 0:
+            legal_pos = [pos for pos in self.board.onboard_pos if self.board.is_legal_not_eye(pos, genmove_color)]
+            if legal_pos:
                 pos = random.choice(legal_pos)
             else:
                 pos = PASS
