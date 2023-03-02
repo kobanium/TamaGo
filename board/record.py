@@ -65,6 +65,12 @@ class Record:
 
 
 def copy_record(dst: Record, src: Record) -> NoReturn:
-    dst.color = [color for color in src.color]
-    dst.pos = [pos for pos in src.pos]
+    """着手履歴をコピーする。
+
+    Args:
+        dst (Record): コピー先の着手履歴データ。
+        src (Record): コピー元の着手履歴データ。
+    """
+    dst.color = src.color[:]
+    dst.pos = src.pos[:]
     dst.hash_value = src.hash_value.copy()

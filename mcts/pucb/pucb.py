@@ -1,3 +1,5 @@
+"""PUCB値の計算の実装。
+"""
 import math
 import numpy as np
 
@@ -17,7 +19,8 @@ def calculate_pucb_value(node_visits: int, children_visits: np.ndarray, \
         np.ndarray: 子ノードのPUCB値。
     """
     # Valueの平均値の算出
-    exploration = np.divide(value_sum, children_visits, out=np.zeros_like(value_sum), where=(children_visits != 0))
+    exploration = np.divide(value_sum, children_visits, \
+        out=np.zeros_like(value_sum), where=(children_visits != 0))
 
     # PUCTの第2項の算出
     exploitation = PUCB_SECOND_TERM_WEIGHT * policy \

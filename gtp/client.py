@@ -27,7 +27,7 @@ class GtpClient: # pylint: disable=R0903
     """_Go Text Protocolクライアントの実装クラス
     """
     def __init__(self, board_size: int, superko: bool, \
-        model_file_path: str, use_gpu: bool) -> NoReturn:
+        model_file_path: str, use_gpu: bool, policy_move) -> NoReturn:
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -35,6 +35,7 @@ class GtpClient: # pylint: disable=R0903
             superko (bool): 超劫判定の有効化。
             model_file_path (str): ネットワークパラメータファイルパス。
             use_gpu (bool): GPU使用フラグ。
+            policy_move (bool): Policyの分布に従って着手するフラグ。
         """
         self.gtp_commands = [
             "version",
@@ -68,7 +69,7 @@ class GtpClient: # pylint: disable=R0903
             GoguiAnalyzeCommand("sboard", "Display policy score (White)", \
                 "display_policy_white"),
         ]
-
+        self.policy_move = policy_move
         self.use_network = False
 
         try:
@@ -79,12 +80,12 @@ class GtpClient: # pylint: disable=R0903
             torch.set_grad_enabled(False)
             self.network.eval()
             self.use_network = True
+            self.mcts = MCTSTree(network=self.network)
         except FileNotFoundError:
             print_err(f"Model file {model_file_path} is not found")
         except RuntimeError:
             print_err(f"Failed to load {model_file_path}")
 
-        self.mcts = MCTSTree()
 
 
     def _respond_success(self, response: str) -> NoReturn:
@@ -202,17 +203,19 @@ class GtpClient: # pylint: disable=R0903
             return
 
         if self.use_network:
-            """
-            # Policy Networkから着手生成
-            pos = generate_move_from_policy(self.network, self.board, genmove_color)
-            _, previous_move, _ = self.board.record.get(self.board.moves - 1)
-            if self.board.moves > 1 and previous_move == PASS:
-                pos = PASS
-            """
-            pos = self.mcts.search_best_move(self.board, genmove_color, self.network)
+            if self.policy_move:
+                # Policy Networkから着手生成
+                pos = generate_move_from_policy(self.network, self.board, genmove_color)
+                _, previous_move, _ = self.board.record.get(self.board.moves - 1)
+                if self.board.moves > 1 and previous_move == PASS:
+                    pos = PASS
+            else:
+                # モンテカルロ木探索で着手生成
+                pos = self.mcts.search_best_move(self.board, genmove_color)
         else:
             # ランダムに着手生成
-            legal_pos = [pos for pos in self.board.onboard_pos if self.board.is_legal_not_eye(pos, genmove_color)]
+            legal_pos = [pos for pos in self.board.onboard_pos \
+                if self.board.is_legal_not_eye(pos, genmove_color)]
             if legal_pos:
                 pos = random.choice(legal_pos)
             else:

@@ -1,3 +1,5 @@
+"""モンテカルロ木探索の実装。
+"""
 from typing import Dict, List, NoReturn, Tuple
 import copy
 import time
@@ -9,27 +11,45 @@ from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 from common.print_console import print_err
 from nn.feature import generate_input_planes
-from mcts.batch_data import BatchQueue
-from mcts.constant import NOT_EXPANDED
-from mcts.node import MCTSNode
 from nn.network.dual_net import DualNet
+from mcts.batch_data import BatchQueue
+from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE
+from mcts.node import MCTSNode
 
 
 class MCTSTree:
-    def __init__(self, tree_size=65536):
+    """モンテカルロ木探索の実装クラス。
+    """
+    def __init__(self, network: DualNet, tree_size=65536) -> NoReturn:
+        """MCTSTreeクラスのコンストラクタ。
+
+        Args:
+            network (DualNet): 使用するニューラルネットワーク。
+            tree_size (int, optional): 木を構成するノードの最大個数. Defaults to 65536.
+        """
         self.node = [MCTSNode() for i in range(tree_size)]
         self.num_nodes = 0
         self.root = 0
-        self.network = None
-        self.batch_queue = BatchQueue()
-
-    def search_best_move(self, board: GoBoard, color: Stone, network: DualNet) -> int:
-        self.num_nodes = 0
         self.network = network
+        self.batch_queue = BatchQueue()
+        self.current_root = 0
+
+
+    def search_best_move(self, board: GoBoard, color: Stone) -> int:
+        """モンテカルロ木探索を実行して最善手を返す。
+
+        Args:
+            board (GoBoard): 評価する局面情報。
+            color (Stone): 評価する局面の手番の色。
+
+        Returns:
+            int: 着手する座標。
+        """
+        self.num_nodes = 0
 
         start_time = time.time()
 
-        self.current_root = self.expand_node(board, color, [])
+        self.current_root = self.expand_node(board, color)
         input_plane = generate_input_planes(board, color, 0)
         self.batch_queue.push(input_plane, [], self.current_root)
 
@@ -38,7 +58,6 @@ class MCTSTree:
         # 候補手が1つしかない場合はPASSを返す
         if self.node[self.current_root].get_num_children() == 1:
             return PASS
-
 
         # 探索を実行する
         self.search(board, color)
@@ -56,14 +75,29 @@ class MCTSTree:
 
 
     def search(self, board: GoBoard, color: Stone) -> NoReturn:
+        """探索を指定回数実行する。
+
+        Args:
+            board (GoBoard): 現在の局面情報。
+            color (Stone): 現局面の手番の色。
+        """
         search_board = copy.deepcopy(board)
-        for _ in range(1000):
+        for _ in range(PLAYOUTS):
             copy_board(dst=search_board,src=board)
-            start_color = copy.copy(color)
+            start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
 
-            
-    def search_mcts(self, board: GoBoard, color: Stone, current_index: int, path: List[Tuple[int, int]]) -> NoReturn:
+
+    def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \
+        path: List[Tuple[int, int]]) -> NoReturn:
+        """モンテカルロ木探索を実行する。
+
+        Args:
+            board (GoBoard): 現在の局面情報。
+            color (Stone): 現局面の手番の色。
+            current_index (int): 評価するノードのインデックス。
+            path (List[Tuple[int, int]]): ルートからcurrent_indexに対応するノードに到達するまでの経路。
+        """
 
         # UCB値最大の手を求める
         next_index = self.node[current_index].select_next_action()
@@ -85,16 +119,23 @@ class MCTSTree:
             next_node_index = self.node[current_index].get_child_index(next_index)
             self.batch_queue.push(input_plane, path, next_node_index)
 
-            if len(self.batch_queue.node_index) >= 1:
+            if len(self.batch_queue.node_index) >= NN_BATCH_SIZE:
                 self.process_mini_batch(board)
         else:
             if self.node[current_index].get_child_index(next_index) == NOT_EXPANDED:
-                child_index = self.expand_node(board, color, path)
+                child_index = self.expand_node(board, color)
                 self.node[current_index].set_child_index(next_index, child_index)
             next_node_index = self.node[current_index].get_child_index(next_index)
             self.search_mcts(board, color, next_node_index, path)
-    
-    def expand_node(self, board: GoBoard, color: Stone, path: List[Tuple[int, int]]) -> NoReturn:
+
+
+    def expand_node(self, board: GoBoard, color: Stone) -> NoReturn:
+        """ノードを展開する。
+
+        Args:
+            board (GoBoard): 現在の局面情報。
+            color (Stone): 現在の手番の色。
+        """
         node_index = self.num_nodes
 
         candidates = board.get_all_legal_pos(color)
@@ -106,12 +147,18 @@ class MCTSTree:
         self.num_nodes += 1
         return node_index
 
-    def process_mini_batch(self, board: GoBoard):
+
+    def process_mini_batch(self, board: GoBoard): # pylint: disable=R0914
+        """ニューラルネットワークの入力をミニバッチ処理して、計算結果を探索結果に反映する。
+
+        Args:
+            board (GoBoard): 碁盤の情報。
+        """
 
         input_planes = torch.Tensor(np.array(self.batch_queue.input_plane))
 
         raw_policy, value_data = self.network.inference(input_planes)
-        
+
         policy_data = []
         for policy in raw_policy:
             policy_dict = {}
@@ -137,15 +184,18 @@ class MCTSTree:
                     self.node[index].update_child_value(child_index, value)
                     self.node[index].update_node_value(value)
                     value = 1.0 - value
-        
+
         self.batch_queue.clear()
 
 
-        
-
-
-
-
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:
+    """ニューラルネットワークの計算が行われるまでに使用するPolicyを取得する。
+
+    Args:
+        candidates (List[int]): パスを含む候補手のリスト。
+
+    Returns:
+        Dict[int, float]: 候補手の座標とPolicyの値のマップ。
+    """
     score = np.random.dirichlet(alpha=np.ones(len(candidates)))
     return dict(zip(candidates, score))

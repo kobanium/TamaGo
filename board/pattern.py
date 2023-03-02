@@ -300,4 +300,10 @@ def get_pat3_symmetry8(pat3: int) -> List[int]:
 
 
 def copy_pattern(dst: Pattern, src: Pattern) -> NoReturn:
+    """配石パターンのデータをコピーする。
+
+    Args:
+        dst (Pattern): コピー先の配石パターンのデータ。
+        src (Pattern): コピー元の配石パターンのデータ。
+    """
     dst.pat3 = src.pat3.copy()

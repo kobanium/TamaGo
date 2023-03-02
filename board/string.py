@@ -1,6 +1,5 @@
 """連の定義と処理の実装。
 """
-import copy
 from typing import List, NoReturn
 from board.constant import STRING_END, LIBERTY_END, NEIGHBOR_END, OB_SIZE
 from board.coordinate import Coordinate
@@ -598,20 +597,31 @@ class StringData:
 
 
 def copy_string(dst: String, src: String) -> NoReturn:
+    """連の情報をコピーする。
+
+    Args:
+        dst (String): コピー先の連のデータ。
+        src (String): コピー元の連のデータ。
+    """
     dst.color = src.color
     dst.libs = src.libs
-    dst.lib = [lib for lib in src.lib]
+    dst.lib = src.lib[:]
     dst.neighbors = src.neighbors
-    dst.neighbor = [neighbor for neighbor in src.neighbor]
+    dst.neighbor = src.neighbor[:]
     dst.origin = src.origin
     dst.size = src.size
-    dst.flag = True
+    dst.flag = src.flag
+
 
 def copy_strings(dst: StringData, src: StringData) -> NoReturn:
-    #dst.string_id = copy.copy(src.string_id)
-    dst.string_id = [string_id for string_id in src.string_id]
-    #dst.string_next = copy.copy(src.string_next)
-    dst.string_next = [string_next for string_next in src.string_next]
+    """全ての連の情報をコピーする。ただし、存在しない場合は存在フラグをオフにするだけにする。
+
+    Args:
+        dst (StringData): コピー先の連データ。
+        src (StringData): コピー元の連データ。
+    """
+    dst.string_id = src.string_id[:]
+    dst.string_next = src.string_next[:]
 
     for i, string in enumerate(src.string):
         if string.exist():

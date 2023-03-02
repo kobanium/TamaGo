@@ -1,6 +1,5 @@
 """碁盤のデータ定義と操作処理。
 """
-import copy
 from typing import List, NoReturn
 import numpy as np
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
@@ -315,17 +314,19 @@ class GoBoard: # pylint: disable=R0902
         return self.sym_map[sym][pos]
 
 
-
-
 def copy_board(dst: GoBoard, src: GoBoard):
-    dst.board = copy.copy(src.board)
+    """盤面の情報をコピーする。
+
+    Args:
+        dst (GoBoard): コピー先の盤面情報のデータ。
+        src (GoBoard): コピー元の盤面情報のデータ。
+    """
+    dst.board = src.board[:]
     copy_pattern(dst.pattern, src.pattern)
     copy_strings(dst.strings, src.strings)
-    #dst.strings = copy.deepcopy(src.strings)
     copy_record(dst.record, src.record)
-    #dst.record = copy.deepcopy(src.record)
     dst.ko_move = src.ko_move
     dst.ko_pos = src.ko_pos
-    dst.prisoner = copy.copy(src.prisoner)
+    dst.prisoner = src.prisoner[:]
     dst.positional_hash = src.positional_hash.copy()
     dst.moves = src.moves
