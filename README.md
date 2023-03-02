@@ -1,7 +1,7 @@
 # TamaGo
 TamaGoはPythonで実装された囲碁の思考エンジンです。  
-人間の棋譜を利用した教師あり学習とGumbel AlphaZero方式の強化学習をお試しできるプログラムとなる予定です。  
-現在はランダムな着手を返すプログラムとなっています。  
+Gumbel AlphaZero方式の強化学習をお試しできるプログラムとなる予定です。  
+現在はSGF形式の棋譜ファイルからの教師あり学習を実行でき、モンテカルロ木探索による着手生成ができます。  
 Python 3.6で動作確認をしています。
 
 * [使用する前提パッケージ](#requirements)
@@ -37,6 +37,7 @@ python main.py
 | --superko | 超劫ルールの有効化 | true または false | true | false | Positional super koのみ対応しています。|
 | --model | ネットワークモデルファイルパス | 学習済みモデルファイルパス | model/model.bin | なし | TamaGoのホームディレクトリからの相対パスで指定してください。指定がない場合はニューラルネットワークを使用せずにランダムに着手します。 |
 | --use-gpu | GPU使用フラグ | true または false | true | false | |
+| --policy-move | Policyの分布に従って着手するフラグ | true または false | true | false | Policyのみの強さを確認するときに使用します。 |
 
 ## プログラムの実行例は下記のとおりです
 1) 碁盤のサイズを5、model/model.binを学習済みモデルとして使用し、GPUを使用せずに実行するケース
@@ -47,10 +48,15 @@ python main.py --size 5 --model model/model.bin --use-gpu false
 ```
 python main.py --superko true
 ```
+3) model/model.binを学習済みモデルとして使用し、Policyの分布に従って着手を生成するケース
+```
+python main.py --model model/model.bin --policy-move true
+```
 
 ## 学習済みモデルファイルについて
 学習済みのモデルファイルについては[こちら](https://github.com/kobanium/TamaGo/releases)から取得してください。modelフォルダ以下にmodel.binファイルを配置するとコマンドラインオプションの指定無しで動かせます。ニューラルネットワークの構造と学習済みモデルファイルが一致しないとロードできないので、取得したモデルファイルのリリースバージョンとTamaGoのバージョンが一致しているかに注意してください。  
-Version 0.2.1時点のモデルはGNUGo Level 10に対して約90eloほど強いです。
+Version 0.3.0時点のモデルはGNUGo Level 10に対して約+90elo(勝率63.5%)程度の強さです。  
+モンテカルロ木探索で1手あたり100回探索すると、GNUGo Level 10に対して約+160elo(勝率71.8%)程度の強さです。
 
 # How to execute supervised learning
 教師あり学習の実行方法については[こちら](doc/ja/supervised_learning.md)をご参照ください。
@@ -77,15 +83,18 @@ Policyの値による色付けはPolicyの値が大きいほど赤く、小さ�
   - [x] Zobrist Hash
   - [x] Super Koの判定処理
 - 探索部の実装
-  - [ ] 木とノードのデータ構造
+  - [x] 木とノードのデータ構造
   - [ ] モンテカルロ木探索
-    - [ ] クラシックなMCTS
-      - [ ] UCT
-      - [ ] RAVE
-      - [ ] ランダムシミュレーション
-    - [ ] PUCT探索
+    - ~~クラシックなMCTS~~
+      - ~~UCT~~
+      - ~~RAVE~~
+      - ~~ランダムシミュレーション~~
+    - [x] PUCT探索
+      - [x] PUCB値の計算
+      - [x] ニューラルネットワークのミニバッチ処理  
     - [ ] Sequential Halving applied to tree探索
     - [ ] CGOS対応
+    - [ ] 持ち時間による探索時間制御
 - 学習の実装
   - [x] SGFファイルの読み込み処理
   - [ ] 学習データ生成

@@ -10,4 +10,5 @@ PROTOCOL_VERSION="2"
 # Version 0.2.0 : ニューラルネットワークの教師あり学習の実装。
 #                 Policy Networkを使用した着手生成ロジックの実装。
 # Version 0.2.1 : Residual Blockの構造を修正。学習の再実行。
-VERSION="0.2.1"
+# Version 0.3.0 : モンテカルロ木探索の実装。
+VERSION="0.3.0"

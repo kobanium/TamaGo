@@ -4,10 +4,10 @@ from typing import List, NoReturn
 import numpy as np
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
-from board.pattern import Pattern
-from board.record import Record
+from board.pattern import Pattern, copy_pattern
+from board.record import Record, copy_record
 from board.stone import Stone
-from board.string import StringData
+from board.string import StringData, copy_strings
 from board.zobrist_hash import affect_stone_hash, affect_string_hash
 from common.print_console import print_err
 
@@ -256,7 +256,7 @@ class GoBoard: # pylint: disable=R0902
         Returns:
             list[int]: 合法手の座標列。
         """
-        return [pos for pos in self.onboard_pos if self.is_legal_not_eye(pos, color)]
+        return [pos for pos in self.onboard_pos if self.is_legal(pos, color)]
 
     def display(self, sym: int=0) -> NoReturn:
         """盤面を表示する。
@@ -312,3 +312,21 @@ class GoBoard: # pylint: disable=R0902
             int: 指定した対称の座標。
         """
         return self.sym_map[sym][pos]
+
+
+def copy_board(dst: GoBoard, src: GoBoard):
+    """盤面の情報をコピーする。
+
+    Args:
+        dst (GoBoard): コピー先の盤面情報のデータ。
+        src (GoBoard): コピー元の盤面情報のデータ。
+    """
+    dst.board = src.board[:]
+    copy_pattern(dst.pattern, src.pattern)
+    copy_strings(dst.strings, src.strings)
+    copy_record(dst.record, src.record)
+    dst.ko_move = src.ko_move
+    dst.ko_pos = src.ko_pos
+    dst.prisoner = src.prisoner[:]
+    dst.positional_hash = src.positional_hash.copy()
+    dst.moves = src.moves
