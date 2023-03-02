@@ -2,6 +2,7 @@
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
     "python.linting.pylintArgs": [
-        "--extension-pkg-whitelist=numpy,torch"
+        "--extension-pkg-whitelist=numpy,torch",
+        "--generated-members=numpy.*,torch.*"
     ]
 }

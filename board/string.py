@@ -268,8 +268,8 @@ class StringData:
     def clear(self) -> NoReturn:
         """全ての連を削除する。
         """
-        self.string_id = [0 for _ in self.string_id]
-        self.string_next = [0 for _ in self.string_next]
+        self.string_id = [0] * len(self.string_id)
+        self.string_next = [0] * len(self.string_next)
         for string in self.string:
             string.remove()
 
@@ -594,3 +594,37 @@ class StringData:
                 for nei in neighbors:
                     neighbor += " " + str(nei)
                 print_err(f"\tNeighbor {len(neighbors)} : {neighbors}")
+
+
+def copy_string(dst: String, src: String) -> NoReturn:
+    """連の情報をコピーする。
+
+    Args:
+        dst (String): コピー先の連のデータ。
+        src (String): コピー元の連のデータ。
+    """
+    dst.color = src.color
+    dst.libs = src.libs
+    dst.lib = src.lib[:]
+    dst.neighbors = src.neighbors
+    dst.neighbor = src.neighbor[:]
+    dst.origin = src.origin
+    dst.size = src.size
+    dst.flag = src.flag
+
+
+def copy_strings(dst: StringData, src: StringData) -> NoReturn:
+    """全ての連の情報をコピーする。ただし、存在しない場合は存在フラグをオフにするだけにする。
+
+    Args:
+        dst (StringData): コピー先の連データ。
+        src (StringData): コピー元の連データ。
+    """
+    dst.string_id = src.string_id[:]
+    dst.string_next = src.string_next[:]
+
+    for i, string in enumerate(src.string):
+        if string.exist():
+            copy_string(dst.string[i], string)
+        else:
+            dst.string[i].flag = False

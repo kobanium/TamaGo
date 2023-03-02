@@ -62,3 +62,15 @@ class Record:
             (Stone, int, np.array): 着手の色、座標、ハッシュ値。
         """
         return (self.color[moves], self.pos[moves], self.hash_value[moves])
+
+
+def copy_record(dst: Record, src: Record) -> NoReturn:
+    """着手履歴をコピーする。
+
+    Args:
+        dst (Record): コピー先の着手履歴データ。
+        src (Record): コピー元の着手履歴データ。
+    """
+    dst.color = src.color[:]
+    dst.pos = src.pos[:]
+    dst.hash_value = src.hash_value.copy()
