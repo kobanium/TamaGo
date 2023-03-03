@@ -180,7 +180,7 @@ class MCTSTree:
 
                 self.node[leaf[0]].set_leaf_value(leaf[1], value)
 
-                for index, child_index in path:
+                for index, child_index in reverse_path:
                     self.node[index].update_child_value(child_index, value)
                     self.node[index].update_node_value(value)
                     value = 1.0 - value
