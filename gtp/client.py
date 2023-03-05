@@ -27,7 +27,7 @@ class GtpClient: # pylint: disable=R0903
     """_Go Text Protocolクライアントの実装クラス
     """
     def __init__(self, board_size: int, superko: bool, \
-        model_file_path: str, use_gpu: bool, policy_move) -> NoReturn:
+        model_file_path: str, use_gpu: bool, policy_move: bool, komi: float) -> NoReturn: # pylint: disable=R0913
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -36,6 +36,7 @@ class GtpClient: # pylint: disable=R0903
             model_file_path (str): ネットワークパラメータファイルパス。
             use_gpu (bool): GPU使用フラグ。
             policy_move (bool): Policyの分布に従って着手するフラグ。
+            komi (float): コミの値。
         """
         self.gtp_commands = [
             "version",
@@ -57,7 +58,7 @@ class GtpClient: # pylint: disable=R0903
             "gogui-analyze_commands"
         ]
         self.superko = superko
-        self.board = GoBoard(board_size=board_size, check_superko=superko)
+        self.board = GoBoard(board_size=board_size, komi=komi, check_superko=superko)
         self.coordinate = Coordinate(board_size=board_size)
         self.gogui_analyze_command = [
             GoguiAnalyzeCommand("cboard", "Display policy distribution (Black)", \
@@ -153,12 +154,12 @@ class GtpClient: # pylint: disable=R0903
     def _komi(self, s_komi: str) -> NoReturn:
         """komiコマンドを処理する。
         入力されたコミを設定する。
-        TODO
 
         Args:
             s_komi (str): 設定するコミ。
         """
         komi = float(s_komi)
+        self.board.set_komi(komi)
         self._respond_success("")
 
     def _play(self, color: str, pos: str) -> NoReturn:
@@ -259,9 +260,8 @@ class GtpClient: # pylint: disable=R0903
 
     def _get_komi(self) -> NoReturn:
         """get_komiコマンドを処理する。
-        TODO
         """
-        self._respond_success("7.0")
+        self._respond_success(str(self.board.get_komi()))
 
     def _showboard(self) -> NoReturn:
         """showboardコマンドを処理する。

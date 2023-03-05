@@ -15,15 +15,17 @@ from common.print_console import print_err
 class GoBoard: # pylint: disable=R0902
     """碁盤クラス
     """
-    def __init__(self, board_size: int, check_superko: bool=False) -> NoReturn:
+    def __init__(self, board_size: int, komi: float=7.0, check_superko: bool=False) -> NoReturn:
         """碁盤クラスの初期化
 
         Args:
             board_size (int): 碁盤の大きさ。
-            check_superko (bool): 超劫の判定有効化。
+            komi (float): コミの値。デフォルト値は7.0。
+            check_superko (bool): 超劫の判定有効化。デフォルト値はFalse。
         """
         self.board_size = board_size
         self.board_size_with_ob = board_size + OB_SIZE * 2
+        self.komi = komi
 
         def pos(x_coord, y_coord):
             return x_coord + y_coord * self.board_size_with_ob
@@ -312,6 +314,22 @@ class GoBoard: # pylint: disable=R0902
             int: 指定した対称の座標。
         """
         return self.sym_map[sym][pos]
+
+    def set_komi(self, komi: float) -> NoReturn:
+        """コミを設定する。
+
+        Args:
+            komi (float): 設定するコミの値。
+        """
+        self.komi = komi
+
+    def get_komi(self) -> float:
+        """現在のコミの値を設定する。
+
+        Returns:
+            float: 現在のコミの値。
+        """
+        return self.komi
 
 
 def copy_board(dst: GoBoard, src: GoBoard):
