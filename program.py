@@ -11,4 +11,5 @@ PROTOCOL_VERSION="2"
 #                 Policy Networkを使用した着手生成ロジックの実装。
 # Version 0.2.1 : Residual Blockの構造を修正。学習の再実行。
 # Version 0.3.0 : モンテカルロ木探索の実装。
-VERSION="0.3.0"
+# Version 0.3.1 : モンテカルロ木探索のValue更新処理のバグ修正。komi, get_komiコマンドのサポート。
+VERSION="0.3.1"
