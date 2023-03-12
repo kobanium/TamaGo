@@ -23,11 +23,12 @@ from sgf.reader import SGFReader
 
 
 
-class GtpClient: # pylint: disable=R0903
+class GtpClient: # pylint: disable=R0902,R0903
     """_Go Text Protocolクライアントの実装クラス
     """
     def __init__(self, board_size: int, superko: bool, \
-        model_file_path: str, use_gpu: bool, policy_move: bool, komi: float) -> NoReturn: # pylint: disable=R0913
+        model_file_path: str, use_gpu: bool, policy_move: bool, \
+        use_sequential_halving: bool, komi: float): # pylint: disable=R0913
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -36,6 +37,7 @@ class GtpClient: # pylint: disable=R0903
             model_file_path (str): ネットワークパラメータファイルパス。
             use_gpu (bool): GPU使用フラグ。
             policy_move (bool): Policyの分布に従って着手するフラグ。
+            use_sequential_halving (bool): Gumbel AlphaZeroの探索手法で着手生成するフラグ。
             komi (float): コミの値。
         """
         self.gtp_commands = [
@@ -71,6 +73,7 @@ class GtpClient: # pylint: disable=R0903
                 "display_policy_white"),
         ]
         self.policy_move = policy_move
+        self.use_sequential_halving = use_sequential_halving
         self.use_network = False
 
         try:
@@ -212,7 +215,10 @@ class GtpClient: # pylint: disable=R0903
                     pos = PASS
             else:
                 # モンテカルロ木探索で着手生成
-                pos = self.mcts.search_best_move(self.board, genmove_color)
+                if self.use_sequential_halving:
+                    pos = self.mcts.generate_move_with_sequential_halving(self.board, genmove_color)
+                else:
+                    pos = self.mcts.search_best_move(self.board, genmove_color)
         else:
             # ランダムに着手生成
             legal_pos = [pos for pos in self.board.onboard_pos \

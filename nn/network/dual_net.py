@@ -1,7 +1,7 @@
 
 """Dual Networkの実装。
 """
-from typing import NoReturn, Tuple
+from typing import Tuple
 from torch import nn
 import torch
 
@@ -16,7 +16,7 @@ class DualNet(nn.Module): # pylint: disable=R0902
     """Dual Networkの実装クラス。
     """
 
-    def __init__(self, device: torch.device, board_size: int=BOARD_SIZE) -> NoReturn:
+    def __init__(self, device: torch.device, board_size: int=BOARD_SIZE):
         """Dual Networkの初期化処理
 
         Args:
@@ -86,7 +86,6 @@ class DualNet(nn.Module): # pylint: disable=R0902
         policy, value = self.forward(input_plane)
         return self.softmax(policy), self.softmax(value)
 
-
     def inference(self, input_plane: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """前向き伝搬処理を実行する。探索用に使うメソッドのため、デバイス間データ転送も内部処理する。
 
@@ -98,3 +97,17 @@ class DualNet(nn.Module): # pylint: disable=R0902
         """
         policy, value = self.forward(input_plane.to(self.device))
         return self.softmax(policy).cpu(), self.softmax(value).cpu()
+
+    def inference_with_policy_logits(self, input_plane: torch.Tensor) \
+        -> Tuple[torch.Tensor, torch.Tensor]:
+        """前向き伝搬処理を実行する。Gumbel AlphaZero用の探索に使うメソッドのため、
+        デバイス間データ転送も内部処理する。
+
+        Args:
+            input_plane (torch.Tensor): 入力特徴テンソル。
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: Policy, Valueの推論結果。
+        """
+        policy, value = self.forward(input_plane.to(self.device))
+        return policy.cpu(), self.softmax(value).cpu()

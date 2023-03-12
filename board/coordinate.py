@@ -1,12 +1,11 @@
 """プログラム内部形式とGTP形式の座標変換処理。
 """
-from typing import NoReturn
 from board.constant import PASS, RESIGN, OB_SIZE, GTP_X_COORDINATE
 
 class Coordinate:
     """座標変換処理クラス
     """
-    def __init__(self, board_size: int) -> NoReturn:
+    def __init__(self, board_size: int):
         """座標変換処理の初期化。
 
         Args:

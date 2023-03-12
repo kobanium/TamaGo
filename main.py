@@ -19,9 +19,12 @@ default_model_path = os.path.join("model", "model.bin")
     help="ニューラルネットワークの計算にGPUを使用するフラグ。デフォルトはFalse。")
 @click.option('--policy-move', type=click.BOOL, default=False, \
     help="Policyの分布に従った着手生成処理フラグ。デフォルトはFalse。")
+@click.option('--sequential-halving', type=click.BOOL, default=False, \
+    help="Gumbel AlphaZeroの探索手法で着手生成するフラグ。デフォルトはFalse。")
 @click.option('--komi', type=click.FLOAT, default=7.0, \
     help="コミの値の設定。デフォルトは7.0。")
-def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, policy_move: bool, komi: float): # pylint: disable=R0913
+def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
+    policy_move: bool, komi: float): # pylint: disable=R0913
     """GTPクライアントの起動。
 
     Args:
@@ -30,10 +33,12 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, policy_move: bo
         model (str): プログラムのホームディレクトリからのモデルファイルの相対パス。
         use_gpu (bool):  ニューラルネットワークでのGPU使用フラグ。デフォルトはFalse。
         policy_move (bool): Policyの分布に従った着手生成処理フラグ。デフォルトはFalse。
+        sequential_halving (bool): Gumbel AlphaZeroの探索手法で着手生成するフラグ。デフォルトはFalse。
         komi (float): コミの値。デフォルトは7.0。
     """
     program_dir = os.path.dirname(__file__)
-    client = GtpClient(size, superko, os.path.join(program_dir, model), use_gpu, policy_move, komi)
+    client = GtpClient(size, superko, os.path.join(program_dir, model), use_gpu, policy_move, \
+        sequential_halving, komi)
     client.run()
 
 

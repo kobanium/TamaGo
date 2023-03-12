@@ -33,7 +33,7 @@ sgf_coord_map = {
 class SGFReader: # pylint: disable=R0902
     """SGFファイル読み込み。
     """
-    def __init__(self, filename: str, board_size: int) -> NoReturn: # pylint: disable=R0912
+    def __init__(self, filename: str, board_size: int): # pylint: disable=R0912
         """コンストラクタ
 
         Args:

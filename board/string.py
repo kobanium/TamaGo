@@ -1,6 +1,6 @@
 """連の定義と処理の実装。
 """
-from typing import List, NoReturn
+from typing import Callable, List, NoReturn
 from board.constant import STRING_END, LIBERTY_END, NEIGHBOR_END, OB_SIZE
 from board.coordinate import Coordinate
 from board.stone import Stone
@@ -9,7 +9,7 @@ from common.print_console import print_err
 class String: # pylint: disable=R0902
     """連の実装クラス。
     """
-    def __init__(self, board_size: int) -> NoReturn:
+    def __init__(self, board_size: int):
         """連クラスのコンストラクタ。
 
         Args:
@@ -250,7 +250,8 @@ class String: # pylint: disable=R0902
 class StringData:
     """碁盤上の全ての連を管理するクラス
     """
-    def __init__(self, board_size: int, pos_func, get_neighbor4):
+    def __init__(self, board_size: int, pos_func: Callable[[int, int], int], \
+        get_neighbor4: Callable[[int], List[int]]):
         """コンストラクタ。
 
         Args:
