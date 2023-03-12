@@ -38,6 +38,7 @@ python main.py
 | --model | ネットワークモデルファイルパス | 学習済みモデルファイルパス | model/model.bin | なし | TamaGoのホームディレクトリからの相対パスで指定してください。指定がない場合はニューラルネットワークを使用せずにランダムに着手します。 |
 | --use-gpu | GPU使用フラグ | true または false | true | false | |
 | --policy-move | Policyの分布に従って着手するフラグ | true または false | true | false | Policyのみの強さを確認するときに使用します。 |
+| --sequential-halving | Sequential Halving applied to treesの探索手法で探索するフラグ | true または false | true | false | 自己対戦時に使う探索なので、基本的にデバッグ用です。 |
 
 ## プログラムの実行例は下記のとおりです
 1) 碁盤のサイズを5、model/model.binを学習済みモデルとして使用し、GPUを使用せずに実行するケース
@@ -92,7 +93,7 @@ Policyの値による色付けはPolicyの値が大きいほど赤く、小さ�
     - [x] PUCT探索
       - [x] PUCB値の計算
       - [x] ニューラルネットワークのミニバッチ処理  
-    - [ ] Sequential Halving applied to tree探索
+    - [x] Sequential Halving applied to tree探索
     - [ ] CGOS対応
     - [ ] 持ち時間による探索時間制御
 - 学習の実装
