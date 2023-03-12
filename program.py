@@ -12,4 +12,5 @@ PROTOCOL_VERSION="2"
 # Version 0.2.1 : Residual Blockの構造を修正。学習の再実行。
 # Version 0.3.0 : モンテカルロ木探索の実装。
 # Version 0.3.1 : モンテカルロ木探索のValue更新処理のバグ修正。komi, get_komiコマンドのサポート。
-VERSION="0.3.1"
+# Version 0.4.0 : Sequential Halving Applied to Trees (SHOT) の実装。
+VERSION="0.4.0"

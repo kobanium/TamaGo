@@ -15,7 +15,7 @@ from common.print_console import print_err
 class GoBoard: # pylint: disable=R0902
     """碁盤クラス
     """
-    def __init__(self, board_size: int, komi: float=7.0, check_superko: bool=False) -> NoReturn:
+    def __init__(self, board_size: int, komi: float=7.0, check_superko: bool=False):
         """碁盤クラスの初期化
 
         Args:
@@ -27,10 +27,27 @@ class GoBoard: # pylint: disable=R0902
         self.board_size_with_ob = board_size + OB_SIZE * 2
         self.komi = komi
 
-        def pos(x_coord, y_coord):
+        def pos(x_coord: int, y_coord: int) -> int:
+            """(x, y)座標を1次元配列のインデックスに変換する。
+
+            Args:
+                x_coord (int): X座標。
+                y_coord (int): Y座標。
+
+            Returns:
+                int: _description_
+            """
             return x_coord + y_coord * self.board_size_with_ob
 
-        def get_neighbor4(pos):
+        def get_neighbor4(pos: int) -> List[int]:
+            """指定した座標の上下左右の座標を取得する。
+
+            Args:
+                pos (int): 基準となる座標。
+
+            Returns:
+                List[int]: 上下左右の座標列。
+            """
             return [pos - self.board_size_with_ob, pos - 1, pos + 1, pos + self.board_size_with_ob]
 
         self.board = [Stone.EMPTY] * (self.board_size_with_ob ** 2)

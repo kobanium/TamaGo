@@ -1,6 +1,5 @@
 """GoGui用のコマンド処理の実装。
 """
-from typing import NoReturn
 import math
 
 import torch
@@ -13,7 +12,7 @@ from nn.network.dual_net import DualNet
 class GoguiAnalyzeCommand: # pylint: disable=R0903
     """Gogui解析コマンドの基本情報クラス。
     """
-    def __init__(self, command_type, label, command) -> NoReturn:
+    def __init__(self, command_type, label, command):
         """コンストラクタ。
 
         Args:

@@ -13,14 +13,15 @@ from common.print_console import print_err
 from nn.feature import generate_input_planes
 from nn.network.dual_net import DualNet
 from mcts.batch_data import BatchQueue
-from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE
+from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, MAX_CONSIDERED_NODES
+from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
 
 
 class MCTSTree:
     """モンテカルロ木探索の実装クラス。
     """
-    def __init__(self, network: DualNet, tree_size=65536) -> NoReturn:
+    def __init__(self, network: DualNet, tree_size=65536):
         """MCTSTreeクラスのコンストラクタ。
 
         Args:
@@ -148,16 +149,20 @@ class MCTSTree:
         return node_index
 
 
-    def process_mini_batch(self, board: GoBoard): # pylint: disable=R0914
+    def process_mini_batch(self, board: GoBoard, use_logit: bool=False): # pylint: disable=R0914
         """ニューラルネットワークの入力をミニバッチ処理して、計算結果を探索結果に反映する。
 
         Args:
             board (GoBoard): 碁盤の情報。
+            use_logit (bool): Policyの出力をlogitにするフラグ
         """
 
         input_planes = torch.Tensor(np.array(self.batch_queue.input_plane))
 
-        raw_policy, value_data = self.network.inference(input_planes)
+        if use_logit:
+            raw_policy, value_data = self.network.inference_with_policy_logits(input_planes)
+        else:
+            raw_policy, value_data = self.network.inference(input_planes)
 
         policy_data = []
         for policy in raw_policy:
@@ -187,6 +192,99 @@ class MCTSTree:
 
         self.batch_queue.clear()
 
+
+    def generate_move_with_sequential_halving(self, board: GoBoard, color: Stone) -> int:
+        """_summary_
+
+        Args:
+            board (GoBoard): _description_
+            color (Stone): _description_
+
+        Returns:
+            int: _description_
+        """
+        self.num_nodes = 0
+        self.current_root = self.expand_node(board, color)
+        input_plane = generate_input_planes(board, color)
+        self.batch_queue.push(input_plane, [], self.current_root)
+        self.process_mini_batch(board, use_logit=True)
+        self.node[self.current_root].set_gumbel_noise()
+
+        # 探索を実行
+        self.search_by_sequential_halving(board, color)
+
+        # 最善の手を取得
+        root = self.node[self.current_root]
+        next_index = root.select_move_by_sequential_halving_for_root(PLAYOUTS)
+
+        root.print_search_result(board)
+
+        # 勝率に基づいて投了するか否かを決める
+        return root.get_child_move(next_index)
+
+
+    def search_by_sequential_halving(self, board: GoBoard, color: Stone) -> NoReturn:
+        """指定された探索回数だけSequential Halving探索を実行する。
+
+        Args:
+            board (GoBoard): 評価したい局面。
+            color (Stone): 評価したい局面の手番の色。
+        """
+        search_board = copy.deepcopy(board)
+
+        num_root_children = self.node[self.current_root].get_num_children()
+        base_num_considered = num_root_children \
+            if num_root_children < MAX_CONSIDERED_NODES else MAX_CONSIDERED_NODES
+        search_control_dict = get_candidates_and_visit_pairs(base_num_considered, PLAYOUTS)
+
+        for num_considered, max_count in search_control_dict.items():
+            for count_threshold in range(max_count):
+                for _ in range(num_considered):
+                    copy_board(search_board, board)
+                    start_color = color
+
+                    # 探索する
+                    self.search_sequential_halving(search_board, start_color, \
+                        self.current_root, [], count_threshold + 1)
+            self.process_mini_batch(search_board, use_logit=True)
+
+
+    def search_sequential_halving(self, board: GoBoard, color: Stone, current_index: int, \
+        path: List[Tuple[int, int]], count_threshold: int) -> NoReturn: # pylint: disable=R0913
+        """Sequential Halving探索を実行する。
+
+        Args:
+            board (GoBoard): 現在の局面。
+            color (Stone): 現在の手番の色。
+            current_index (int): 現在のノードのインデックス。
+            path (List[Tuple[int, int]]): 現在のノードまで辿ったインデックス。
+            count_threshold (int): 評価対象とする探索回数の閾値。
+        """
+        current_node = self.node[current_index]
+        if current_index == self.current_root:
+            next_index = current_node.select_move_by_sequential_halving_for_root(count_threshold)
+        else:
+            next_index = current_node.select_move_by_sequential_halving_for_node()
+        next_move = self.node[current_index].get_child_move(next_index)
+
+        path.append((current_index, next_index))
+
+        board.put_stone(pos=next_move, color=color)
+        color = Stone.get_opponent_color(color)
+
+        self.node[current_index].add_virtual_loss(next_index)
+
+        if self.node[current_index].children_visits[next_index] < 1:
+            # ニューラルネットワークの計算
+            input_plane = generate_input_planes(board, color)
+            next_node_index = self.node[current_index].get_child_index(next_index)
+            self.batch_queue.push(input_plane, path, next_node_index)
+        else:
+            if self.node[current_index].get_child_index(next_index) == NOT_EXPANDED:
+                child_index = self.expand_node(board, color)
+                self.node[current_index].set_child_index(next_index, child_index)
+            next_node_index = self.node[current_index].get_child_index(next_index)
+            self.search_sequential_halving(board, color, next_node_index, path, count_threshold)
 
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:
     """ニューラルネットワークの計算が行われるまでに使用するPolicyを取得する。

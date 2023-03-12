@@ -1,6 +1,6 @@
 """配石パターンの実装。
 """
-from typing import List, NoReturn
+from typing import Callable, List, NoReturn
 import numpy as np
 
 from board.constant import OB_SIZE
@@ -22,12 +22,12 @@ pattern_mask = np.array([
 class Pattern:
     """配石パターンクラス。
     """
-    def __init__(self, board_size: int, pos_func) -> NoReturn:
+    def __init__(self, board_size: int, pos_func: Callable[[int], int]):
         """Patternクラスのコンストラクタ。
 
         Args:
             board_size (int): 碁盤の大きさ。
-            POS (func): 座標変換用の関数。
+            POS (Callable[[int], int]): 座標変換用の関数。
         """
         self.board_size = board_size
         board_size_with_ob = board_size + OB_SIZE * 2

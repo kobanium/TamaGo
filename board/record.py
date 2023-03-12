@@ -11,7 +11,7 @@ from common.print_console import print_err
 class Record:
     """着手の履歴を保持するクラス。
     """
-    def __init__(self) -> NoReturn:
+    def __init__(self):
         """Recordクラスのコンストラクタ。
         """
         self.color = [Stone.EMPTY] * MAX_RECORDS

@@ -7,6 +7,7 @@ import numpy as np
 
 from common.print_console import print_err
 
+
 def get_torch_device(use_gpu: bool) -> torch.device:
     """torch.deviceを取得する。
 
@@ -118,3 +119,17 @@ def split_train_test_set(file_list: List[str], train_data_ratio: float) \
     print(f"Testing data set  : {test_data_set}")
 
     return train_data_set, test_data_set
+
+
+def apply_softmax(logits: np.array) -> np.array:
+    """Softmax関数を適用する。
+
+    Args:
+        logits (np.array): Softmax関数の入力値。
+
+    Returns:
+        np.array: Softmax関数適用後の値。
+    """
+    shift_exp = np.exp(logits - np.max(logits))
+
+    return shift_exp / np.sum(shift_exp)

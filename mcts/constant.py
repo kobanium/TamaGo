@@ -12,3 +12,12 @@ PLAYOUTS = 100
 
 # 探索時のミニバッチサイズ
 NN_BATCH_SIZE = 1
+
+# Gumbel AlphaZero用のパラメータ(C_visit)
+C_VISIT = 50
+
+# Gumbel AlphaZero用のパラメータ(C_scale)
+C_SCALE = 1.0
+
+# Sequential Halvingで考慮する着手の最大数
+MAX_CONSIDERED_NODES = 16

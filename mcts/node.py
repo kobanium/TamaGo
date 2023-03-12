@@ -6,8 +6,9 @@ import numpy as np
 from board.constant import BOARD_SIZE
 from board.go_board import GoBoard
 from common.print_console import print_err
-from mcts.constant import NOT_EXPANDED
+from mcts.constant import NOT_EXPANDED, C_VISIT, C_SCALE
 from mcts.pucb.pucb import calculate_pucb_value
+from nn.utility import apply_softmax
 
 
 MAX_ACTIONS = BOARD_SIZE ** 2 + 1
@@ -16,7 +17,7 @@ PUCT_WEIGHT = 1.0
 class MCTSNode: # pylint: disable=R0902
     """モンテカルロ木探索で使うノード情報のクラス。
     """
-    def __init__(self, num_actions: int=MAX_ACTIONS) -> NoReturn:
+    def __init__(self, num_actions: int=MAX_ACTIONS):
         """_MCTSNodeクラスのコンストラクタ
 
         Args:
@@ -211,3 +212,83 @@ class MCTSNode: # pylint: disable=R0902
             if self.children_visits[i] > 0:
                 pos = board.coordinate.convert_to_gtp_format(self.action[i])
                 print_err(f"pos={pos}, visits={self.children_visits[i]}, value={value[i]:.4f}")
+
+
+    def set_gumbel_noise(self) -> NoReturn:
+        """Gumbelノイズを設定する。
+        """
+        self.noise = np.random.gumbel(loc=0.0, scale=1.0, size=self.noise.size)
+
+
+    def calculate_completed_q_value(self) -> np.array:
+        """Completed-Q valueを計算する。
+
+        Returns:
+            np.array: Completed-Q value.
+        """
+        policy = apply_softmax(self.children_policy[:self.num_children])
+
+        q_value = np.divide(self.children_value_sum, self.children_visits, \
+            out=np.zeros_like(self.children_value_sum), \
+            where=(self.children_visits > 0))[:self.num_children]
+
+        sum_prob = np.sum(policy)
+        v_pi = np.sum(policy * q_value)
+
+        return np.where(self.children_visits[:self.num_children] > 0, q_value, v_pi / sum_prob)
+
+
+    def calculate_improved_policy(self) -> np.array:
+        """Improved Policyを計算する。
+
+        Returns:
+            np.array: Improved Policy.
+        """
+        max_visit = np.max(self.children_visits)
+
+        sigma_base = (C_VISIT + max_visit) * C_SCALE
+        completed_q_value = self.calculate_completed_q_value()
+
+        improved_logits = self.children_policy[:self.num_children] + sigma_base * completed_q_value
+
+        return apply_softmax(improved_logits)
+
+
+    def select_move_by_sequential_halving_for_root(self, count_threshold: int) -> int:
+        """Gumbel AlphaZeroの探索手法を使用して次の着手を選択する。Rootのみで使用する。。
+
+        Args:
+            count_threshold (int): 探索回数閾値。
+
+        Returns:
+            int: 選択した子ノードのインデックス。
+        """
+        max_count = max(self.children_visits[:self.num_children])
+
+        sigma_base = (C_VISIT + max_count) * C_SCALE
+
+        counts = self.children_visits[:self.num_children] \
+            + self.children_virtual_loss[:self.num_children]
+        q_mean = np.divide(self.children_value_sum, self.children_visits, \
+            out=np.zeros_like(self.children_value_sum), \
+            where=(self.children_visits > 0))[:self.num_children]
+
+        evaluation_value = np.where(counts >= count_threshold, -10000.0, \
+            self.children_policy[:self.num_children] + self.noise[:self.num_children] \
+            + sigma_base * q_mean)
+        return np.argmax(evaluation_value)
+
+
+    def select_move_by_sequential_halving_for_node(self) -> int:
+        """Gumbel AlphaZeroの探索手法を使用して次の着手を選択する。Root以外で使用する。。
+
+        Returns:
+            int: 選択した子ノードのインデックス。
+        """
+
+        improved_policy = self.calculate_improved_policy()
+
+        evaluation_value = improved_policy \
+            - (self.children_visits[:self.num_children] / (1.0 + self.node_visits))
+
+        return np.argmax(evaluation_value)
