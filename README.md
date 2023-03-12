@@ -105,7 +105,7 @@ Policyの値による色付けはPolicyの値が大きいほど赤く、小さ�
       - [x] npz形式での保存処理
     - [ ] 強化学習のデータ生成
       - [x] 入力特徴生成
-      - [ ] Improved Policyの生成
+      - [x] Improved Policyの生成
       - [ ] npz形式での保存処理
   - [x] PyTorchを利用した教師あり学習
   - [ ] PyTorchを利用したGumbel AlphaZero方式の強化学習
