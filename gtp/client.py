@@ -15,6 +15,7 @@ from board.stone import Stone
 from common.print_console import print_err
 from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution, \
     display_policy_score
+from mcts.time_manager import TimeControl, TimeManager
 from mcts.tree import MCTSTree
 from nn.policy_player import generate_move_from_policy
 from nn.network.dual_net import DualNet
@@ -28,7 +29,8 @@ class GtpClient: # pylint: disable=R0902,R0903
     """
     def __init__(self, board_size: int, superko: bool, \
         model_file_path: str, use_gpu: bool, policy_move: bool, \
-        use_sequential_halving: bool, komi: float): # pylint: disable=R0913
+        use_sequential_halving: bool, komi: float, \
+        mode: TimeControl, visits: int, const_time: float, time: float): # pylint: disable=R0913
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -39,6 +41,10 @@ class GtpClient: # pylint: disable=R0902,R0903
             policy_move (bool): Policyの分布に従って着手するフラグ。
             use_sequential_halving (bool): Gumbel AlphaZeroの探索手法で着手生成するフラグ。
             komi (float): コミの値。
+            mode (TimeControl):
+            visits (int):
+            const_time (float):
+            time (float):
         """
         self.gtp_commands = [
             "version",
@@ -76,6 +82,13 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.use_sequential_halving = use_sequential_halving
         self.use_network = False
 
+        if mode is TimeControl.CONSTANT_PLAYOUT:
+            self.time_manager = TimeManager(mode=mode, constant_visits=visits)
+        if mode is TimeControl.CONSTANT_TIME:
+            self.time_manager = TimeManager(mode=mode, constant_time=const_time)
+        if mode is TimeControl.TIME_CONTROL:
+            self.time_manager = TimeManager(mode=mode, remaining_time=time)
+
         try:
             device = get_torch_device(use_gpu=use_gpu)
             self.network = DualNet(device)
@@ -92,46 +105,9 @@ class GtpClient: # pylint: disable=R0902,R0903
 
 
 
-    def _respond_success(self, response: str) -> NoReturn:
-        """コマンド処理成功時の応答メッセージを表示する。
 
-        Args:
-            response (str): 表示する応答メッセージ。
-        """
-        print("= " + response + '\n')
 
-    def _respond_failure(self, response: str) -> NoReturn:
-        """コマンド処理失敗時の応答メッセージを表示する。
 
-        Args:
-            response (str): 表示する応答メッセージ。
-        """
-        print("= ? " + response + '\n')
-
-    def _version(self) -> NoReturn:
-        """versionコマンドを処理する。
-        プログラムのバージョンを表示する。
-        """
-        self._respond_success(VERSION)
-
-    def _protocol_version(self) -> NoReturn:
-        """protocol_versionコマンドを処理する。
-        GTPのプロトコルバージョンを表示する。
-        """
-        self._respond_success(PROTOCOL_VERSION)
-
-    def _name(self) -> NoReturn:
-        """nameコマンドを処理する。
-        プログラム名を表示する。
-        """
-        self._respond_success(PROGRAM_NAME)
-
-    def _quit(self) -> NoReturn:
-        """quitコマンドを処理する。
-        プログラムを終了する。
-        """
-        self._respond_success("")
-        sys.exit(0)
 
     def _known_command(self, command: str) -> NoReturn:
         """known_commandコマンドを処理する。
@@ -141,9 +117,9 @@ class GtpClient: # pylint: disable=R0902,R0903
             command (str): 対応確認をしたいGTPコマンド。
         """
         if command in self.gtp_commands:
-            self._respond_success("true")
+            respond_success("true")
         else:
-            self._respond_failure("unknown command")
+            respond_failure("unknown command")
 
     def _list_commands(self) -> NoReturn:
         """list_commandsコマンドを処理する。
@@ -152,7 +128,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         response = ""
         for command in self.gtp_commands:
             response += '\n' + command
-        self._respond_success(response)
+        respond_success(response)
 
     def _komi(self, s_komi: str) -> NoReturn:
         """komiコマンドを処理する。
@@ -163,7 +139,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         """
         komi = float(s_komi)
         self.board.set_komi(komi)
-        self._respond_success("")
+        respond_success("")
 
     def _play(self, color: str, pos: str) -> NoReturn:
         """playコマンドを処理する。
@@ -178,7 +154,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         elif color.lower()[0] == 'w':
             play_color = Stone.WHITE
         else:
-            self._respond_failure("play color pos")
+            respond_failure("play color pos")
             return
 
         coord = self.coordinate.convert_from_gtp_format(pos)
@@ -189,7 +165,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         if pos.upper != "RESIGN":
             self.board.put_stone(coord, play_color)
 
-        self._respond_success("")
+        respond_success("")
 
     def _genmove(self, color: str) -> NoReturn:
         """genmoveコマンドを処理する。
@@ -203,7 +179,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         elif color.lower()[0] == 'w':
             genmove_color = Stone.WHITE
         else:
-            self._respond_failure("genmove color")
+            respond_failure("genmove color")
             return
 
         if self.use_network:
@@ -216,9 +192,10 @@ class GtpClient: # pylint: disable=R0902,R0903
             else:
                 # モンテカルロ木探索で着手生成
                 if self.use_sequential_halving:
-                    pos = self.mcts.generate_move_with_sequential_halving(self.board, genmove_color)
+                    pos = self.mcts.generate_move_with_sequential_halving(self.board, \
+                        genmove_color, self.time_manager)
                 else:
-                    pos = self.mcts.search_best_move(self.board, genmove_color)
+                    pos = self.mcts.search_best_move(self.board, genmove_color, self.time_manager)
         else:
             # ランダムに着手生成
             legal_pos = [pos for pos in self.board.onboard_pos \
@@ -231,7 +208,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         if pos != RESIGN:
             self.board.put_stone(pos, genmove_color)
 
-        self._respond_success(self.coordinate.convert_to_gtp_format(pos))
+        respond_success(self.coordinate.convert_to_gtp_format(pos))
 
     def _boardsize(self, size: str) -> NoReturn:
         """boardsizeコマンドを処理する。
@@ -243,38 +220,57 @@ class GtpClient: # pylint: disable=R0902,R0903
         board_size = int(size)
         self.board = GoBoard(board_size=board_size, check_superko=self.superko)
         self.coordinate = Coordinate(board_size=board_size)
-        self._respond_success("")
+        self.time_manager.initialize()
+        respond_success("")
 
     def _clear_board(self) -> NoReturn:
         """clear_boardコマンドを処理する。
         盤面を初期化する。
         """
         self.board.clear()
-        self._respond_success("")
+        self.time_manager.initialize()
+        respond_success("")
 
-    def _time_settings(self) -> NoReturn:
+    def _time_settings(self, arg_list: List[str]) -> NoReturn:
         """time_settingsコマンドを処理する。
-        TODO
-        """
-        self._respond_success("")
+        持ち時間のみを設定する。
 
-    def _time_left(self) -> NoReturn:
-        """time_leftコマンドを処理する。
-        TODO
+        Args:
+            arg_list (List[str]): コマンドの引数リスト（持ち時間、秒読み、秒読みの手数）。
         """
-        self._respond_success("")
+        time = float(arg_list[0])
+        self.time_manager.set_remaining_time(Stone.BLACK, time)
+        self.time_manager.set_remaining_time(Stone.WHITE, time)
+        respond_success("")
+
+    def _time_left(self, arg_list: List[str]) -> NoReturn:
+        """time_leftコマンドを処理する。
+        指定した手番の残りの時間を設定する。
+
+        Args:
+            arg_list (List[str]): コマンドの引数リスト（手番の色、残り時間）。
+        """
+        if arg_list[0][0] in ['B', 'b']:
+            color = Stone.BLACK
+        elif arg_list[0][0] in ['W', 'b']:
+            color = Stone.WHITE
+        else:
+            respond_failure("invalid color")
+
+        self.time_manager.set_remaining_time(color, float(arg_list[1]))
+        respond_success("")
 
     def _get_komi(self) -> NoReturn:
         """get_komiコマンドを処理する。
         """
-        self._respond_success(str(self.board.get_komi()))
+        respond_success(str(self.board.get_komi()))
 
     def _showboard(self) -> NoReturn:
         """showboardコマンドを処理する。
         現在の盤面を表示する。
         """
         self.board.display()
-        self._respond_success("")
+        respond_success("")
 
     def _load_sgf(self, arg_list: List[str]) -> NoReturn:
         """load_sgfコマンドを処理する。
@@ -284,7 +280,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             arg_list (List[str]): コマンドの引数リスト（ファイル名（必須）、手数（任意））
         """
         if not os.path.exists(arg_list[0]):
-            self._respond_failure(f"cannot load {arg_list[0]}")
+            respond_failure(f"cannot load {arg_list[0]}")
 
         sgf_data = SGFReader(arg_list[0], board_size=self.board.get_board_size())
 
@@ -300,7 +296,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             color = sgf_data.get_color(i)
             self.board.put_stone(pos, color)
 
-        self._respond_success("")
+        respond_success("")
 
     def run(self) -> NoReturn: # pylint: disable=R0912,R0915
         """Go Text Protocolのクライアントの実行処理。
@@ -314,13 +310,13 @@ class GtpClient: # pylint: disable=R0902,R0903
             input_gtp_command = command_list[0]
 
             if input_gtp_command == "version":
-                self._version()
+                _version()
             elif input_gtp_command == "protocol_version":
-                self._protocol_version()
+                _protocol_version()
             elif input_gtp_command == "name":
-                self._name()
+                _name()
             elif input_gtp_command == "quit":
-                self._quit()
+                _quit()
             elif input_gtp_command == "known_command":
                 self._known_command(command_list[1])
             elif input_gtp_command == "list_commands":
@@ -336,9 +332,9 @@ class GtpClient: # pylint: disable=R0902,R0903
             elif input_gtp_command == "clear_board":
                 self._clear_board()
             elif input_gtp_command == "time_settings":
-                self._time_settings()
+                self._time_settings(command_list[1:])
             elif input_gtp_command == "time_left":
-                self._time_left()
+                self._time_left(command_list[1:])
             elif input_gtp_command == "get_komi":
                 self._get_komi()
             elif input_gtp_command == "showboard":
@@ -346,14 +342,14 @@ class GtpClient: # pylint: disable=R0902,R0903
             elif input_gtp_command == "load_sgf":
                 self._load_sgf(command_list[1:])
             elif input_gtp_command == "final_score":
-                self._respond_success("?")
+                respond_success("?")
             elif input_gtp_command == "showstring":
                 self.board.strings.display()
-                self._respond_success("")
+                respond_success("")
             elif input_gtp_command == "showpattern":
                 coordinate = Coordinate(self.board.get_board_size())
                 self.board.pattern.display(coordinate.convert_from_gtp_format(command_list[1]))
-                self._respond_success("")
+                respond_success("")
             elif input_gtp_command == "eye":
                 coordinate = Coordinate(self.board.get_board_size())
                 coord = coordinate.convert_from_gtp_format(command_list[1])
@@ -362,20 +358,62 @@ class GtpClient: # pylint: disable=R0902,R0903
                 response = ""
                 for cmd in self.gogui_analyze_command:
                     response += cmd.get_command_information() + '\n'
-                self._respond_success(response)
+                respond_success(response)
             elif input_gtp_command == "display_policy_black_color":
-                self._respond_success(display_policy_distribution(
+                respond_success(display_policy_distribution(
                     self.network, self.board, Stone.BLACK))
             elif input_gtp_command == "display_policy_white_color":
-                self._respond_success(display_policy_distribution(
+                respond_success(display_policy_distribution(
                     self.network, self.board, Stone.WHITE))
             elif input_gtp_command == "display_policy_black":
-                self._respond_success(display_policy_score(
+                respond_success(display_policy_score(
                     self.network, self.board, Stone.BLACK
                 ))
             elif input_gtp_command == "display_policy_white":
-                self._respond_success(display_policy_score(
+                respond_success(display_policy_score(
                     self.network, self.board, Stone.WHITE
                 ))
             else:
-                self._respond_failure("unknown_command")
+                respond_failure("unknown_command")
+
+
+def respond_success(response: str) -> NoReturn:
+    """コマンド処理成功時の応答メッセージを表示する。
+
+    Args:
+        response (str): 表示する応答メッセージ。
+    """
+    print("= " + response + '\n')
+
+def respond_failure(response: str) -> NoReturn:
+    """コマンド処理失敗時の応答メッセージを表示する。
+
+    Args:
+        response (str): 表示する応答メッセージ。
+    """
+    print("= ? " + response + '\n')
+
+def _version() -> NoReturn:
+    """versionコマンドを処理する。
+    プログラムのバージョンを表示する。
+    """
+    respond_success(VERSION)
+
+def _protocol_version() -> NoReturn:
+    """protocol_versionコマンドを処理する。
+    GTPのプロトコルバージョンを表示する。
+    """
+    respond_success(PROTOCOL_VERSION)
+
+def _name() -> NoReturn:
+    """nameコマンドを処理する。
+    プログラム名を表示する。
+    """
+    respond_success(PROGRAM_NAME)
+
+def _quit() -> NoReturn:
+    """quitコマンドを処理する。
+    プログラムを終了する。
+    """
+    respond_success("")
+    sys.exit(0)

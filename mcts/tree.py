@@ -6,16 +6,18 @@ import time
 import numpy as np
 import torch
 
-from board.constant import PASS
+from board.constant import PASS, RESIGN
 from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 from common.print_console import print_err
 from nn.feature import generate_input_planes
 from nn.network.dual_net import DualNet
 from mcts.batch_data import BatchQueue
-from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, MAX_CONSIDERED_NODES
+from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
+    MAX_CONSIDERED_NODES, RESIGN_THRESHOLD
 from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
+from mcts.time_manager import TimeManager
 
 
 class MCTSTree:
@@ -36,12 +38,13 @@ class MCTSTree:
         self.current_root = 0
 
 
-    def search_best_move(self, board: GoBoard, color: Stone) -> int:
+    def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager) -> int:
         """モンテカルロ木探索を実行して最善手を返す。
 
         Args:
             board (GoBoard): 評価する局面情報。
             color (Stone): 評価する局面の手番の色。
+            time_manager (TimeManager):
 
         Returns:
             int: 着手する座標。
@@ -56,34 +59,46 @@ class MCTSTree:
 
         self.process_mini_batch(board)
 
+        root = self.node[self.current_root]
+
         # 候補手が1つしかない場合はPASSを返す
-        if self.node[self.current_root].get_num_children() == 1:
+        if root.get_num_children() == 1:
             return PASS
 
         # 探索を実行する
-        self.search(board, color)
+        self.search(board, color, time_manager.get_num_visits_threshold(color))
 
         # 最善手を取得する
-        next_move = self.node[self.current_root].get_best_move()
+        next_move = root.get_best_move()
+        next_index = root.get_best_move_index()
 
         # 探索結果と探索にかかった時間を表示する
-        self.node[self.current_root].print_search_result(board)
+        root.print_search_result(board)
         search_time = time.time() - start_time
-        po_per_sec = self.node[self.current_root].node_visits / search_time
+        po_per_sec = root.node_visits / search_time
+
+        time_manager.set_search_speed(root.node_visits, search_time)
+
         print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f}")
+
+        value = root.calculate_value_evaluation(next_index)
+
+        if value < RESIGN_THRESHOLD:
+            return RESIGN
 
         return next_move
 
 
-    def search(self, board: GoBoard, color: Stone) -> NoReturn:
+    def search(self, board: GoBoard, color: Stone, threshold: int) -> NoReturn:
         """探索を指定回数実行する。
 
         Args:
             board (GoBoard): 現在の局面情報。
             color (Stone): 現局面の手番の色。
+            threshold (int): この探索で実行する探索回数。
         """
         search_board = copy.deepcopy(board)
-        for _ in range(PLAYOUTS):
+        for _ in range(threshold):
             copy_board(dst=search_board,src=board)
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
@@ -193,17 +208,20 @@ class MCTSTree:
         self.batch_queue.clear()
 
 
-    def generate_move_with_sequential_halving(self, board: GoBoard, color: Stone) -> int:
+    def generate_move_with_sequential_halving(self, board: GoBoard, color: Stone, \
+        time_manager: TimeManager) -> int:
         """_summary_
 
         Args:
             board (GoBoard): _description_
             color (Stone): _description_
+            time (TimeManager):
 
         Returns:
             int: _description_
         """
         self.num_nodes = 0
+        start_time = time.time()
         self.current_root = self.expand_node(board, color)
         input_plane = generate_input_planes(board, color)
         self.batch_queue.push(input_plane, [], self.current_root)
@@ -211,7 +229,7 @@ class MCTSTree:
         self.node[self.current_root].set_gumbel_noise()
 
         # 探索を実行
-        self.search_by_sequential_halving(board, color)
+        self.search_by_sequential_halving(board, color, time_manager.get_num_visits_threshold())
 
         # 最善の手を取得
         root = self.node[self.current_root]
@@ -220,22 +238,36 @@ class MCTSTree:
         root.print_search_result(board)
 
         # 勝率に基づいて投了するか否かを決める
+        value = root.calculate_value_evaluation(next_index)
+
+        search_time = time.time() - start_time
+        po_per_sec = self.node[self.current_root].node_visits / search_time
+
+        time_manager.set_search_speed(self.node[self.current_root].node_visits, search_time)
+
+        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f}")
+
+        if value < 0.05:
+            return RESIGN
+
         return root.get_child_move(next_index)
 
 
-    def search_by_sequential_halving(self, board: GoBoard, color: Stone) -> NoReturn:
+    def search_by_sequential_halving(self, board: GoBoard, color: Stone, \
+        threshold: int) -> NoReturn:
         """指定された探索回数だけSequential Halving探索を実行する。
 
         Args:
             board (GoBoard): 評価したい局面。
             color (Stone): 評価したい局面の手番の色。
+            threshold (int): 実行する探索回数。
         """
         search_board = copy.deepcopy(board)
 
         num_root_children = self.node[self.current_root].get_num_children()
         base_num_considered = num_root_children \
             if num_root_children < MAX_CONSIDERED_NODES else MAX_CONSIDERED_NODES
-        search_control_dict = get_candidates_and_visit_pairs(base_num_considered, PLAYOUTS)
+        search_control_dict = get_candidates_and_visit_pairs(base_num_considered, threshold)
 
         for num_considered, max_count in search_control_dict.items():
             for count_threshold in range(max_count):

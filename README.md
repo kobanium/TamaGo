@@ -39,6 +39,9 @@ python main.py
 | --use-gpu | GPU使用フラグ | true または false | true | false | |
 | --policy-move | Policyの分布に従って着手するフラグ | true または false | true | false | Policyのみの強さを確認するときに使用します。 |
 | --sequential-halving | Sequential Halving applied to treesの探索手法で探索するフラグ | true または false | true | false | 自己対戦時に使う探索なので、基本的にデバッグ用です。 |
+| --visits | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
+| --const-time | 1手あたりの探索時間 (秒) | 0より大きい実数 | 10.0 |  | --timeオプションの指定があるときは本オプションを無視します。 |
+| --time | 持ち時間 (秒) | 0より大きい実数 | 600.0 | |
 
 ## プログラムの実行例は下記のとおりです
 1) 碁盤のサイズを5、model/model.binを学習済みモデルとして使用し、GPUを使用せずに実行するケース
@@ -49,9 +52,21 @@ python main.py --size 5 --model model/model.bin --use-gpu false
 ```
 python main.py --superko true
 ```
-3) model/model.binを学習済みモデルとして使用し、Policyの分布に従って着手を生成するケース
+3) model/sl-model.binを学習済みモデルとして使用し、Policyの分布に従って着手を生成するケース
 ```
-python main.py --model model/model.bin --policy-move true
+python main.py --model model/sl-model.bin --policy-move true
+```
+4) 持ち時間を10分にするケース
+```
+python main.py --time 600
+```
+5) 1手あたりの探索回数を500にするケース
+```
+python main.py --visits 500
+```
+6) 1手あたりの探索時間を10秒にするケース
+```
+python main.py --const-time 10.0
 ```
 
 ## 学習済みモデルファイルについて
@@ -95,7 +110,7 @@ Policyの値による色付けはPolicyの値が大きいほど赤く、小さ�
       - [x] ニューラルネットワークのミニバッチ処理  
     - [x] Sequential Halving applied to tree探索
     - [ ] CGOS対応
-    - [ ] 持ち時間による探索時間制御
+    - [x] 持ち時間による探索時間制御
 - 学習の実装
   - [x] SGFファイルの読み込み処理
   - [ ] 学習データ生成
@@ -120,8 +135,8 @@ Policyの値による色付けはPolicyの値が大きいほど赤く、小さ�
     - [x] コマンドの確認 : known_command, list_commands
     - [x] SGFファイルの読み込み : load_sgf
   - 大会参加時に必要なコマンド
-    - [ ] 持ち時間の初期化 : time_settings
-    - [ ] 持ち時間の読み込み : time_left
+    - [x] 持ち時間の初期化 : time_settings
+    - [x] 持ち時間の読み込み : time_left
   - 分析用のコマンド
     - [x] Policyの数値の表示
     - [x] Policyの分布を色で表示

@@ -5,6 +5,7 @@ import click
 
 from gtp.client import GtpClient
 from board.constant import BOARD_SIZE
+from mcts.time_manager import TimeControl
 
 default_model_path = os.path.join("model", "model.bin")
 
@@ -23,8 +24,15 @@ default_model_path = os.path.join("model", "model.bin")
     help="Gumbel AlphaZeroの探索手法で着手生成するフラグ。デフォルトはFalse。")
 @click.option('--komi', type=click.FLOAT, default=7.0, \
     help="コミの値の設定。デフォルトは7.0。")
+@click.option('--visits', type=click.IntRange(min=1), default=1000, \
+    help="1手あたりの探索回数の指定。デフォルトは1000。\
+    --const-timeオプション、または--timeオプションが指定された時は無視する。")
+@click.option('--const-time', type=click.FLOAT, \
+    help="1手あたりの探索時間の指定。--timeオプションが指定された時は無視する。")
+@click.option('--time', type=click.FLOAT, \
+    help="持ち時間の指定。")
 def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
-    policy_move: bool, komi: float): # pylint: disable=R0913
+    policy_move: bool, komi: float, visits: int, const_time: float, time: float): # pylint: disable=R0913
     """GTPクライアントの起動。
 
     Args:
@@ -35,10 +43,20 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
         policy_move (bool): Policyの分布に従った着手生成処理フラグ。デフォルトはFalse。
         sequential_halving (bool): Gumbel AlphaZeroの探索手法で着手生成するフラグ。デフォルトはFalse。
         komi (float): コミの値。デフォルトは7.0。
+        visits (int):
+        const_time (float):
+        time (float):
     """
+    mode = TimeControl.CONSTANT_PLAYOUT
+
+    if const_time is not None:
+        mode = TimeControl.CONSTANT_TIME
+    if time is not None:
+        mode = TimeControl.TIME_CONTROL
+
     program_dir = os.path.dirname(__file__)
     client = GtpClient(size, superko, os.path.join(program_dir, model), use_gpu, policy_move, \
-        sequential_halving, komi)
+        sequential_halving, komi, mode, visits, const_time, time)
     client.run()
 
 
