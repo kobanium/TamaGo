@@ -14,7 +14,7 @@ from nn.utility import apply_softmax
 MAX_ACTIONS = BOARD_SIZE ** 2 + 1
 PUCT_WEIGHT = 1.0
 
-class MCTSNode: # pylint: disable=R0902
+class MCTSNode: # pylint: disable=R0902, R0904
     """モンテカルロ木探索で使うノード情報のクラス。
     """
     def __init__(self, num_actions: int=MAX_ACTIONS):
@@ -292,3 +292,17 @@ class MCTSNode: # pylint: disable=R0902
             - (self.children_visits[:self.num_children] / (1.0 + self.node_visits))
 
         return np.argmax(evaluation_value)
+
+
+    def calculate_value_evaluation(self, index: int) -> float:
+        """指定した子ノードのValueを計算する。
+
+        Args:
+            index (int): 子ノードのインデックス。
+
+        Returns:
+            float: 指定した子ノードのValueの値。
+        """
+        if self.children_visits[index] == 0:
+            return 0.5
+        return self.children_value_sum[index] / self.children_visits[index]
