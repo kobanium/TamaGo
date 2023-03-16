@@ -29,3 +29,7 @@ DATA_SET_SIZE = BATCH_SIZE * 4000
 
 # Policyのlossに対するValueのlossの重み比率
 SL_VALUE_WEIGHT = 0.02
+
+
+# 自己対戦時の探索回数
+SELF_PLAY_VISITS = 16

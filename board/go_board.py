@@ -1,7 +1,9 @@
 """碁盤のデータ定義と操作処理。
 """
 from typing import List, NoReturn
+from collections import deque
 import numpy as np
+
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
 from board.pattern import Pattern, copy_pattern
@@ -347,6 +349,55 @@ class GoBoard: # pylint: disable=R0902
             float: 現在のコミの値。
         """
         return self.komi
+
+    def count_score(self) -> int: # pylint: disable=R0912
+        """領地を簡易的にカウントする。
+
+        Returns:
+            int: 黒から見た領地の数（コミは考慮しない)。
+        """
+        board = self.board[:]
+
+        # 明らかに死んでいる石は打ち上げたとみなす
+        for pos in self.onboard_pos:
+            if self.board[pos] in [Stone.BLACK, Stone.WHITE]:
+                if self.strings.get_num_liberties(pos) == 1:
+                    board[pos] = Stone.EMPTY
+
+        already_check = [False] * len(self.board)
+
+        # 同じ色の石に囲まれている空点をその色の領地とする。
+        # 違う色が混じった場合は領地として認識しないようにする。
+        for pos in self.onboard_pos: # pylint: disable=R1702
+            if board[pos] is Stone.EMPTY:
+                pos_list = []
+                pos_queue = deque()
+                pos_queue.append(pos)
+                color = Stone.EMPTY
+                while pos_queue:
+                    coord = pos_queue.popleft()
+                    if board[coord] is Stone.OUT_OF_BOARD or already_check[coord]:
+                        continue
+                    neighbor4 = self.get_neighbor4(coord)
+                    for neighbor in neighbor4:
+                        if board[neighbor] is Stone.EMPTY:
+                            pos_queue.append(coord)
+                        elif board[neighbor] in [Stone.BLACK, Stone.WHITE]:
+                            if color is Stone.EMPTY:
+                                color = board[neighbor]
+                            elif color != board[neighbor]:
+                                color = Stone.OUT_OF_BOARD
+                    already_check[coord] = True
+                    pos_list.append(coord)
+                for coord in pos_list:
+                    board[pos] = color
+            else:
+                already_check[pos] = True
+
+        black = board.count(Stone.BLACK)
+        white = board.count(Stone.WHITE)
+
+        return black - white
 
 
 def copy_board(dst: GoBoard, src: GoBoard):

@@ -209,7 +209,7 @@ class MCTSTree:
 
 
     def generate_move_with_sequential_halving(self, board: GoBoard, color: Stone, \
-        time_manager: TimeManager) -> int:
+        time_manager: TimeManager, never_resign: bool) -> int:
         """_summary_
 
         Args:
@@ -229,25 +229,26 @@ class MCTSTree:
         self.node[self.current_root].set_gumbel_noise()
 
         # 探索を実行
-        self.search_by_sequential_halving(board, color, time_manager.get_num_visits_threshold())
+        self.search_by_sequential_halving(board, color, \
+            time_manager.get_num_visits_threshold(color))
 
         # 最善の手を取得
         root = self.node[self.current_root]
         next_index = root.select_move_by_sequential_halving_for_root(PLAYOUTS)
 
-        root.print_search_result(board)
+        #root.print_search_result(board)
 
         # 勝率に基づいて投了するか否かを決める
         value = root.calculate_value_evaluation(next_index)
 
         search_time = time.time() - start_time
-        po_per_sec = self.node[self.current_root].node_visits / search_time
 
         time_manager.set_search_speed(self.node[self.current_root].node_visits, search_time)
 
-        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f}")
+        #po_per_sec = self.node[self.current_root].node_visits / search_time
+        #print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f}")
 
-        if value < 0.05:
+        if not never_resign and value < 0.05:
             return RESIGN
 
         return root.get_child_move(next_index)
@@ -317,6 +318,14 @@ class MCTSTree:
                 self.node[current_index].set_child_index(next_index, child_index)
             next_node_index = self.node[current_index].get_child_index(next_index)
             self.search_sequential_halving(board, color, next_node_index, path, count_threshold)
+
+    def get_root(self) -> MCTSNode:
+        """木のルートを返す。
+
+        Returns:
+            MCTSNode: モンテカルロ木探索で使用する木のルート。
+        """
+        return self.node[self.current_root]
 
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:
     """ニューラルネットワークの計算が行われるまでに使用するPolicyを取得する。
