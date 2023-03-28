@@ -1,8 +1,11 @@
 """学習用の各種ハイパーパラメータの設定。
 """
 
-# 学習率
-LEARNING_RATE = 0.02
+# 教師あり学習実行時の学習率
+SL_LEARNING_RATE = 0.02
+
+# 強化学習実行時の学習率
+RL_LEARNING_RATE = 0.02
 
 # ミニバッチサイズ
 BATCH_SIZE = 256
@@ -30,6 +33,11 @@ DATA_SET_SIZE = BATCH_SIZE * 4000
 # Policyのlossに対するValueのlossの重み比率
 SL_VALUE_WEIGHT = 0.02
 
+# Policyのlossに対するValueのlossの重み比率
+RL_VALUE_WEIGHT = 1.0
 
 # 自己対戦時の探索回数
 SELF_PLAY_VISITS = 16
+
+# 自己対戦実行ワーカ数
+NUM_SELF_PLAY_WORKER = 4

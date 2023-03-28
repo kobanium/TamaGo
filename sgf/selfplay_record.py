@@ -1,6 +1,8 @@
 """強化学習用の自己対戦データの記録と出力
 """
 from typing import NoReturn
+import os
+
 from board.constant import MAX_RECORDS
 from board.coordinate import Coordinate
 from board.stone import Stone
@@ -12,10 +14,11 @@ class SelfPlayRecord:
     """自己対戦のデータの記録と出力をするクラス
     """
 
-    def __init__(self, coord: Coordinate):
+    def __init__(self, save_dir: str, coord: Coordinate):
         """SelfPlayRecordクラスのコンストラクタ。
 
         Args:
+            save_dir (str): 保存先のディレクトリパス。
             coord (Coordinate): 座標変換処理クラスのインスタンス。
         """
         self.record_moves = 0
@@ -23,13 +26,21 @@ class SelfPlayRecord:
         self.pos = [0] * MAX_RECORDS
         self.coord = coord
         self.policy_target = [""] * MAX_RECORDS
-
+        self.save_dir = save_dir
+        self.file_index = 1
 
     def clear(self) -> NoReturn:
         """レコードの初期化。
         """
         self.record_moves = 0
 
+    def set_index(self, index: int) -> NoReturn:
+        """ファイルのインデックスを設定する。
+
+        Args:
+            index (int): 出力ファイルのインデックス。
+        """
+        self.file_index = index
 
     def save_record(self, root: MCTSNode, pos: int, color: Stone) -> NoReturn:
         """着手とImproved Policyを記録する。
@@ -69,12 +80,12 @@ class SelfPlayRecord:
 
         if winner is Stone.BLACK:
             if is_resign:
-                sgf_string += "RE[B+]"
+                sgf_string += "RE[B+R]"
             else:
                 sgf_string += f"RE[B+{score:.1f}]"
         elif winner is Stone.WHITE:
             if is_resign:
-                sgf_string += "RE[W+]"
+                sgf_string += "RE[W+R]"
             else:
                 sgf_string += f"RE[W+{-score:.1f}]"
         else:
@@ -91,5 +102,9 @@ class SelfPlayRecord:
 
         sgf_string += "\n)"
 
-        with open('test.sgf', mode='w', encoding="utf-8") as out_file:
+        out_file_path = os.path.join(self.save_dir, f"{self.file_index}.sgf")
+
+        with open(out_file_path, mode='w', encoding="utf-8") as out_file:
             out_file.write(sgf_string)
+
+        self.file_index += 1

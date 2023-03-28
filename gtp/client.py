@@ -24,6 +24,7 @@ from sgf.reader import SGFReader
 class GtpClient: # pylint: disable=R0902,R0903
     """_Go Text Protocolクライアントの実装クラス
     """
+    # pylint: disable=R0913
     def __init__(self, board_size: int, superko: bool, \
         model_file_path: str, use_gpu: bool, policy_move: bool, \
         use_sequential_halving: bool, komi: float, \
