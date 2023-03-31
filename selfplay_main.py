@@ -49,8 +49,7 @@ def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
     kifu_dir_index = max(kifu_dir_index_list) + 1
 
     start_time = time.time()
-
-    os.mkdir(save_dir, str(kifu_dir_index))
+    os.mkdir(os.path.join(save_dir, str(kifu_dir_index)))
 
     with ProcessPoolExecutor(max_workers=process) as executor:
         futures = [executor.submit(selfplay_worker, os.path.join(save_dir, str(kifu_dir_index)), \

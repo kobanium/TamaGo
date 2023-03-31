@@ -155,6 +155,8 @@ class MCTSTree:
         node_index = self.num_nodes
 
         candidates = board.get_all_legal_pos(color)
+        candidates = [candidate for candidate in candidates \
+            if board.check_self_atari_stone(candidate, color) < 7]
         candidates.append(PASS)
 
         policy = get_tentative_policy(candidates)

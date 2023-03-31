@@ -361,6 +361,10 @@ class GtpClient: # pylint: disable=R0902,R0903
                 respond_success(display_policy_score(
                     self.network, self.board, Stone.WHITE
                 ))
+            elif input_gtp_command == "self-atari":
+                self.board.display_self_atari(Stone.BLACK)
+                self.board.display_self_atari(Stone.WHITE)
+                respond_success("")
             else:
                 respond_failure("unknown_command")
 

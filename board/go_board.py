@@ -268,6 +268,47 @@ class GoBoard: # pylint: disable=R0902
 
         return False
 
+    def check_self_atari_stone(self, pos: int, color: Stone) -> int:
+        """アタリに突っ込んで取られる石の数を返す。取られない場合は0を返す。
+
+        Args:
+            pos (int): 評価する座標。
+            color (Stone): 着手する手番の色。
+
+        Returns:
+            int: 取られる石の数
+        """
+        neighbor4 = self.get_neighbor4(pos)
+
+        lib_candidate = []
+        for neighbor in neighbor4:
+            if self.board[neighbor] is Stone.EMPTY:
+                lib_candidate.append(neighbor)
+
+        if len(lib_candidate) > 1:
+            return 0
+        checked = []
+        size = 0
+        other = Stone.get_opponent_color(color)
+        for neighbor in neighbor4:
+            if self.board[neighbor] is color:
+                string_id = self.strings.get_id(neighbor)
+                if string_id in checked:
+                    continue
+                lib_candidate.extend(self.strings.string[string_id].get_liberties())
+                lib_candidate = list(set(lib_candidate))
+                if len(lib_candidate) >= 3:
+                    return 0
+                size += self.strings.string[string_id].get_size()
+                checked.append(string_id)
+            elif self.board[neighbor] is other:
+                if self.strings.get_num_liberties(neighbor) == 1:
+                    return 0
+
+        # 石を打つ分として1を足す。
+        return size + 1
+
+
     def get_all_legal_pos(self, color: Stone) -> List[int]:
         """全ての合法手の座標を取得する。ただし眼は除く。
 
@@ -304,6 +345,24 @@ class GoBoard: # pylint: disable=R0902
         board_string += "  +" + "-" * (self.board_size * 2 + 1) + "+\n"
 
         print_err(board_string)
+
+
+    def display_self_atari(self, color: Stone) -> NoReturn:
+        """アタリに突っ込んだ時に取られる石の数を表示する。取られない場合は0。デバッグ用。
+
+        Args:
+            color (Stone): 手番の色。
+        """
+        self_atari_string = ""
+        for i, pos in enumerate(self.onboard_pos):
+            if self.board[pos] is Stone.EMPTY and self.is_legal(pos, color):
+                print_err(self.coordinate.convert_to_gtp_format(pos))
+                self_atari_string += f"{self.check_self_atari_stone(pos, color):3}"
+            else:
+                self_atari_string += "  0"
+            if (i + 1) % self.board_size == 0:
+                self_atari_string += '\n'
+        print_err(self_atari_string)
 
     def get_board_size(self) -> NoReturn:
         """碁盤の大きさを取得する。

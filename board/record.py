@@ -39,7 +39,7 @@ class Record:
             self.pos[moves] = pos
             self.hash_value[moves] = hash_value
         else:
-            print_err("Cannnot save move record.")
+            print_err("Cannot save move record.")
 
     def has_same_hash(self, hash_value: np.array) -> bool:
         """同じハッシュ値があるかを確認する。
