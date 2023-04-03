@@ -52,6 +52,12 @@ class GoBoard: # pylint: disable=R0902
             """
             return [pos - self.board_size_with_ob, pos - 1, pos + 1, pos + self.board_size_with_ob]
 
+        def get_cross4(pos: int) -> List[int]:
+            """指定した座標の斜め方向の座標を取得する。
+            """
+            return [pos - self.board_size_with_ob - 1, pos - self.board_size_with_ob + 1, \
+                pos + self.board_size_with_ob - 1, pos + self.board_size_with_ob + 1]
+
         self.board = [Stone.EMPTY] * (self.board_size_with_ob ** 2)
         self.pattern = Pattern(board_size, pos)
         self.strings = StringData(board_size, pos, get_neighbor4)
@@ -69,6 +75,7 @@ class GoBoard: # pylint: disable=R0902
 
         self.POS = pos # pylint: disable=C0103
         self.get_neighbor4 = get_neighbor4
+        self.get_cross4 = get_cross4
 
         idx = 0
         for y_coord in range(self.board_start, self.board_end + 1):
@@ -307,6 +314,38 @@ class GoBoard: # pylint: disable=R0902
 
         # 石を打つ分として1を足す。
         return size + 1
+
+    def is_complete_eye(self, pos: int, color: Stone) -> bool:
+        """完全な眼形か否かを判定する。
+
+        Args:
+            pos (int): 確認する座標。
+            color (Stone): 手番の色。
+
+        Returns:
+            bool: 完全な眼の判定結果
+        """
+        if self.pattern.get_eye_color(pos) is color:
+            connection_count = 0
+            edge = False
+
+            for cross in self.get_cross4(pos):
+                if self.board[cross] in [color, Stone.OUT_OF_BOARD]:
+                    connection_count += 1
+                elif self.board[cross] is Stone.EMPTY and \
+                    self.pattern.get_eye_color(cross) is color:
+                    connection_count += 1
+
+                if self.board[cross] is Stone.OUT_OF_BOARD:
+                    edge = True
+
+            # 完全な眼の条件は下記2つのいずれかを満たすこと。
+            #   1. 盤端かつ4方向の斜めの箇所がちゃんと結合していること
+            #   2. 盤端ではなく、かつ4方向の斜めの箇所の内、3箇所を自分の意志が専有していること
+            if (edge and connection_count == 4) or (not edge and connection_count >= 3):
+                return True
+
+        return False
 
 
     def get_all_legal_pos(self, color: Stone) -> List[int]:

@@ -156,7 +156,8 @@ class MCTSTree:
 
         candidates = board.get_all_legal_pos(color)
         candidates = [candidate for candidate in candidates \
-            if board.check_self_atari_stone(candidate, color) < 7]
+            if (board.check_self_atari_stone(candidate, color) < 7) \
+                and not board.is_complete_eye(candidate, color)]
         candidates.append(PASS)
 
         policy = get_tentative_policy(candidates)
@@ -186,7 +187,7 @@ class MCTSTree:
             policy_dict = {}
             for i, pos in enumerate(board.onboard_pos):
                 policy_dict[pos] = policy[i]
-            policy_dict[PASS] = policy[board.get_board_size() ** 2]
+            policy_dict[PASS] = policy[board.get_board_size() ** 2] - 0.5
             policy_data.append(policy_dict)
 
         for policy, value_dist, path, node_index in zip(policy_data, \

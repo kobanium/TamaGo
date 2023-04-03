@@ -2,6 +2,7 @@
 """
 import glob
 import os
+import random
 from typing import List, NoReturn
 import numpy as np
 from board.go_board import GoBoard
@@ -103,36 +104,42 @@ def generate_reinforcement_learning_data(program_dir: str, kifu_dir_list: List[s
     kifu_counter = 1
     data_counter = 0
 
+    kifu_list = []
     for kifu_dir in kifu_dir_list:
-        for kifu_path in glob.glob(os.path.join(kifu_dir, "*.sgf")):
-            board.clear()
-            sgf = SGFReader(kifu_path, board_size)
-            color = Stone.BLACK
-            value_label = sgf.get_value_label()
-            target_index = sorted(np.random.permutation(np.arange(sgf.get_n_moves()))[:8])
-            sym_index_list = np.random.permutation(np.arange(8))
-            sym_index = 0
-            for i, pos in enumerate(sgf.get_moves()):
-                if i in target_index:
-                    sym = sym_index_list[sym_index]
-                    input_data.append(generate_input_planes(board, color, sym))
-                    policy_data.append(generate_rl_target_data(board, sgf.get_comment(i), sym))
-                    value_data.append(value_label)
-                    sym_index += 1
-                board.put_stone(pos, color)
-                color = Stone.get_opponent_color(color)
-                value_label = 2 - value_label
+        kifu_list.extend(glob.glob(os.path.join(kifu_dir, "*.sgf")))
+    random.shuffle(kifu_list)
 
-            if len(value_data) >= DATA_SET_SIZE:
-                _save_data(os.path.join(program_dir, "data", f"rl_data_{data_counter}"), \
-                    input_data, policy_data, value_data, kifu_counter)
-                input_data = input_data[DATA_SET_SIZE:]
-                policy_data = policy_data[DATA_SET_SIZE:]
-                value_data = value_data[DATA_SET_SIZE:]
-                kifu_counter = 1
-                data_counter += 1
+    for kifu_path in kifu_list:
+        board.clear()
+        sgf = SGFReader(kifu_path, board_size)
+        color = Stone.BLACK
+        value_label = sgf.get_value_label()
+        target_index = sorted(np.random.permutation(np.arange(sgf.get_n_moves()))[:8])
+        sym_index_list = np.random.permutation(np.arange(8))
+        sym_index = 0
+        #target_index = np.random.permutation(np.arange(sgf.get_n_moves()))[:1]
+        #sym = np.random.permutation(np.arange(8))[0]
+        for i, pos in enumerate(sgf.get_moves()):
+            if i in target_index:
+                sym = sym_index_list[sym_index]
+                input_data.append(generate_input_planes(board, color, sym))
+                policy_data.append(generate_rl_target_data(board, sgf.get_comment(i), sym))
+                value_data.append(value_label)
+                sym_index += 1
+            board.put_stone(pos, color)
+            color = Stone.get_opponent_color(color)
+            value_label = 2 - value_label
 
-            kifu_counter += 1
+        if len(value_data) >= DATA_SET_SIZE:
+            _save_data(os.path.join(program_dir, "data", f"rl_data_{data_counter}"), \
+                input_data, policy_data, value_data, kifu_counter)
+            input_data = input_data[DATA_SET_SIZE:]
+            policy_data = policy_data[DATA_SET_SIZE:]
+            value_data = value_data[DATA_SET_SIZE:]
+            kifu_counter = 1
+            data_counter += 1
+
+        kifu_counter += 1
 
     # 端数の出力
     n_batches = len(value_data) // BATCH_SIZE

@@ -149,7 +149,10 @@ def load_network(model_file_path: str, use_gpu: bool) -> DualNet:
     device = get_torch_device(use_gpu=use_gpu)
     network = DualNet(device)
     network.to(device)
-    network.load_state_dict(torch.load(model_file_path))
+    try:
+        network.load_state_dict(torch.load(model_file_path))
+    except: # pylint: disable=W0702
+        print(f"Failed to load {model_file_path}.")
     network.eval()
     torch.set_grad_enabled(False)
 

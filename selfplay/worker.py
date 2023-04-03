@@ -32,7 +32,7 @@ def selfplay_worker(save_dir: str, model_file_path: str, index_list: List[int], 
     init_board = GoBoard(board_size=size, komi=7.0, check_superko=True)
     record = SelfPlayRecord(save_dir, board.coordinate)
     network = load_network(model_file_path=model_file_path, use_gpu=use_gpu)
-    network.training =False
+    network.training = False
 
     np.random.seed(random.choice(index_list))
 
