@@ -1,7 +1,9 @@
 """碁盤のデータ定義と操作処理。
 """
 from typing import List, NoReturn
+from collections import deque
 import numpy as np
+
 from board.constant import PASS, OB_SIZE, GTP_X_COORDINATE
 from board.coordinate import Coordinate
 from board.pattern import Pattern, copy_pattern
@@ -50,6 +52,12 @@ class GoBoard: # pylint: disable=R0902
             """
             return [pos - self.board_size_with_ob, pos - 1, pos + 1, pos + self.board_size_with_ob]
 
+        def get_cross4(pos: int) -> List[int]:
+            """指定した座標の斜め方向の座標を取得する。
+            """
+            return [pos - self.board_size_with_ob - 1, pos - self.board_size_with_ob + 1, \
+                pos + self.board_size_with_ob - 1, pos + self.board_size_with_ob + 1]
+
         self.board = [Stone.EMPTY] * (self.board_size_with_ob ** 2)
         self.pattern = Pattern(board_size, pos)
         self.strings = StringData(board_size, pos, get_neighbor4)
@@ -67,6 +75,7 @@ class GoBoard: # pylint: disable=R0902
 
         self.POS = pos # pylint: disable=C0103
         self.get_neighbor4 = get_neighbor4
+        self.get_cross4 = get_cross4
 
         idx = 0
         for y_coord in range(self.board_start, self.board_end + 1):
@@ -164,7 +173,7 @@ class GoBoard: # pylint: disable=R0902
 
         if len(connection) == 0:
             self.strings.make_string(self.board, pos, color)
-            if prisoner == 1:
+            if prisoner == 1 and self.strings.get_num_liberties(pos) == 1:
                 self.ko_move = self.moves
                 self.ko_pos = self.strings.string[self.strings.get_id(pos)].lib[0]
         elif len(connection) == 1:
@@ -233,7 +242,7 @@ class GoBoard: # pylint: disable=R0902
 
             # 打ち上げる石があれば打ち上げたと仮定
             for string_id in unique_ids:
-                if self.strings.get_num_liberties(self.strings.string[string_id].get_origin) == 1:
+                if self.strings.get_num_liberties(self.strings.string[string_id].get_origin()) == 1:
                     stones = self.strings.get_stone_coordinates(string_id)
                     current_hash = affect_string_hash(current_hash, stones, opponent)
             # 石を置く
@@ -265,6 +274,79 @@ class GoBoard: # pylint: disable=R0902
             return self.is_legal(pos, color)
 
         return False
+
+    def check_self_atari_stone(self, pos: int, color: Stone) -> int:
+        """アタリに突っ込んで取られる石の数を返す。取られない場合は0を返す。
+
+        Args:
+            pos (int): 評価する座標。
+            color (Stone): 着手する手番の色。
+
+        Returns:
+            int: 取られる石の数
+        """
+        neighbor4 = self.get_neighbor4(pos)
+
+        lib_candidate = []
+        for neighbor in neighbor4:
+            if self.board[neighbor] is Stone.EMPTY:
+                lib_candidate.append(neighbor)
+
+        if len(lib_candidate) > 1:
+            return 0
+        checked = []
+        size = 0
+        other = Stone.get_opponent_color(color)
+        for neighbor in neighbor4:
+            if self.board[neighbor] is color:
+                string_id = self.strings.get_id(neighbor)
+                if string_id in checked:
+                    continue
+                lib_candidate.extend(self.strings.string[string_id].get_liberties())
+                lib_candidate = list(set(lib_candidate))
+                if len(lib_candidate) >= 3:
+                    return 0
+                size += self.strings.string[string_id].get_size()
+                checked.append(string_id)
+            elif self.board[neighbor] is other:
+                if self.strings.get_num_liberties(neighbor) == 1:
+                    return 0
+
+        # 石を打つ分として1を足す。
+        return size + 1
+
+    def is_complete_eye(self, pos: int, color: Stone) -> bool:
+        """完全な眼形か否かを判定する。
+
+        Args:
+            pos (int): 確認する座標。
+            color (Stone): 手番の色。
+
+        Returns:
+            bool: 完全な眼の判定結果
+        """
+        if self.pattern.get_eye_color(pos) is color:
+            connection_count = 0
+            edge = False
+
+            for cross in self.get_cross4(pos):
+                if self.board[cross] in [color, Stone.OUT_OF_BOARD]:
+                    connection_count += 1
+                elif self.board[cross] is Stone.EMPTY and \
+                    self.pattern.get_eye_color(cross) is color:
+                    connection_count += 1
+
+                if self.board[cross] is Stone.OUT_OF_BOARD:
+                    edge = True
+
+            # 完全な眼の条件は下記2つのいずれかを満たすこと。
+            #   1. 盤端かつ4方向の斜めの箇所がちゃんと結合していること
+            #   2. 盤端ではなく、かつ4方向の斜めの箇所の内、3箇所を自分の石が専有していること
+            if (edge and connection_count == 4) or (not edge and connection_count >= 3):
+                return True
+
+        return False
+
 
     def get_all_legal_pos(self, color: Stone) -> List[int]:
         """全ての合法手の座標を取得する。ただし眼は除く。
@@ -302,6 +384,24 @@ class GoBoard: # pylint: disable=R0902
         board_string += "  +" + "-" * (self.board_size * 2 + 1) + "+\n"
 
         print_err(board_string)
+
+
+    def display_self_atari(self, color: Stone) -> NoReturn:
+        """アタリに突っ込んだ時に取られる石の数を表示する。取られない場合は0。デバッグ用。
+
+        Args:
+            color (Stone): 手番の色。
+        """
+        self_atari_string = ""
+        for i, pos in enumerate(self.onboard_pos):
+            if self.board[pos] is Stone.EMPTY and self.is_legal(pos, color):
+                print_err(self.coordinate.convert_to_gtp_format(pos))
+                self_atari_string += f"{self.check_self_atari_stone(pos, color):3}"
+            else:
+                self_atari_string += "  0"
+            if (i + 1) % self.board_size == 0:
+                self_atari_string += '\n'
+        print_err(self_atari_string)
 
     def get_board_size(self) -> NoReturn:
         """碁盤の大きさを取得する。
@@ -347,6 +447,55 @@ class GoBoard: # pylint: disable=R0902
             float: 現在のコミの値。
         """
         return self.komi
+
+    def count_score(self) -> int: # pylint: disable=R0912
+        """領地を簡易的にカウントする。
+
+        Returns:
+            int: 黒から見た領地の数（コミは考慮しない)。
+        """
+        board = self.board[:]
+
+        # 明らかに死んでいる石は打ち上げたとみなす
+        for pos in self.onboard_pos:
+            if self.board[pos] in [Stone.BLACK, Stone.WHITE]:
+                if self.strings.get_num_liberties(pos) == 1:
+                    board[pos] = Stone.EMPTY
+
+        already_check = [False] * len(self.board)
+
+        # 同じ色の石に囲まれている空点をその色の領地とする。
+        # 違う色が混じった場合は領地として認識しないようにする。
+        for pos in self.onboard_pos: # pylint: disable=R1702
+            if board[pos] is Stone.EMPTY:
+                pos_list = []
+                pos_queue = deque()
+                pos_queue.append(pos)
+                color = Stone.EMPTY
+                while pos_queue:
+                    coord = pos_queue.popleft()
+                    if board[coord] is Stone.OUT_OF_BOARD or already_check[coord]:
+                        continue
+                    neighbor4 = self.get_neighbor4(coord)
+                    for neighbor in neighbor4:
+                        if board[neighbor] is Stone.EMPTY:
+                            pos_queue.append(coord)
+                        elif board[neighbor] in [Stone.BLACK, Stone.WHITE]:
+                            if color is Stone.EMPTY:
+                                color = board[neighbor]
+                            elif color != board[neighbor]:
+                                color = Stone.OUT_OF_BOARD
+                    already_check[coord] = True
+                    pos_list.append(coord)
+                for coord in pos_list:
+                    board[pos] = color
+            else:
+                already_check[pos] = True
+
+        black = board.count(Stone.BLACK)
+        white = board.count(Stone.WHITE)
+
+        return black - white
 
 
 def copy_board(dst: GoBoard, src: GoBoard):

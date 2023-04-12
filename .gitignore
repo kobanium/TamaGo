@@ -2,3 +2,5 @@
 **/*.*~
 **/*.npz
 **/*.bin
+**/*.ckpt
+archive/*

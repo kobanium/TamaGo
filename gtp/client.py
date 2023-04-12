@@ -5,8 +5,6 @@ import random
 import sys
 from typing import List, NoReturn
 
-import torch
-
 from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
 from board.constant import PASS, RESIGN
 from board.coordinate import Coordinate
@@ -18,8 +16,7 @@ from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution, \
 from mcts.time_manager import TimeControl, TimeManager
 from mcts.tree import MCTSTree
 from nn.policy_player import generate_move_from_policy
-from nn.network.dual_net import DualNet
-from nn.utility import get_torch_device
+from nn.utility import load_network
 from sgf.reader import SGFReader
 
 
@@ -27,6 +24,7 @@ from sgf.reader import SGFReader
 class GtpClient: # pylint: disable=R0902,R0903
     """_Go Text Protocolクライアントの実装クラス
     """
+    # pylint: disable=R0913
     def __init__(self, board_size: int, superko: bool, \
         model_file_path: str, use_gpu: bool, policy_move: bool, \
         use_sequential_halving: bool, komi: float, \
@@ -90,23 +88,13 @@ class GtpClient: # pylint: disable=R0902,R0903
             self.time_manager = TimeManager(mode=mode, remaining_time=time)
 
         try:
-            device = get_torch_device(use_gpu=use_gpu)
-            self.network = DualNet(device)
-            self.network.to(device)
-            self.network.load_state_dict(torch.load(model_file_path))
-            torch.set_grad_enabled(False)
-            self.network.eval()
+            self.network = load_network(model_file_path, use_gpu)
             self.use_network = True
             self.mcts = MCTSTree(network=self.network)
         except FileNotFoundError:
             print_err(f"Model file {model_file_path} is not found")
         except RuntimeError:
             print_err(f"Failed to load {model_file_path}")
-
-
-
-
-
 
 
     def _known_command(self, command: str) -> NoReturn:
@@ -193,7 +181,7 @@ class GtpClient: # pylint: disable=R0902,R0903
                 # モンテカルロ木探索で着手生成
                 if self.use_sequential_halving:
                     pos = self.mcts.generate_move_with_sequential_halving(self.board, \
-                        genmove_color, self.time_manager)
+                        genmove_color, self.time_manager, False)
                 else:
                     pos = self.mcts.search_best_move(self.board, genmove_color, self.time_manager)
         else:
@@ -373,6 +361,10 @@ class GtpClient: # pylint: disable=R0902,R0903
                 respond_success(display_policy_score(
                     self.network, self.board, Stone.WHITE
                 ))
+            elif input_gtp_command == "self-atari":
+                self.board.display_self_atari(Stone.BLACK)
+                self.board.display_self_atari(Stone.WHITE)
+                respond_success("")
             else:
                 respond_failure("unknown_command")
 

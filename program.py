@@ -14,4 +14,5 @@ PROTOCOL_VERSION="2"
 # Version 0.3.1 : モンテカルロ木探索のValue更新処理のバグ修正。komi, get_komiコマンドのサポート。
 # Version 0.4.0 : Sequential Halving Applied to Trees (SHOT) の実装。
 # Version 0.5.0 : 探索時間の制御、time_left、time_settingsコマンドのサポート。
-VERSION="0.5.0"
+# Version 0.6.0 : Gumbel AlphaZero方式の強化学習の実装。ネットワークの構造改善。
+VERSION="0.6.0"
