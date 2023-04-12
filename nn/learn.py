@@ -267,6 +267,8 @@ def train_with_gumbel_alphazero_on_cpu(program_dir: str, board_size: int, \
         checkpoint = torch.load(state_file_path, map_location=device)
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         num_trained_batches = checkpoint["num_trained_batches"]
+        for group in optimizer.param_groups:
+            group["lr"] = RL_LEARNING_RATE
         print(f"num_trained_batches : {num_trained_batches}")
 
     for data_index, train_data_path in enumerate(data_set):

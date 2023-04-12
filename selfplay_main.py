@@ -8,15 +8,16 @@ from concurrent.futures import ProcessPoolExecutor
 import click
 from board.constant import BOARD_SIZE
 from selfplay.worker import selfplay_worker
-from learning_param import SELF_PLAY_VISITS, NUM_SELF_PLAY_WORKER
+from learning_param import SELF_PLAY_VISITS, NUM_SELF_PLAY_WORKERS, \
+    NUM_SELF_PLAY_GAMES
 
 # pylint: disable=R0913, R0914
 @click.command()
 @click.option('--save-dir', type=click.STRING, default="archive", \
     help="棋譜ファイルを保存するディレクトリ。デフォルトはarchive。")
-@click.option('--process', type=click.IntRange(min=1), default=NUM_SELF_PLAY_WORKER, \
-    help=f"自己対戦実行ワーカ数。デフォルトは{NUM_SELF_PLAY_WORKER}。")
-@click.option('--num-data', type=click.IntRange(min=1), default=10000, \
+@click.option('--process', type=click.IntRange(min=1), default=NUM_SELF_PLAY_WORKERS, \
+    help=f"自己対戦実行ワーカ数。デフォルトは{NUM_SELF_PLAY_WORKERS}。")
+@click.option('--num-data', type=click.IntRange(min=1), default=NUM_SELF_PLAY_GAMES, \
     help="生成するデータ(棋譜)の数。デフォルトは10000。")
 @click.option('--size', type=click.IntRange(2, BOARD_SIZE), default=BOARD_SIZE, \
     help=f"碁盤のサイズ。デフォルトは{BOARD_SIZE}。")
@@ -50,6 +51,8 @@ def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
 
     start_time = time.time()
     os.mkdir(os.path.join(save_dir, str(kifu_dir_index)))
+
+    print(f"Self play visits : {visits}")
 
     with ProcessPoolExecutor(max_workers=process) as executor:
         futures = [executor.submit(selfplay_worker, os.path.join(save_dir, str(kifu_dir_index)), \

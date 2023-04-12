@@ -1,13 +1,14 @@
 # TamaGo
 TamaGoはPythonで実装された囲碁の思考エンジンです。  
-Gumbel AlphaZero方式の強化学習をお試しできるプログラムとなる予定です。  
-現在はSGF形式の棋譜ファイルからの教師あり学習を実行でき、モンテカルロ木探索による着手生成ができます。  
+SGF形式の棋譜ファイルを利用した教師あり学習、Gumbel AlphaZero方式の強化学習をお試しできるプログラムとなっています。  
+学習したニューラルネットワークのモデルを使用したモンテカルロ木探索による着手生成ができます。  
 Python 3.6で動作確認をしています。
 
 * [使用する前提パッケージ](#requirements)
 * [セットアップ手順](#installation)
 * [思考エンジンとしての使い方](#how-to-execute-gtp-engine)
 * [教師あり学習の実行](#how-to-execute-supervised-learning)
+* [強化学習の実行](#how-to-execute-reinforcement-learning)
 * [ライセンス](#license)
 
 # Requirements
@@ -33,15 +34,15 @@ python main.py
 
 | オプション | 概要 | 設定する値 | 設定値の例 | デフォルト値 | 備考 |
 |---|---|---|---|---|---|
-| --size | 碁盤のサイズ | 2以上BOARD_SIZE以下 | 9 | BOARD_SIZE | BOARD_SIZEはboard/constant.pyに定義してあります。|
-| --superko | 超劫ルールの有効化 | true または false | true | false | Positional super koのみ対応しています。|
-| --model | ネットワークモデルファイルパス | 学習済みモデルファイルパス | model/model.bin | なし | TamaGoのホームディレクトリからの相対パスで指定してください。指定がない場合はニューラルネットワークを使用せずにランダムに着手します。 |
-| --use-gpu | GPU使用フラグ | true または false | true | false | |
-| --policy-move | Policyの分布に従って着手するフラグ | true または false | true | false | Policyのみの強さを確認するときに使用します。 |
-| --sequential-halving | Sequential Halving applied to treesの探索手法で探索するフラグ | true または false | true | false | 自己対戦時に使う探索なので、基本的にデバッグ用です。 |
-| --visits | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
-| --const-time | 1手あたりの探索時間 (秒) | 0より大きい実数 | 10.0 |  | --timeオプションの指定があるときは本オプションを無視します。 |
-| --time | 持ち時間 (秒) | 0より大きい実数 | 600.0 | |
+| `--size` | 碁盤のサイズ | 2以上BOARD_SIZE以下 | 9 | BOARD_SIZE | BOARD_SIZEはboard/constant.pyに定義してあります。|
+| `--superko` | 超劫ルールの有効化 | true または false | true | false | Positional super koのみ対応しています。|
+| `--model` | ネットワークモデルファイルパス | 学習済みモデルファイルパス | model/model.bin | なし | TamaGoのホームディレクトリからの相対パスで指定してください。指定がない場合はニューラルネットワークを使用せずにランダムに着手します。 |
+| `--use-gpu` | GPU使用フラグ | true または false | true | false | |
+| `--policy-move` | Policyの分布に従って着手するフラグ | true または false | true | false | Policyのみの強さを確認するときに使用します。 |
+| `--sequential-halving` | Sequential Halving applied to treesの探索手法で探索するフラグ | true または false | true | false | 自己対戦時に使う探索なので、基本的にデバッグ用です。 |
+| `--visits` | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
+| `--const-time` | 1手あたりの探索時間 (秒) | 0より大きい実数 | 10.0 |  | --timeオプションの指定があるときは本オプションを無視します。 |
+| `--time` | 持ち時間 (秒) | 0より大きい実数 | 600.0 | |
 
 ## プログラムの実行例は下記のとおりです
 1) 碁盤のサイズを5、model/model.binを学習済みモデルとして使用し、GPUを使用せずに実行するケース
@@ -71,12 +72,14 @@ python main.py --const-time 10.0
 
 ## 学習済みモデルファイルについて
 学習済みのモデルファイルについては[こちら](https://github.com/kobanium/TamaGo/releases)から取得してください。modelフォルダ以下にmodel.binファイルを配置するとコマンドラインオプションの指定無しで動かせます。ニューラルネットワークの構造と学習済みモデルファイルが一致しないとロードできないので、取得したモデルファイルのリリースバージョンとTamaGoのバージョンが一致しているかに注意してください。  
-Version 0.3.0時点のモデルはGNUGo Level 10に対して約+90elo(勝率63.5%)程度の強さです。  
-モンテカルロ木探索で1手あたり100回探索すると、GNUGo Level 10に対して約+160elo(勝率71.8%)程度の強さです。
+Version 0.3.0時点のモデルはGNUGo Level 10に対して約+90elo(勝率63.5%)程度の強さです。モンテカルロ木探索で1手あたり100回探索すると、GNUGo Level 10に対して約+160elo(勝率71.8%)程度の強さです。  
+Version 0.6.0からネットワークの構造を変更したため、以前のバージョンの学習済みモデルファイルは利用できません。
 
 # How to execute supervised learning
 教師あり学習の実行方法については[こちら](doc/ja/supervised_learning.md)をご参照ください。
 
+# How to execute reinforcement learning
+強化学習の実行方法については[こちら](doc/ja/reinforcement_learning.md)をご参照ください。
 
 # GoGui analyze commands
 [GoGui](https://sourceforge.net/projects/gogui/)を使用すると現局面のPolicyの値を表示したり、Policyの値の大きさに応じた色付けをできます。  
@@ -113,17 +116,17 @@ Policyの値による色付けはPolicyの値が大きいほど赤く、小さ�
     - [x] 持ち時間による探索時間制御
 - 学習の実装
   - [x] SGFファイルの読み込み処理
-  - [ ] 学習データ生成
+  - [x] 学習データ生成
     - [x] 教師あり学習のデータ生成
       - [x] 入力特徴生成
       - [x] Policyの生成
       - [x] npz形式での保存処理
-    - [ ] 強化学習のデータ生成
+    - [x] 強化学習のデータ生成
       - [x] 入力特徴生成
       - [x] Improved Policyの生成
-      - [ ] npz形式での保存処理
+      - [x] npz形式での保存処理
   - [x] PyTorchを利用した教師あり学習
-  - [ ] PyTorchを利用したGumbel AlphaZero方式の強化学習
+  - [x] PyTorchを利用したGumbel AlphaZero方式の強化学習
 - GTPクライアントの実装
   - 基本的なコマンド
     - [x] プログラム情報の表示 : name, version, protocol_version

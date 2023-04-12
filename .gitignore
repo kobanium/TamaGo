@@ -3,3 +3,4 @@
 **/*.npz
 **/*.bin
 **/*.ckpt
+archive/*

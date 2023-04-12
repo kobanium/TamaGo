@@ -89,7 +89,7 @@ def generate_rl_target_data(board: GoBoard, improved_policy_data: str, sym: int=
         np.ndarray: Policyのターゲットデータ。
     """
     split_data = improved_policy_data.split(" ")[1:]
-    target_data = [1e-12] * len(board.board)
+    target_data = [1e-18] * len(board.board)
 
     for datum in split_data[1:]:
         pos, target = datum.split(":")
