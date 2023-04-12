@@ -173,7 +173,7 @@ class GoBoard: # pylint: disable=R0902
 
         if len(connection) == 0:
             self.strings.make_string(self.board, pos, color)
-            if prisoner == 1:
+            if prisoner == 1 and self.strings.get_num_liberties(pos) == 1:
                 self.ko_move = self.moves
                 self.ko_pos = self.strings.string[self.strings.get_id(pos)].lib[0]
         elif len(connection) == 1:
@@ -341,7 +341,7 @@ class GoBoard: # pylint: disable=R0902
 
             # 完全な眼の条件は下記2つのいずれかを満たすこと。
             #   1. 盤端かつ4方向の斜めの箇所がちゃんと結合していること
-            #   2. 盤端ではなく、かつ4方向の斜めの箇所の内、3箇所を自分の意志が専有していること
+            #   2. 盤端ではなく、かつ4方向の斜めの箇所の内、3箇所を自分の石が専有していること
             if (edge and connection_count == 4) or (not edge and connection_count >= 3):
                 return True
 
