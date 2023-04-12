@@ -6,6 +6,7 @@ import torch
 import numpy as np
 
 from common.print_console import print_err
+from nn.network.dual_net import DualNet
 
 
 def get_torch_device(use_gpu: bool) -> torch.device:
@@ -133,3 +134,26 @@ def apply_softmax(logits: np.array) -> np.array:
     shift_exp = np.exp(logits - np.max(logits))
 
     return shift_exp / np.sum(shift_exp)
+
+
+def load_network(model_file_path: str, use_gpu: bool) -> DualNet:
+    """ニューラルネットワークをロードして取得する。
+
+    Args:
+        model_file_path (str): ニューラルネットワークのパラメータファイルパス。
+        use_gpu (bool): GPU使用フラグ。
+
+    Returns:
+        DualNet: パラメータロード済みのニューラルネットワーク。
+    """
+    device = get_torch_device(use_gpu=use_gpu)
+    network = DualNet(device)
+    network.to(device)
+    try:
+        network.load_state_dict(torch.load(model_file_path))
+    except: # pylint: disable=W0702
+        print(f"Failed to load {model_file_path}.")
+    network.eval()
+    torch.set_grad_enabled(False)
+
+    return network

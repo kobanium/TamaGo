@@ -1,8 +1,11 @@
 """学習用の各種ハイパーパラメータの設定。
 """
 
-# 学習率
-LEARNING_RATE = 0.02
+# 教師あり学習実行時の学習率
+SL_LEARNING_RATE = 0.01
+
+# 強化学習実行時の学習率
+RL_LEARNING_RATE = 0.01
 
 # ミニバッチサイズ
 BATCH_SIZE = 256
@@ -18,9 +21,9 @@ EPOCHS = 15
 # 学習率を変更するエポック数と変更後の学習率
 LEARNING_SCHEDULE = {
     "learning_rate": {
-        5: 0.002,
-        8: 0.0002,
-        10: 0.00002,
+        5: 0.001,
+        8: 0.0001,
+        10: 0.00001,
     }
 }
 
@@ -29,3 +32,15 @@ DATA_SET_SIZE = BATCH_SIZE * 4000
 
 # Policyのlossに対するValueのlossの重み比率
 SL_VALUE_WEIGHT = 0.02
+
+# Policyのlossに対するValueのlossの重み比率
+RL_VALUE_WEIGHT = 1.0
+
+# 自己対戦時の探索回数
+SELF_PLAY_VISITS = 16
+
+# 自己対戦実行ワーカ数
+NUM_SELF_PLAY_WORKERS = 4
+
+# 1回の学習ごとに生成する棋譜の数
+NUM_SELF_PLAY_GAMES = 10000

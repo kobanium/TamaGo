@@ -58,12 +58,12 @@ def generate_input_planes(board: GoBoard, color: Stone, sym: int=0) -> np.ndarra
 
 
 def generate_target_data(board:GoBoard, target_pos: int, sym: int=0) -> np.ndarray:
-    """
+    """教師あり学習で使用するターゲットデータを生成する。
 
     Args:
         board (GoBoard): 碁盤の情報。
         target_pos (int): 教師データの着手の座標。
-        sym (int, optional): 対称系の指定. Defaults to 0.
+        sym (int, optional): 対称系の指定。値の範囲は0〜7の整数。デフォルトは0。
 
     Returns:
         np.ndarray: Policyのターゲットラベル。
@@ -74,4 +74,29 @@ def generate_target_data(board:GoBoard, target_pos: int, sym: int=0) -> np.ndarr
     target.append(1 if target_pos == PASS else 0)
     #target_index = np.where(np.array(target) > 0)
     #return target_index[0]
+    return np.array(target)
+
+
+def generate_rl_target_data(board: GoBoard, improved_policy_data: str, sym: int=0) -> np.ndarray:
+    """Gumbel AlphaZero方式の強化学習で使用するターゲットデータを精鋭する。
+
+    Args:
+        board (GoBoard): 碁盤の情報。
+        improved_policy_data (str): Improved Policyのデータをまとめた文字列。
+        sym (int, optional): 対称系の指定。値の範囲は0〜7の整数。デフォルトは0。
+
+    Returns:
+        np.ndarray: Policyのターゲットデータ。
+    """
+    split_data = improved_policy_data.split(" ")[1:]
+    target_data = [1e-18] * len(board.board)
+
+    for datum in split_data[1:]:
+        pos, target = datum.split(":")
+        coord = board.coordinate.convert_from_gtp_format(pos)
+        target_data[coord] = float(target)
+
+    target = [target_data[board.get_symmetrical_coordinate(pos, sym)] for pos in board.onboard_pos]
+    target.append(target_data[PASS])
+
     return np.array(target)

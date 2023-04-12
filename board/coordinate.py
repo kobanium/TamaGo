@@ -2,6 +2,7 @@
 """
 from board.constant import PASS, RESIGN, OB_SIZE, GTP_X_COORDINATE
 
+
 class Coordinate:
     """座標変換処理クラス
     """
@@ -13,6 +14,7 @@ class Coordinate:
         """
         self.board_size = board_size
         self.board_size_with_ob = board_size + OB_SIZE * 2
+        self.sgf_format = "abcdefghijklmnopqrstuvwxyz"
 
     def convert_from_gtp_format(self, pos: str) -> int:
         """GTP形式の座標からプログラム内部表現の座標に変換する。
@@ -59,3 +61,22 @@ class Coordinate:
         y_coord = self.board_size - (pos // self.board_size_with_ob - OB_SIZE)
 
         return GTP_X_COORDINATE[x_coord] + str(y_coord)
+
+    def convert_to_sgf_format(self, pos: int) -> str:
+        """プログラム内部の座標からSGF形式の座標に変換する。
+
+        Args:
+            pos (int): プログラム内部表現の座標。
+
+        Returns:
+            str: SGF形式の座標。
+        """
+        if pos == PASS:
+            return "tt"
+
+        if pos == RESIGN:
+            return "tt"
+
+        x_coord = pos % self.board_size_with_ob - OB_SIZE
+        y_coord = pos // self.board_size_with_ob - OB_SIZE
+        return self.sgf_format[x_coord] +  self.sgf_format[y_coord]

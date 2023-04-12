@@ -352,6 +352,17 @@ class SGFReader: # pylint: disable=R0902
         print_err(f"Invalid value label {self.result}")
         return 1
 
+    def get_comment(self, index: int) -> str:
+        """指定の手数のコメントを取得する。
+
+        Args:
+            index (int): 手数。
+
+        Returns:
+            str: 指定した手数のコメント。
+        """
+        return self.comment[index]
+
     def display(self) -> NoReturn:
         """読み込んだSGFファイルの情報を表示する。（デバッグ用）
         """
