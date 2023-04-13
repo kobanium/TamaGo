@@ -54,7 +54,7 @@ def display_policy_distribution(model: DualNet, board: GoBoard, color: Stone) ->
 
     for i, log_policy in enumerate(log_policies):
         pos = board.onboard_pos[i]
-        if board.is_legal(pos, color):
+        if board.board[pos] is Stone.EMPTY and board.is_legal(pos, color):
             max_policy = max(max_policy, log_policy)
             min_policy = min(min_policy, log_policy)
 
@@ -63,9 +63,9 @@ def display_policy_distribution(model: DualNet, board: GoBoard, color: Stone) ->
 
     for i, log_policy in enumerate(log_policies):
         pos = board.onboard_pos[i]
-        if board.is_legal(pos, color):
-            color = int((log_policy - min_policy) / scale * 255)
-            response += f"\"#{color:02x}{0:02x}{255-color:02x}\" "
+        if board.board[pos] is Stone.EMPTY and board.is_legal(pos, color):
+            color_value = int((log_policy - min_policy) / scale * 255)
+            response += f"\"#{color_value:02x}{0:02x}{255-color_value:02x}\" "
         else:
             response += "\"\" "
         if (i + 1) % board_size == 0:

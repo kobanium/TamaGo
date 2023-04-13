@@ -201,9 +201,9 @@ class GoBoard: # pylint: disable=R0902
         neighbor4 = self.get_neighbor4(pos)
 
         for neighbor in neighbor4:
-            if self.board[neighbor] == other and self.strings.get_num_liberties(neighbor) == 1:
+            if self.board[neighbor] is other and self.strings.get_num_liberties(neighbor) == 1:
                 return False
-            if self.board[neighbor] == color and self.strings.get_num_liberties(neighbor) > 1:
+            if self.board[neighbor] is color and self.strings.get_num_liberties(neighbor) > 1:
                 return False
 
         return True
