@@ -1,147 +1,105 @@
 # TamaGo
-TamaGoはPythonで実装された囲碁の思考エンジンです。  
-SGF形式の棋譜ファイルを利用した教師あり学習、Gumbel AlphaZero方式の強化学習をお試しできるプログラムとなっています。  
-学習したニューラルネットワークのモデルを使用したモンテカルロ木探索による着手生成ができます。  
-Python 3.6で動作確認をしています。
+TamaGo is a Go (Weiqi, Baduk) engine implemented in Python.  
+TamaGo has following features,
+ - Supervised learning using SGF-format files.
+ - Reinforcement learning with Gumbel AlphaZero method.
+ - Move generation using Monte-Carlo tree search and a trained neural network model.
 
-* [使用する前提パッケージ](#requirements)
-* [セットアップ手順](#installation)
-* [思考エンジンとしての使い方](#how-to-execute-gtp-engine)
-* [教師あり学習の実行](#how-to-execute-supervised-learning)
-* [強化学習の実行](#how-to-execute-reinforcement-learning)
-* [ライセンス](#license)
+TamaGo runs on Python 3.6 or higher.
+
+日本語は[こちら](doc/ja/README.md)をご覧ください。
+
+- [TamaGo](#tamago)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [How to execute GTP engine](#how-to-execute-gtp-engine)
+  - [Examples of TamaGo execution as GTP engine.](#examples-of-tamago-execution-as-gtp-engine)
+  - [Trained neural network parameters file.](#trained-neural-network-parameters-file)
+- [How to execute supervised learning](#how-to-execute-supervised-learning)
+- [How to execute reinforcement learning](#how-to-execute-reinforcement-learning)
+- [GoGui analyze commands](#gogui-analyze-commands)
+- [License](#license)
 
 # Requirements
-|使用するパッケージ|用途|
-|---|---|
-|click|コマンドライン引数の実装|
-|numpy|雑多な計算|
-|pytorch|Neural Networkの構成と学習の実装|
+| Package name | Purpose |
+| --- | --- |
+| click | Implementation of command line options |
+| numpy | Fast calculation |
+| pytorch | Implementation of neural network construction and learning |
 
 # Installation
-Python 3.6が使える環境で下記コマンドで前提パッケージをインストールします。
+You can install TamaGo by executing the following command in a Python-installed computer.
 ```
 pip install -r requirements.txt
 ```
-CPUのみでも動作しますが、学習を実行する場合はGPUを使えるようセットアップすることをお勧めします。
+You can use TamaGo with CPU only. It is recommended that you set up your computer so that you can use a GPU when executing neural network learning.
 
 # How to execute GTP engine
-GTP対応のGUI (GoGui, Sabaki, Lizzieなど) を使用する場合は下記コマンドで思考エンジンとして使用できます。
+When using a GUI that supports GTP (Go Text Protocol), the following command canb be used TamaGo as a engine,
 ```
 python main.py
 ```
-コマンドラインオプションとしては下記のものがあるので必要に応じて設定してください。コマンドラインオプションはclickを使用して実装しています。
 
-| オプション | 概要 | 設定する値 | 設定値の例 | デフォルト値 | 備考 |
-|---|---|---|---|---|---|
-| `--size` | 碁盤のサイズ | 2以上BOARD_SIZE以下 | 9 | BOARD_SIZE | BOARD_SIZEはboard/constant.pyに定義してあります。|
-| `--superko` | 超劫ルールの有効化 | true または false | true | false | Positional super koのみ対応しています。|
-| `--model` | ネットワークモデルファイルパス | 学習済みモデルファイルパス | model/model.bin | なし | TamaGoのホームディレクトリからの相対パスで指定してください。指定がない場合はニューラルネットワークを使用せずにランダムに着手します。 |
-| `--use-gpu` | GPU使用フラグ | true または false | true | false | |
-| `--policy-move` | Policyの分布に従って着手するフラグ | true または false | true | false | Policyのみの強さを確認するときに使用します。 |
-| `--sequential-halving` | Sequential Halving applied to treesの探索手法で探索するフラグ | true または false | true | false | 自己対戦時に使う探索なので、基本的にデバッグ用です。 |
-| `--visits` | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
-| `--const-time` | 1手あたりの探索時間 (秒) | 0より大きい実数 | 10.0 |  | --timeオプションの指定があるときは本オプションを無視します。 |
-| `--time` | 持ち時間 (秒) | 0より大きい実数 | 600.0 | |
+TamaGo's command line options are as follows,
 
-## プログラムの実行例は下記のとおりです
-1) 碁盤のサイズを5、model/model.binを学習済みモデルとして使用し、GPUを使用せずに実行するケース
+| Option | Description | Value | Example of value | Default value | Note |
+| --- | --- | --- | --- | --- | --- |
+| `--size` | Size of go board | Integer number more than 1 and less than or equal to BOARD_SIZE | 9  | BOARD_SIZE | BOARD_SIZE is defined in board/constant.py.
+| `--superko` | Activation super-ko rule | true or false | true | true | It supports only positional super-ko. |
+| `--model` | Path to a trained neural network parameters file | | model/model.bin| None |  It must be relative path to TamaGo's home directory |
+| `--use-gpu` | Flag to use a GPU | true or false | true | false | |
+| `--policy-move` | Flag to move according to Policy distribution | true or false | true | false | |
+| `--sequential-halving` | Flag to use SHOT (Sequential Halving applied to trees) for searching | true or false | true | false | It's for debugging |
+| `--visits` | The number of visits per move | Integer number more than 0 | 1000 | 1000 | When you use '--const-time' or '--time' options, this option is ignored. |
+| `--const-time` | Time to thinking per move | Real number more than 0 | 10.0 | None | When you use '--const-time' or '--time' options, this option is ignored.|
+| `--time` | Total remaining time for a game | Real number more than 0 | 600.0 | None |
+
+## Examples of TamaGo execution as GTP engine.
+1) Setting board size to 5, using model/model.bin as a trained file, avoiding to use a GPU.
 ```
 python main.py --size 5 --model model/model.bin --use-gpu false
 ```
-2) 超劫を着手禁止にするケース
+1) Activating super-ko rule.
 ```
 python main.py --superko true
 ```
-3) model/sl-model.binを学習済みモデルとして使用し、Policyの分布に従って着手を生成するケース
+1) Using model/sl-model.bin as a trained file, generating moves with Policy distribution.
 ```
 python main.py --model model/sl-model.bin --policy-move true
 ```
-4) 持ち時間を10分にするケース
+1) Setting total remaining time to 10 minites.
 ```
 python main.py --time 600
 ```
-5) 1手あたりの探索回数を500にするケース
+1) Setting the number of visits per move to 500.
 ```
 python main.py --visits 500
 ```
-6) 1手あたりの探索時間を10秒にするケース
+1) Setting time to thinking time per move to 10 seconds.
 ```
 python main.py --const-time 10.0
 ```
 
-## 学習済みモデルファイルについて
-学習済みのモデルファイルについては[こちら](https://github.com/kobanium/TamaGo/releases)から取得してください。modelフォルダ以下にmodel.binファイルを配置するとコマンドラインオプションの指定無しで動かせます。ニューラルネットワークの構造と学習済みモデルファイルが一致しないとロードできないので、取得したモデルファイルのリリースバージョンとTamaGoのバージョンが一致しているかに注意してください。  
-Version 0.3.0時点のモデルはGNUGo Level 10に対して約+90elo(勝率63.5%)程度の強さです。モンテカルロ木探索で1手あたり100回探索すると、GNUGo Level 10に対して約+160elo(勝率71.8%)程度の強さです。  
-Version 0.6.0からネットワークの構造を変更したため、以前のバージョンの学習済みモデルファイルは利用できません。
+## Trained neural network parameters file.
+Trained neural network parameters file is available [here](https://github.com/kobanium/TamaGo/releases). When you place a trained file in the "model" direcotry under the name "model.bin", you can run TamaGo using a trained file without a command line option. If TamaGo's structure of neural network and a trained neural network parameter files are unmached, TamaGo cannot load a trained file. Please care about version of the trained model file and version of TamaGo.
+On TamaGo 0.3.0 is stronger than GNUGo level 10 (about +90 elo). Using Monte Carlo tree search, TamaGo 0.3.0 is quitely stronger than GNUGo Level 10 (about +160 elo).  
+TamaGo has changed it's neural network structure from version 0.6.0, You cannot use trained model files for older version.
 
 # How to execute supervised learning
-教師あり学習の実行方法については[こちら](doc/ja/supervised_learning.md)をご参照ください。
+For more information on how to execute supervised learning, please check [here](doc/en/supervised_learning.md).
 
 # How to execute reinforcement learning
-強化学習の実行方法については[こちら](doc/ja/reinforcement_learning.md)をご参照ください。
+For more information on how to execute reinforcement learning, please check [here](doc/en/reinforcement_learning.md).
 
 # GoGui analyze commands
-[GoGui](https://sourceforge.net/projects/gogui/)を使用すると現局面のPolicyの値を表示したり、Policyの値の大きさに応じた色付けをできます。  
-Policyの値は0.0〜1.0の範囲で表示されます。
+When you use [GoGui](https://sourceforge.net/projects/gogui/), you can check Policy values for current position, and color according to Policy values.  
+Value range of Policy is more than or equal 0.0 and less than or equal to 1.0.
 
-![Policyの値の表示](img/gogui_analyze_policy.png)
+![Display policy value](img/gogui_analyze_policy.png)
 
 
-Policyの値による色付けはPolicyの値が大きいほど赤く、小さいほど青く表示されます。
-![Policyの値で色付け](img/gogui_analyze_policy_color.png)
+Redder is higher value, bluer is lower value.  
+![Coloring policy value](img/gogui_analyze_policy_color.png)
 
 # License
-ライセンスはApache License ver 2.0です。
-
-# Todo list
-- 碁盤の実装
-  - [x] 連のデータ構造
-  - [x] 3x3パターンのデータ構造
-  - [x] 着手履歴
-  - [x] Zobrist Hash
-  - [x] Super Koの判定処理
-- 探索部の実装
-  - [x] 木とノードのデータ構造
-  - [ ] モンテカルロ木探索
-    - ~~クラシックなMCTS~~
-      - ~~UCT~~
-      - ~~RAVE~~
-      - ~~ランダムシミュレーション~~
-    - [x] PUCT探索
-      - [x] PUCB値の計算
-      - [x] ニューラルネットワークのミニバッチ処理  
-    - [x] Sequential Halving applied to tree探索
-    - [ ] CGOS対応
-    - [x] 持ち時間による探索時間制御
-- 学習の実装
-  - [x] SGFファイルの読み込み処理
-  - [x] 学習データ生成
-    - [x] 教師あり学習のデータ生成
-      - [x] 入力特徴生成
-      - [x] Policyの生成
-      - [x] npz形式での保存処理
-    - [x] 強化学習のデータ生成
-      - [x] 入力特徴生成
-      - [x] Improved Policyの生成
-      - [x] npz形式での保存処理
-  - [x] PyTorchを利用した教師あり学習
-  - [x] PyTorchを利用したGumbel AlphaZero方式の強化学習
-- GTPクライアントの実装
-  - 基本的なコマンド
-    - [x] プログラム情報の表示 : name, version, protocol_version
-    - [x] プログラムの終了 : quit
-    - [x] 碁盤の操作 : boardsize, clear_board
-    - [x] 碁盤の表示 : showboard, showstring
-    - [x] 着手 : play, genmove
-    - [x] コミの設定と取得 : komi, get_komi
-    - [x] コマンドの確認 : known_command, list_commands
-    - [x] SGFファイルの読み込み : load_sgf
-  - 大会参加時に必要なコマンド
-    - [x] 持ち時間の初期化 : time_settings
-    - [x] 持ち時間の読み込み : time_left
-  - 分析用のコマンド
-    - [x] Policyの数値の表示
-    - [x] Policyの分布を色で表示
-
-etc...
+You can use TamaGo under [Apache License 2.0](LICENSE).
