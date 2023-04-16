@@ -21,7 +21,7 @@ TamaGo 需要 python 3.6 或更高的版本
 | 套件 | 用途 |
 |---|---|
 | click | 支援選項 |
-| numpy | 用於計算 |
+| numpy | 用於計算和其它 |
 | pytorch | 構成神經網路和學習 |
 
 # 安裝套件
@@ -91,7 +91,7 @@ python main.py --const-time 10.0
 你可以從[這裡](https://github.com/kobanium/TamaGo/releases)下載訓練好的全權重，直接權重 ```model.bin``` 放置在 ```model``` 路徑之下即可使用。請注意每不同版本的網路結構可能不一樣，不同版本的 TamaGo 可能需要對應對不同版本的權重。
 
 * 0.3.0 版本，不使用搜索的條件下強 GNU Go（lv10） 約 90 elo，搜索的條件下大概強約 160 elo。
-* 0.6.0 版本後網路結構改變，之前的網路無法使用。
+* 0.6.0 版本後的網路結構改變，之前的網路無法使用。
 
 
 # 如何使用監督學習
@@ -106,6 +106,7 @@ python main.py --const-time 10.0
 ![Display policy value](../../img/gogui_analyze_policy.png)
 
 下圖裡的越紅代表其 policy 的數值越高。
+
 ![Coloring policy value](../../img/gogui_analyze_policy_color.png)
 
 # 授權條款
