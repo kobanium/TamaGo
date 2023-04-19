@@ -1,5 +1,5 @@
 # TamaGo
-TamaGo is a Go (Weiqi, Baduk) engine implemented in Python.  
+TamaGo is a Go (Weiqi, Baduk) engine implemented in Python.
 TamaGo has following features,
  - Supervised learning using SGF-format files.
  - Reinforcement learning with Gumbel AlphaZero method.
@@ -8,6 +8,8 @@ TamaGo has following features,
 TamaGo runs on Python 3.6 or higher.
 
 日本語は[こちら](doc/ja/README.md)をご覧ください。
+
+中文文檔請看[這裡](doc/cn/README.md)。
 
 - [TamaGo](#tamago)
 - [Requirements](#requirements)
@@ -59,23 +61,23 @@ TamaGo's command line options are as follows,
 ```
 python main.py --size 5 --model model/model.bin --use-gpu false
 ```
-1) Activating super-ko rule.
+2) Activating super-ko rule.
 ```
 python main.py --superko true
 ```
-1) Using model/sl-model.bin as a trained file, generating moves with Policy distribution.
+3) Using model/sl-model.bin as a trained file, generating moves with Policy distribution.
 ```
 python main.py --model model/sl-model.bin --policy-move true
 ```
-1) Setting total remaining time to 10 minites.
+4) Setting total remaining time to 10 minites.
 ```
 python main.py --time 600
 ```
-1) Setting the number of visits per move to 500.
+5) Setting the number of visits per move to 500.
 ```
 python main.py --visits 500
 ```
-1) Setting time to thinking time per move to 10 seconds.
+6) Setting time to thinking time per move to 10 seconds.
 ```
 python main.py --const-time 10.0
 ```
@@ -98,7 +100,7 @@ Value range of Policy is more than or equal 0.0 and less than or equal to 1.0.
 ![Display policy value](img/gogui_analyze_policy.png)
 
 
-Redder is higher value, bluer is lower value.  
+Redder is higher value, bluer is lower value.
 ![Coloring policy value](img/gogui_analyze_policy_color.png)
 
 # License
