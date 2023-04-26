@@ -33,7 +33,7 @@ class GoguiAnalyzeCommand: # pylint: disable=R0903
         return self.type + "/" + self.label + "/" + self.command
 
 
-def display_policy_distribution(model: DualNet, board: GoBoard, color: Stone) -> str:
+def display_policy_distribution(model: DualNet, board: GoBoard, color: Stone) -> str: # pylint: disable=R0914
     """Policyを色付けして表示するための文字列を生成する。（GoGui解析コマンド）
 
     Args:

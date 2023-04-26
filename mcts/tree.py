@@ -23,12 +23,13 @@ from mcts.time_manager import TimeManager
 class MCTSTree:
     """モンテカルロ木探索の実装クラス。
     """
-    def __init__(self, network: DualNet, tree_size=65536):
+    def __init__(self, network: DualNet, tree_size=65536, batch_size=NN_BATCH_SIZE):
         """MCTSTreeクラスのコンストラクタ。
 
         Args:
             network (DualNet): 使用するニューラルネットワーク。
-            tree_size (int, optional): 木を構成するノードの最大個数. Defaults to 65536.
+            tree_size (int, optional): 木を構成するノードの最大個数。デフォルトは65536。
+            batch_size (int, optional): ニューラルネットワークの前向き伝搬処理のミニバッチサイズ。デフォルトはNN_BATCH_SIZE。
         """
         self.node = [MCTSNode() for i in range(tree_size)]
         self.num_nodes = 0
@@ -36,6 +37,7 @@ class MCTSTree:
         self.network = network
         self.batch_queue = BatchQueue()
         self.current_root = 0
+        self.batch_size = batch_size
 
 
     def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager) -> int:
@@ -135,7 +137,7 @@ class MCTSTree:
             next_node_index = self.node[current_index].get_child_index(next_index)
             self.batch_queue.push(input_plane, path, next_node_index)
 
-            if len(self.batch_queue.node_index) >= NN_BATCH_SIZE:
+            if len(self.batch_queue.node_index) >= self.batch_size:
                 self.process_mini_batch(board)
         else:
             if self.node[current_index].get_child_index(next_index) == NOT_EXPANDED:
