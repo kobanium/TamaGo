@@ -48,13 +48,14 @@ TamaGo's command line options are as follows,
 | --- | --- | --- | --- | --- | --- |
 | `--size` | Size of go board | Integer number more than 1 and less than or equal to BOARD_SIZE | 9  | BOARD_SIZE | BOARD_SIZE is defined in board/constant.py.
 | `--superko` | Activation super-ko rule | true or false | true | true | It supports only positional super-ko. |
-| `--model` | Path to a trained neural network parameters file | | model/model.bin| None |  It must be relative path to TamaGo's home directory |
+| `--model` | Path to a trained neural network parameters file | String of model file path | model/model.bin| None |  It must be relative path from TamaGo's home directory |
 | `--use-gpu` | Flag to use a GPU | true or false | true | false | |
 | `--policy-move` | Flag to move according to Policy distribution | true or false | true | false | |
 | `--sequential-halving` | Flag to use SHOT (Sequential Halving applied to trees) for searching | true or false | true | false | It's for debugging |
 | `--visits` | The number of visits per move | Integer number more than 0 | 1000 | 1000 | When you use '--const-time' or '--time' options, this option is ignored. |
 | `--const-time` | Time to thinking per move | Real number more than 0 | 10.0 | None | When you use '--const-time' or '--time' options, this option is ignored.|
 | `--time` | Total remaining time for a game | Real number more than 0 | 600.0 | None |
+| `--batch-size` | Mini-batch size for MCTS | Integer number more than 0 | 13 | NN_BATCH_SIZE | NN_BATCH_SIZE is defined in mcts/constant.py. |
 
 ## Examples of TamaGo execution as GTP engine.
 1) Setting board size to 5, using model/model.bin as a trained file, avoiding to use a GPU.

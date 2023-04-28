@@ -25,10 +25,10 @@ class GtpClient: # pylint: disable=R0902,R0903
     """_Go Text Protocolクライアントの実装クラス
     """
     # pylint: disable=R0913
-    def __init__(self, board_size: int, superko: bool, \
-        model_file_path: str, use_gpu: bool, policy_move: bool, \
-        use_sequential_halving: bool, komi: float, \
-        mode: TimeControl, visits: int, const_time: float, time: float): # pylint: disable=R0913
+    def __init__(self, board_size: int, superko: bool, model_file_path: str, \
+        use_gpu: bool, policy_move: bool, use_sequential_halving: bool, \
+        komi: float, mode: TimeControl, visits: int, const_time: float, \
+        time: float, batch_size: int): # pylint: disable=R0913
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -39,10 +39,11 @@ class GtpClient: # pylint: disable=R0902,R0903
             policy_move (bool): Policyの分布に従って着手するフラグ。
             use_sequential_halving (bool): Gumbel AlphaZeroの探索手法で着手生成するフラグ。
             komi (float): コミの値。
-            mode (TimeControl):
-            visits (int):
-            const_time (float):
-            time (float):
+            mode (TimeControl): 思考時間制御モード。
+            visits (int): 1手あたりの探索回数。
+            const_time (float): 1手あたりの探索時間。
+            time (float): 持ち時間。
+            batch_size (int): 探索時のニューラルネットワークのミニバッチサイズ。
         """
         self.gtp_commands = [
             "version",
@@ -90,7 +91,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         try:
             self.network = load_network(model_file_path, use_gpu)
             self.use_network = True
-            self.mcts = MCTSTree(network=self.network)
+            self.mcts = MCTSTree(network=self.network, batch_size=batch_size)
         except FileNotFoundError:
             print_err(f"Model file {model_file_path} is not found")
         except RuntimeError:

@@ -414,10 +414,32 @@ class GoBoard: # pylint: disable=R0902
     def get_board_data(self, sym: int) -> List[int]:
         """ニューラルネットワークの入力用の碁盤情報を取得する。
 
+        Args:
+            sym (int): 対称形の番号。
+
         Returns:
             list[int]: 空点は0, 黒石は1, 白石は2のリスト。
         """
         return [self.board[self.get_symmetrical_coordinate(pos, sym)].value \
+            for pos in self.onboard_pos]
+
+    def get_liberty_data(self, sym: int) -> List[int]:
+        """ニューラルネットワークの入力用の呼吸点数の情報を取得する。
+
+        Args:
+            sym (int): 対称形の番号。
+
+        Returns:
+            List[int]: _description_
+        """
+        base_data = [0] * (self.board_size_with_ob ** 2)
+        for index, string in enumerate(self.strings.string):
+            if string.exist():
+                num_liberties = string.get_liberties()
+                coordinates = self.strings.get_stone_coordinates(index)
+                for coordinate in coordinates:
+                    base_data[coordinate] = num_liberties
+        return [base_data[self.get_symmetrical_coordinate(pos, sym)] \
             for pos in self.onboard_pos]
 
     def get_symmetrical_coordinate(self, pos: int, sym: int) -> int:
