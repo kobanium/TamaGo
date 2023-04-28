@@ -5,6 +5,7 @@ import click
 
 from gtp.client import GtpClient
 from board.constant import BOARD_SIZE
+from mcts.constant import NN_BATCH_SIZE
 from mcts.time_manager import TimeControl
 
 default_model_path = os.path.join("model", "model.bin")
@@ -31,8 +32,11 @@ default_model_path = os.path.join("model", "model.bin")
     help="1手あたりの探索時間の指定。--timeオプションが指定された時は無視する。")
 @click.option('--time', type=click.FLOAT, \
     help="持ち時間の指定。")
+@click.option('--batch-size', type=click.IntRange(min=1), default=NN_BATCH_SIZE, \
+    help="探索時のミニバッチサイズ。デフォルトはNN_BATCH_SIZE。")
 def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
-    policy_move: bool, komi: float, visits: int, const_time: float, time: float): # pylint: disable=R0913
+    policy_move: bool, komi: float, visits: int, const_time: float, time: float, \
+    batch_size: int): # pylint: disable=R0913
     """GTPクライアントの起動。
 
     Args:
@@ -43,9 +47,10 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
         policy_move (bool): Policyの分布に従った着手生成処理フラグ。デフォルトはFalse。
         sequential_halving (bool): Gumbel AlphaZeroの探索手法で着手生成するフラグ。デフォルトはFalse。
         komi (float): コミの値。デフォルトは7.0。
-        visits (int):
-        const_time (float):
-        time (float):
+        visits (int): 1手あたりの探索回数。デフォルトは1000。
+        const_time (float): 1手あたりの探索時間。
+        time (float): 対局時の持ち時間。
+        batch_size (int): 探索実行時のニューラルネットワークのミニバッチサイズ。デフォルトはNN_BATCH_SIZE。
     """
     mode = TimeControl.CONSTANT_PLAYOUT
 
@@ -56,7 +61,7 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
 
     program_dir = os.path.dirname(__file__)
     client = GtpClient(size, superko, os.path.join(program_dir, model), use_gpu, policy_move, \
-        sequential_halving, komi, mode, visits, const_time, time)
+        sequential_halving, komi, mode, visits, const_time, time, batch_size)
     client.run()
 
 
