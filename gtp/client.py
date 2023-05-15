@@ -294,7 +294,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         while True:
             command = input()
 
-            command_list = command.split(' ')
+            command_list = command.rstrip().split(' ')
 
             input_gtp_command = command_list[0]
 
