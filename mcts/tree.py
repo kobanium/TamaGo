@@ -130,9 +130,16 @@ class MCTSTree:
         # Virtual Lossの加算
         self.node[current_index].add_virtual_loss(next_index)
 
-        if self.node[current_index].children_visits[next_index] < 1:
-            # ニューラルネットワークの計算
+        # 既に2回連続パスしている場合は新しいノードを展開しないようにする
+        expand_threshold = 1
+        if board.moves > 2:
+            _, pm1, _ = board.record.get(board.moves - 1)
+            _, pm2, _ = board.record.get(board.moves - 2)
+            if pm1 == PASS and pm2 == PASS:
+                expand_threshold = 10000000
 
+        if self.node[current_index].children_visits[next_index] < expand_threshold:
+            # ニューラルネットワークの計算
             input_plane = generate_input_planes(board, color, 0)
             next_node_index = self.node[current_index].get_child_index(next_index)
             self.batch_queue.push(input_plane, path, next_node_index)
