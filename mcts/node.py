@@ -211,7 +211,11 @@ class MCTSNode: # pylint: disable=R0902, R0904
         for i in range(self.num_children):
             if self.children_visits[i] > 0:
                 pos = board.coordinate.convert_to_gtp_format(self.action[i])
-                print_err(f"pos={pos}, visits={self.children_visits[i]}, value={value[i]:.4f}")
+                msg = f"pos={pos}, "
+                msg += f"visits={self.children_visits[i]}, "
+                msg += f"policy={self.children_policy[i]:.4f}, "
+                msg += f"value={value[i]:.4f}"
+                print_err(msg)
 
 
     def set_gumbel_noise(self) -> NoReturn:

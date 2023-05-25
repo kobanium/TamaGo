@@ -81,7 +81,7 @@ class MCTSTree:
 
         time_manager.set_search_speed(root.node_visits, search_time)
 
-        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f}")
+        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f} visits/sec")
 
         value = root.calculate_value_evaluation(next_index)
 
@@ -139,17 +139,16 @@ class MCTSTree:
                 expand_threshold = 10000000
 
         if self.node[current_index].children_visits[next_index] < expand_threshold:
-            # ニューラルネットワークの計算
+            if self.node[current_index].children_index[next_index] == NOT_EXPANDED:
+                child_index = self.expand_node(board, color)
+                self.node[current_index].set_child_index(next_index, child_index)
+            else:
+                child_index = self.node[current_index].get_child_index(next_index)
             input_plane = generate_input_planes(board, color, 0)
-            next_node_index = self.node[current_index].get_child_index(next_index)
-            self.batch_queue.push(input_plane, path, next_node_index)
-
+            self.batch_queue.push(input_plane, path, child_index)
             if len(self.batch_queue.node_index) >= self.batch_size:
                 self.process_mini_batch(board)
         else:
-            if self.node[current_index].get_child_index(next_index) == NOT_EXPANDED:
-                child_index = self.expand_node(board, color)
-                self.node[current_index].set_child_index(next_index, child_index)
             next_node_index = self.node[current_index].get_child_index(next_index)
             self.search_mcts(board, color, next_node_index, path)
 
@@ -196,7 +195,9 @@ class MCTSTree:
             policy_dict = {}
             for i, pos in enumerate(board.onboard_pos):
                 policy_dict[pos] = policy[i]
-            policy_dict[PASS] = policy[board.get_board_size() ** 2] - 0.5
+            policy_dict[PASS] = policy[board.get_board_size() ** 2]
+            if use_logit:
+                policy_dict[PASS] -= 0.5
             policy_data.append(policy_dict)
 
         for policy, value_dist, path, node_index in zip(policy_data, \
@@ -248,17 +249,12 @@ class MCTSTree:
         root = self.node[self.current_root]
         next_index = root.select_move_by_sequential_halving_for_root(PLAYOUTS)
 
-        #root.print_search_result(board)
-
         # 勝率に基づいて投了するか否かを決める
         value = root.calculate_value_evaluation(next_index)
 
         search_time = time.time() - start_time
 
         time_manager.set_search_speed(self.node[self.current_root].node_visits, search_time)
-
-        #po_per_sec = self.node[self.current_root].node_visits / search_time
-        #print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f}")
 
         if not never_resign and value < 0.05:
             return RESIGN
