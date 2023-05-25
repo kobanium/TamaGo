@@ -241,7 +241,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         """
         if arg_list[0][0] in ['B', 'b']:
             color = Stone.BLACK
-        elif arg_list[0][0] in ['W', 'b']:
+        elif arg_list[0][0] in ['W', 'w']:
             color = Stone.WHITE
         else:
             respond_failure("invalid color")
