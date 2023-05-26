@@ -83,6 +83,7 @@ class MCTSTree:
         po_per_sec = root.node_visits / search_time
 
         time_manager.set_search_speed(root.node_visits, search_time)
+        time_manager.substract_consumption_time(color, search_time)
 
         print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f} visits/sec")
 
