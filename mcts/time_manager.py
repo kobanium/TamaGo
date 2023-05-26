@@ -32,7 +32,7 @@ class TimeManager:
         self.constant_visits = constant_visits
         self.constant_time = constant_time
         self.default_time = remaining_time
-        self.search_speed = 200
+        self.search_speed = VISITS_PER_SEC
         self.remaining_time = [remaining_time] * 2
 
 
@@ -68,7 +68,7 @@ class TimeManager:
         if self.mode == TimeControl.TIME_CONTROL:
             remaining_time = self.remaining_time[0] \
                 if color is Stone.BLACK else self.remaining_time[1]
-            return int(self.search_speed * remaining_time / 8.0)
+            return int(self.search_speed * remaining_time / 10.0)
         return int(self.constant_visits)
 
 
@@ -83,6 +83,19 @@ class TimeManager:
             self.remaining_time[0] = time
         if color is Stone.WHITE:
             self.remaining_time[1] = time
+
+
+    def substract_consumption_time(self, color: Stone, time: float):
+        """消費した時間を持ち時間から引く。
+
+        Args:
+            color (Stone): 思考した手番の色。
+            time (float): 消費した時間。
+        """
+        if color is Stone.BLACK:
+            self.remaining_time[0] -= time
+        if color is Stone.WHITE:
+            self.remaining_time[1] -= time
 
 
     def set_mode(self, mode:TimeControl) -> NoReturn:

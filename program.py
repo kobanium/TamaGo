@@ -18,4 +18,5 @@ PROTOCOL_VERSION="2"
 # Version 0.6.1 : --batch-sizeオプションの追加。
 # Version 0.6.2 : 2回連続パスした時にノードを展開しないように変更。
 # Version 0.6.3 : 探索回数を増やした時に強くならないバグの修正。time_leftコマンドのバグ修正。
-VERSION="0.6.3"
+# Version 0.6.4 : time_leftコマンドが来ないと持ち時間を正しく消費しないバグの修正。
+VERSION="0.6.4"
