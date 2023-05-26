@@ -17,4 +17,5 @@ PROTOCOL_VERSION="2"
 # Version 0.6.0 : Gumbel AlphaZero方式の強化学習の実装。ネットワークの構造改善。
 # Version 0.6.1 : --batch-sizeオプションの追加。
 # Version 0.6.2 : 2回連続パスした時にノードを展開しないように変更。
-VERSION="0.6.2"
+# Version 0.6.3 : 探索回数を増やした時に強くならないバグの修正。time_leftコマンドのバグ修正。
+VERSION="0.6.3"
