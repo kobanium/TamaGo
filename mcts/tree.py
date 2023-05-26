@@ -70,6 +70,9 @@ class MCTSTree:
         # 探索を実行する
         self.search(board, color, time_manager.get_num_visits_threshold(color))
 
+        if len(self.batch_queue.node_index) > 0:
+            self.process_mini_batch(board)
+
         # 最善手を取得する
         next_move = root.get_best_move()
         next_index = root.get_best_move_index()
@@ -138,7 +141,8 @@ class MCTSTree:
             if pm1 == PASS and pm2 == PASS:
                 expand_threshold = 10000000
 
-        if self.node[current_index].children_visits[next_index] < expand_threshold:
+        if self.node[current_index].children_visits[next_index] \
+            + self.node[current_index].children_virtual_loss[next_index] < expand_threshold + 1:
             if self.node[current_index].children_index[next_index] == NOT_EXPANDED:
                 child_index = self.expand_node(board, color)
                 self.node[current_index].set_child_index(next_index, child_index)
@@ -202,7 +206,6 @@ class MCTSTree:
 
         for policy, value_dist, path, node_index in zip(policy_data, \
             value_data, self.batch_queue.path, self.batch_queue.node_index):
-
             self.node[node_index].update_policy(policy)
 
             if path:

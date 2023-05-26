@@ -310,3 +310,24 @@ class MCTSNode: # pylint: disable=R0902, R0904
         if self.children_visits[index] == 0:
             return 0.5
         return self.children_value_sum[index] / self.children_visits[index]
+
+
+    def print_all_node_info(self) -> NoReturn:
+        """子ノードの情報を全て表示する。
+        """
+        msg = ""
+        msg += f"node_visits : {self.node_visits}\n"
+        msg += f"virtual_loss : {self.virtual_loss}\n"
+        msg += f"node_value_sum : {self.node_value_sum}\n"
+        msg += f"num_children : {self.num_children}\n"
+        for i in range(self.num_children):
+            msg += f"\tindex : {i}\n"
+            msg += f"\taction : {self.action[i]}\n"
+            msg += f"\tchildren_index : {self.children_index[i]}\n"
+            msg += f"\tchildren_value : {self.children_value[i]}\n"
+            msg += f"\tchildren_visits : {self.children_visits[i]}\n"
+            msg += f"\tchildren_policy : {self.children_policy[i]}\n"
+            msg += f"\tchildren_virtual_loss : {self.children_virtual_loss[i]}\n"
+            msg += f"\tchildren_value_sum : {self.children_value_sum[i]}\n"
+            msg += f"\tnoise : {self.children_value_sum[i]}\n"
+        print_err(msg)
