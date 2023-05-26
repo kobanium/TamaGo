@@ -85,7 +85,7 @@ python main.py --const-time 10.0
 
 ## Trained neural network parameters file.
 Trained neural network parameters file is available [here](https://github.com/kobanium/TamaGo/releases). When you place a trained file in the "model" direcotry under the name "model.bin", you can run TamaGo using a trained file without a command line option. If TamaGo's structure of neural network and a trained neural network parameter files are unmached, TamaGo cannot load a trained file. Please care about version of the trained model file and version of TamaGo.
-On TamaGo 0.3.0 is stronger than GNUGo level 10 (about +90 elo). Using Monte Carlo tree search, TamaGo 0.3.0 is quitely stronger than GNUGo Level 10 (about +160 elo).  
+On TamaGo 0.6.3 is pretty stronger than GNUGo level 10 (about +420 elo). Using Monte Carlo tree search, TamaGo 0.6.3 (100 visits/move) with sl-model.bin is stronger than Ray ver 9.0 10k playouts/move (about +180 elo).  
 TamaGo has changed it's neural network structure from version 0.6.0, You cannot use trained model files for older version.
 
 # How to execute supervised learning
