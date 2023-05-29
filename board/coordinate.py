@@ -62,6 +62,18 @@ class Coordinate:
 
         return GTP_X_COORDINATE[x_coord] + str(y_coord)
 
+    def convert_to_lz_format(self, pos: int) -> str:
+        if pos == PASS:
+            return "pass"
+
+        if pos == RESIGN:
+            return "resign"
+
+        x_coord = pos % self.board_size_with_ob - OB_SIZE + 1
+        y_coord = self.board_size - (pos // self.board_size_with_ob - OB_SIZE)
+
+        return GTP_X_COORDINATE[x_coord] + str(y_coord)
+
     def convert_to_sgf_format(self, pos: int) -> str:
         """プログラム内部の座標からSGF形式の座標に変換する。
 

@@ -1,6 +1,8 @@
 """モンテカルロ木探索の実装。
 """
 from typing import Dict, List, NoReturn, Tuple
+import sys
+import select
 import copy
 import time
 import numpy as np
@@ -40,7 +42,8 @@ class MCTSTree:
         self.batch_size = batch_size
 
 
-    def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager) -> int:
+    def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
+        analysis_query: Dict = dict()) -> int:
         """モンテカルロ木探索を実行して最善手を返す。
 
         Args:
@@ -68,7 +71,7 @@ class MCTSTree:
             return PASS
 
         # 探索を実行する
-        self.search(board, color, time_manager.get_num_visits_threshold(color))
+        self.search(board, color, time_manager.get_num_visits_threshold(color), analysis_query)
 
         if len(self.batch_queue.node_index) > 0:
             self.process_mini_batch(board)
@@ -94,8 +97,23 @@ class MCTSTree:
 
         return next_move
 
+    def ponder(self, board: GoBoard, color: Stone, analysis_query: Dict) -> NoReturn:
+        self.num_nodes = 0
 
-    def search(self, board: GoBoard, color: Stone, threshold: int) -> NoReturn:
+        self.current_root = self.expand_node(board, color)
+        input_plane = generate_input_planes(board, color, 0)
+        self.batch_queue.push(input_plane, [], self.current_root)
+        self.process_mini_batch(board)
+
+        # 探索を実行する
+        self.search(board, color, 999999999, analysis_query)
+
+        if len(self.batch_queue.node_index) > 0:
+            self.process_mini_batch(board)
+
+
+    def search(self, board: GoBoard, color: Stone, threshold: int, \
+        analysis_query: Dict) -> NoReturn:
         """探索を指定回数実行する。
 
         Args:
@@ -103,11 +121,29 @@ class MCTSTree:
             color (Stone): 現局面の手番の色。
             threshold (int): この探索で実行する探索回数。
         """
+
+        analysis_clock = time.time()
         search_board = copy.deepcopy(board)
-        for _ in range(threshold):
+        for p in range(threshold):
             copy_board(dst=search_board,src=board)
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
+
+            if len(analysis_query) > 0:
+                interval = analysis_query.get("interval", 0)
+                elapsed = time.time() - analysis_clock
+                root = self.node[self.current_root]
+
+                if interval > 0 and \
+                       p == threshold-1 or elapsed > interval:
+                    analysis_clock = time.time()
+                    sys.stdout.write(root.to_lz_analysis(board))
+                    sys.stdout.flush()
+
+                if analysis_query.get("ponder", False):
+                    rlist, _, _ = select.select([sys.stdin], [], [], 0)
+                    if rlist:
+                        break
 
 
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \

@@ -5,6 +5,7 @@ from typing import Dict, NoReturn
 import numpy as np
 from board.constant import BOARD_SIZE
 from board.go_board import GoBoard
+from board.coordinate import Coordinate
 from common.print_console import print_err
 from mcts.constant import NOT_EXPANDED, C_VISIT, C_SCALE
 from mcts.pucb.pucb import calculate_pucb_value
@@ -331,3 +332,46 @@ class MCTSNode: # pylint: disable=R0902, R0904
             msg += f"\tchildren_value_sum : {self.children_value_sum[i]}\n"
             msg += f"\tnoise : {self.children_value_sum[i]}\n"
         print_err(msg)
+
+    def to_lz_analysis(self, board: GoBoard) -> str:
+        sorted_list = list()
+        for i in range(self.num_children): 
+            sorted_list.append((self.children_visits[i], i))
+        sorted_list.sort(reverse=True)
+
+        coordinate = Coordinate(board_size=board.board_size)
+
+        children_status_list = list()
+        order = 0
+        for visits, i in sorted_list:
+            if visits != 0:
+                pos = self.action[i]
+                winrate = self.children_value_sum[i] / visits
+                prior = self.children_policy[i]
+                pv = "{} ".format(coordinate.convert_to_lz_format(pos))
+
+                children_status_list.append(
+                    {
+                        "move" : coordinate.convert_to_lz_format(pos),
+                        "visits" : visits,
+                        "winrate" : int(10000 * winrate),
+                        "prior" : int(10000 * prior),
+                        "lcb" : int(10000 * winrate),
+                        "order" : order,
+                        "pv" : pv
+                    }
+                )
+                order += 1
+
+        out = str()
+        for status in children_status_list:
+            out += "info move {} visits {} winrate {} prior {} lcb {} order {} pv {}".format(
+                       status["move"],
+                       status["visits"],
+                       status["winrate"],
+                       status["prior"],
+                       status["lcb"],
+                       status["order"],
+                       status["pv"])
+        out += '\n'
+        return out
