@@ -54,9 +54,9 @@ def print_learning_process(loss_data: Dict[str, float], epoch: int, index: int, 
     loss, policy_loss, value_loss = _calculate_losses(loss_data, iteration)
     training_time = time.time() - start_time
 
-    print_err(f"epoch {epoch}, data-{index} : loss = {loss}, time = {training_time} sec.")
-    print_err(f"\tpolicy loss : {policy_loss}")
-    print_err(f"\tvalue loss  : {value_loss}")
+    print_err(f"epoch {epoch}, data-{index} : loss = {loss:6f}, time = {training_time:3f} seconds.")
+    print_err(f"\tpolicy loss : {policy_loss:6f}")
+    print_err(f"\tvalue loss  : {value_loss:6f}")
 
 
 def print_evaluation_information(loss_data: Dict[str, float], epoch: int, \
@@ -72,9 +72,9 @@ def print_evaluation_information(loss_data: Dict[str, float], epoch: int, \
     loss, policy_loss, value_loss = _calculate_losses(loss_data, iteration)
     testing_time = time.time() - start_time
 
-    print_err(f"Test {epoch} : loss = {loss}, time = {testing_time} sec.")
-    print_err(f"\tpolicy loss : {policy_loss}")
-    print_err(f"\tvalue loss  : {value_loss}")
+    print_err(f"Test {epoch} : loss = {loss:6f}, time = {testing_time:3f} seconds.")
+    print_err(f"\tpolicy loss : {policy_loss:6f}")
+    print_err(f"\tvalue loss  : {value_loss:6f}")
 
 
 def save_model(network: torch.nn.Module, path: str) -> NoReturn:
