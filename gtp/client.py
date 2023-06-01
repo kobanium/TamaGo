@@ -64,7 +64,9 @@ class GtpClient: # pylint: disable=R0902,R0903
             "load_sgf",
             "gogui-analyze_commands",
             "lz-analyze",
-            "lz-genmove_analyze"
+            "lz-genmove_analyze",
+            "cgos-analyze",
+            "cgos-genmove_analyze"
         ]
         self.superko = superko
         self.board = GoBoard(board_size=board_size, komi=komi, check_superko=superko)
@@ -289,7 +291,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         respond_success("")
 
-    def _lz_analyze(self, arg_list: List[str]) -> NoReturn:
+    def _analyze(self, mode: str, arg_list: List[str]) -> NoReturn:
         color = arg_list[0]
         interval = 0
         if len(arg_list) >= 2:
@@ -304,13 +306,13 @@ class GtpClient: # pylint: disable=R0902,R0903
             return
 
         analysis_query = {
-            "mode" : "lz",
+            "mode" : mode,
             "interval" : interval,
             "ponder" : True
         }
         self.mcts.ponder(self.board, to_move, analysis_query)
 
-    def _lz_genmove_analyze(self, arg_list: List[str]) -> int:
+    def _genmove_analyze(self, mode: str, arg_list: List[str]) -> int:
         color = arg_list[0]
         interval = 0
         if len(arg_list) >= 2:
@@ -321,7 +323,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         elif color.lower()[0] == 'w':
             genmove_color = Stone.WHITE
         else:
-            respond_failure("genmove color")
+            respond_failure("genmove_analyze color")
             return
 
         if self.use_network:
@@ -338,7 +340,7 @@ class GtpClient: # pylint: disable=R0902,R0903
                         genmove_color, self.time_manager, False)
                 else:
                     analysis_query = {
-                        "mode" : "lz",
+                        "mode" : mode,
                         "interval" : interval,
                         "ponder" : False
                     }
@@ -439,11 +441,19 @@ class GtpClient: # pylint: disable=R0902,R0903
                 respond_success("")
             elif input_gtp_command == "lz-analyze":
                 print("= ")
-                self._lz_analyze(command_list[1:])
+                self._analyze("lz", command_list[1:])
                 print("")
             elif input_gtp_command == "lz-genmove_analyze":
                 print("= ")
-                pos = self._lz_genmove_analyze(command_list[1:])
+                pos = self._genmove_analyze("lz", command_list[1:])
+                print("play {}\n".format(self.coordinate.convert_to_gtp_format(pos)))
+            elif input_gtp_command == "cgos-analyze":
+                print("= ")
+                self._analyze("cgos", command_list[1:])
+                print("")
+            elif input_gtp_command == "cgos-genmove_analyze":
+                print("= ")
+                pos = self._genmove_analyze("cgos", command_list[1:])
                 print("play {}\n".format(self.coordinate.convert_to_gtp_format(pos)))
             else:
                 respond_failure("unknown_command")

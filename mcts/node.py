@@ -333,7 +333,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
             msg += f"\tnoise : {self.children_value_sum[i]}\n"
         print_err(msg)
 
-    def to_lz_analysis(self, board: GoBoard) -> str:
+    def to_analysis(self, board: GoBoard, mode: str) -> str:
         sorted_list = list()
         for i in range(self.num_children): 
             sorted_list.append((self.children_visits[i], i))
@@ -348,30 +348,45 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 pos = self.action[i]
                 winrate = self.children_value_sum[i] / visits
                 prior = self.children_policy[i]
-                pv = "{} ".format(coordinate.convert_to_lz_format(pos))
+                pv = "{} ".format(coordinate.convert_to_analyze_format(pos))
 
                 children_status_list.append(
                     {
-                        "move" : coordinate.convert_to_lz_format(pos),
+                        "move" : coordinate.convert_to_analyze_format(pos),
                         "visits" : visits,
-                        "winrate" : int(10000 * winrate),
-                        "prior" : int(10000 * prior),
-                        "lcb" : int(10000 * winrate),
+                        "winrate" : winrate,
+                        "prior" : prior,
+                        "lcb" : winrate,
                         "order" : order,
                         "pv" : pv
                     }
                 )
                 order += 1
 
-        out = str()
+        out = ""
+
+        if mode == "cgos":
+            cgos_dict = {
+                "winrate" : float(self.node_value_sum) / self.node_visits,
+                "visits" : self.node_visits,
+                "moves" : list()
+            }
+
         for status in children_status_list:
-            out += "info move {} visits {} winrate {} prior {} lcb {} order {} pv {}".format(
-                       status["move"],
-                       status["visits"],
-                       status["winrate"],
-                       status["prior"],
-                       status["lcb"],
-                       status["order"],
-                       status["pv"])
+            if mode == "lz":
+                out += "info move {} visits {} winrate {} prior {} lcb {} order {} pv {}".format(
+                           status["move"],
+                           status["visits"],
+                           int(10000 * status["winrate"]),
+                           int(10000 * status["prior"]),
+                           int(10000 * status["lcb"]),
+                           status["order"],
+                           status["pv"])
+            elif mode == "cgos":
+                cgos_dict["moves"].append(status)
+
+        if mode == "cgos":
+            out = str(cgos_dict)
+
         out += '\n'
         return out

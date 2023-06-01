@@ -62,7 +62,7 @@ class Coordinate:
 
         return GTP_X_COORDINATE[x_coord] + str(y_coord)
 
-    def convert_to_lz_format(self, pos: int) -> str:
+    def convert_to_analyze_format(self, pos: int) -> str:
         if pos == PASS:
             return "pass"
 

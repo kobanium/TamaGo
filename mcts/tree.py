@@ -135,15 +135,20 @@ class MCTSTree:
                 root = self.node[self.current_root]
 
                 if interval > 0 and \
-                       p == threshold-1 or elapsed > interval:
+                       (p == threshold-1 or elapsed > interval):
                     analysis_clock = time.time()
-                    sys.stdout.write(root.to_lz_analysis(board))
+                    mode = analysis_query.get("mode", "lz")
+                    sys.stdout.write(root.to_analysis(board, mode))
                     sys.stdout.flush()
 
                 if analysis_query.get("ponder", False):
                     rlist, _, _ = select.select([sys.stdin], [], [], 0)
                     if rlist:
                         break
+        if interval == 0:
+            mode = analysis_query.get("mode", "lz")
+            sys.stdout.write(root.to_analysis(board, mode))
+            sys.stdout.flush()
 
 
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \
