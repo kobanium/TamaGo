@@ -40,7 +40,7 @@ def train_main(kifu_dir: str, size: int, use_gpu: bool, rl: bool, window_size: i
             kifu_dir_list = []
             for index in sorted(kifu_index_list, reverse=True):
                 kifu_dir_path = os.path.join(kifu_dir, str(index))
-                num_kifu += len(glob.glob(kifu_dir_path))
+                num_kifu += len(glob.glob(os.path.join(kifu_dir_path, "*.sgf")))
                 kifu_dir_list.append(kifu_dir_path)
                 if num_kifu >= window_size:
                     break

@@ -46,14 +46,14 @@ class MCTSTree:
         Args:
             board (GoBoard): 評価する局面情報。
             color (Stone): 評価する局面の手番の色。
-            time_manager (TimeManager):
+            time_manager (TimeManager): 思考時間管理インスタンス。
 
         Returns:
             int: 着手する座標。
         """
         self.num_nodes = 0
 
-        start_time = time.time()
+        time_manager.start_timer()
 
         self.current_root = self.expand_node(board, color)
         input_plane = generate_input_planes(board, color, 0)
@@ -68,7 +68,7 @@ class MCTSTree:
             return PASS
 
         # 探索を実行する
-        self.search(board, color, time_manager.get_num_visits_threshold(color))
+        self.search(board, color, time_manager)
 
         if len(self.batch_queue.node_index) > 0:
             self.process_mini_batch(board)
@@ -79,13 +79,13 @@ class MCTSTree:
 
         # 探索結果と探索にかかった時間を表示する
         root.print_search_result(board)
-        search_time = time.time() - start_time
+        search_time = time_manager.calculate_consumption_time()
         po_per_sec = root.node_visits / search_time
 
         time_manager.set_search_speed(root.node_visits, search_time)
         time_manager.substract_consumption_time(color, search_time)
 
-        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f} visits/sec")
+        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f} visits/s")
 
         value = root.calculate_value_evaluation(next_index)
 
@@ -95,19 +95,22 @@ class MCTSTree:
         return next_move
 
 
-    def search(self, board: GoBoard, color: Stone, threshold: int) -> NoReturn:
-        """探索を指定回数実行する。
+    def search(self, board: GoBoard, color: Stone, time_manager: TimeManager) -> NoReturn:
+        """探索を実行する。
 
         Args:
             board (GoBoard): 現在の局面情報。
             color (Stone): 現局面の手番の色。
-            threshold (int): この探索で実行する探索回数。
+            time_manager (TimeManager): 思考時間管理インスタンス。
         """
         search_board = copy.deepcopy(board)
+        threshold = time_manager.get_num_visits_threshold(color)
         for _ in range(threshold):
             copy_board(dst=search_board,src=board)
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
+            if time_manager.is_time_over():
+                break
 
 
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \
