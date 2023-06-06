@@ -142,7 +142,6 @@ class GoBoard: # pylint: disable=R0902
 
         opponent_color = Stone.get_opponent_color(color)
 
-
         self.board[pos] = color
         self.pattern.put_stone(pos, color)
         self.positional_hash = affect_stone_hash(self.positional_hash, pos, color)
@@ -164,7 +163,7 @@ class GoBoard: # pylint: disable=R0902
                     for removed_pos in removed_stones:
                         self.pattern.remove_stone(removed_pos)
                     self.positional_hash = affect_string_hash(self.positional_hash, \
-                        removed_stones, color)
+                        removed_stones, opponent_color)
 
         if color == Stone.BLACK:
             self.prisoner[0] += prisoner
@@ -238,7 +237,7 @@ class GoBoard: # pylint: disable=R0902
             neighbor4 = self.get_neighbor4(pos)
             neighbor_ids = [self.strings.get_id(neighbor) for neighbor in neighbor4]
             unique_ids = list(set(neighbor_ids))
-            current_hash = self.positional_hash
+            current_hash = self.positional_hash.copy()
 
             # 打ち上げる石があれば打ち上げたと仮定
             for string_id in unique_ids:

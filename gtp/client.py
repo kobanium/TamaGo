@@ -366,6 +366,9 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self.board.display_self_atari(Stone.BLACK)
                 self.board.display_self_atari(Stone.WHITE)
                 respond_success("")
+            elif input_gtp_command == "hash_record":
+                print_err(self.board.record.get_hash_history())
+                respond_success("")
             else:
                 respond_failure("unknown_command")
 
