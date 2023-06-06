@@ -7,6 +7,7 @@ import numpy as np
 import torch
 
 from board.constant import PASS, RESIGN
+from board.coordinate import Coordinate
 from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 from common.print_console import print_err
@@ -78,7 +79,8 @@ class MCTSTree:
         next_index = root.get_best_move_index()
 
         # 探索結果と探索にかかった時間を表示する
-        root.print_search_result(board)
+        pv_list = self.get_pv_lists(board.coordinate)
+        root.print_search_result(board, pv_list)
         search_time = time_manager.calculate_consumption_time()
         po_per_sec = root.node_visits / search_time
 
@@ -341,6 +343,53 @@ class MCTSTree:
             MCTSNode: モンテカルロ木探索で使用する木のルート。
         """
         return self.node[self.current_root]
+
+    def get_pv_lists(self, coord: Coordinate) -> Dict[str, List[str]]:
+        """探索した手の最善応手系列を取得する。
+
+        Args:
+            coordinate (Coordinate): 座標変換処理インスタンス。
+
+        Returns:
+            Dict[str, List[str]]: 各手の最善応手系列を記録した辞書。
+        """
+        root = self.get_root()
+
+        pv_dict = {}
+
+        for i in range(root.num_children):
+            if root.children_visits[i] > 0:
+                pv_list = self.get_best_move_sequence([root.action[i]], i)
+                pv_dict[coord.convert_to_gtp_format(root.action[i])] = \
+                    [coord.convert_to_gtp_format(pv) for pv in pv_list]
+
+
+        return pv_dict
+
+    def get_best_move_sequence(self, pv_list: List[str], index: int) -> List[str]:
+        """最善応手系列を取得する。
+
+        Args:
+            pv_list (List[str]): 今までの経路の最善応手系列。
+            index (int): ノードのインデックス。
+
+        Returns:
+            List[str]: 最善応手系列。
+        """
+        node = self.node[index]
+
+        if node.node_visits == 0:
+            return pv_list
+
+        next_index = node.get_child_index(node.get_best_move_index())
+        next_action = node.get_best_move()
+        pv_list.append(next_action)
+
+        if next_index == NOT_EXPANDED:
+            return pv_list
+
+        return self.get_best_move_sequence(pv_list, next_index)
+
 
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:
     """ニューラルネットワークの計算が行われるまでに使用するPolicyを取得する。
