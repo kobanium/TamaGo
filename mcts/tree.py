@@ -20,8 +20,7 @@ from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
     MAX_CONSIDERED_NODES, RESIGN_THRESHOLD
 from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
-from mcts.time_manager import TimeManager
-
+from mcts.time_manager import TimeControl, TimeManager
 
 class MCTSTree:
     """モンテカルロ木探索の実装クラス。
@@ -108,12 +107,15 @@ class MCTSTree:
         self.process_mini_batch(board)
 
         # 探索を実行する
-        self.search(board, color, 999999999, analysis_query)
+        max_visits = 999999999
+        mode = TimeControl.CONSTANT_PLAYOUT
+        time_manager = TimeManager(mode=mode, constant_visits=max_visits)
+        time_manager.initialize()
+        time_manager.start_timer()
+        self.search(board, color, time_manager, analysis_query)
 
         if len(self.batch_queue.node_index) > 0:
             self.process_mini_batch(board)
-
-
 
     def search(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
         analysis_query: Dict) -> NoReturn:
@@ -127,6 +129,7 @@ class MCTSTree:
         analysis_clock = time.time()
         search_board = copy.deepcopy(board)
 
+        interval = analysis_query.get("interval", 0)
         threshold = time_manager.get_num_visits_threshold(color)
         for p in range(threshold):
             copy_board(dst=search_board,src=board)
@@ -136,7 +139,6 @@ class MCTSTree:
                 break
 
             if len(analysis_query) > 0:
-                interval = analysis_query.get("interval", 0)
                 elapsed = time.time() - analysis_clock
                 root = self.node[self.current_root]
 
@@ -151,7 +153,7 @@ class MCTSTree:
                     rlist, _, _ = select.select([sys.stdin], [], [], 0)
                     if rlist:
                         break
-        if interval == 0:
+        if len(analysis_query) > 0 and interval == 0:
             mode = analysis_query.get("mode", "lz")
             sys.stdout.write(root.to_analysis(board, mode))
             sys.stdout.flush()
