@@ -1,5 +1,6 @@
 """モンテカルロ木探索で使用するノードの実装。
 """
+import json
 from typing import Dict, List, NoReturn
 
 import numpy as np
@@ -10,7 +11,6 @@ from common.print_console import print_err
 from mcts.constant import NOT_EXPANDED, C_VISIT, C_SCALE
 from mcts.pucb.pucb import calculate_pucb_value
 from nn.utility import apply_softmax
-
 
 MAX_ACTIONS = BOARD_SIZE ** 2 + 1
 PUCT_WEIGHT = 1.0
@@ -334,13 +334,14 @@ class MCTSNode: # pylint: disable=R0902, R0904
             msg += f"\tnoise : {self.children_value_sum[i]}\n"
         print_err(msg)
 
-    def to_analysis(self, board: GoBoard, mode: str) -> str:
+    def get_analysis(self, board: GoBoard, mode: str, pv_lists_func) -> str:
         sorted_list = list()
         for i in range(self.num_children): 
             sorted_list.append((self.children_visits[i], i))
         sorted_list.sort(reverse=True)
 
-        coordinate = Coordinate(board_size=board.board_size)
+        coordinate = board.coordinate
+        pv_lists = pv_lists_func(self, coordinate)
 
         children_status_list = list()
         order = 0
@@ -349,23 +350,24 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 pos = self.action[i]
                 winrate = self.children_value_sum[i] / visits
                 prior = self.children_policy[i]
-                pv = "{} ".format(coordinate.convert_to_analyze_format(pos))
+
+                pv_list = pv_lists[coordinate.convert_to_gtp_format(pos)]
+                pv = "".join(["{} ".format(p) for p in pv_list])
 
                 children_status_list.append(
                     {
-                        "move" : coordinate.convert_to_analyze_format(pos),
-                        "visits" : visits,
-                        "winrate" : winrate,
-                        "prior" : prior,
-                        "lcb" : winrate,
-                        "order" : order,
+                        "move" : coordinate.convert_to_gtp_format(pos),
+                        "visits" : int(visits),
+                        "winrate" : float(winrate),
+                        "prior" : float(prior),
+                        "lcb" : float(winrate),
+                        "order" : int(order),
                         "pv" : pv
                     }
                 )
                 order += 1
 
         out = ""
-
         if mode == "cgos":
             cgos_dict = {
                 "winrate" : float(self.node_value_sum) / self.node_visits,
@@ -387,7 +389,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 cgos_dict["moves"].append(status)
 
         if mode == "cgos":
-            out = str(cgos_dict)
+            out = json.dumps(cgos_dict, indent=None, separators=(',', ':'))
 
         out += '\n'
         return out

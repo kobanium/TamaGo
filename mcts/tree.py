@@ -81,7 +81,7 @@ class MCTSTree:
         next_index = root.get_best_move_index()
 
         # 探索結果と探索にかかった時間を表示する
-        pv_list = self.get_pv_lists(board.coordinate)
+        pv_list = self.get_pv_lists(self.get_root(), board.coordinate)
         root.print_search_result(board, pv_list)
         search_time = time_manager.calculate_consumption_time()
         po_per_sec = root.node_visits / search_time
@@ -146,7 +146,7 @@ class MCTSTree:
                        (p == threshold-1 or elapsed > interval):
                     analysis_clock = time.time()
                     mode = analysis_query.get("mode", "lz")
-                    sys.stdout.write(root.to_analysis(board, mode))
+                    sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
                     sys.stdout.flush()
 
                 if analysis_query.get("ponder", False):
@@ -155,7 +155,7 @@ class MCTSTree:
                         break
         if len(analysis_query) > 0 and interval == 0:
             mode = analysis_query.get("mode", "lz")
-            sys.stdout.write(root.to_analysis(board, mode))
+            sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
             sys.stdout.flush()
 
 
@@ -388,7 +388,7 @@ class MCTSTree:
         """
         return self.node[self.current_root]
 
-    def get_pv_lists(self, coord: Coordinate) -> Dict[str, List[str]]:
+    def get_pv_lists(self, root, coord: Coordinate) -> Dict[str, List[str]]:
         """探索した手の最善応手系列を取得する。
 
         Args:
@@ -397,8 +397,6 @@ class MCTSTree:
         Returns:
             Dict[str, List[str]]: 各手の最善応手系列を記録した辞書。
         """
-        root = self.get_root()
-
         pv_dict = {}
 
         for i in range(root.num_children):
@@ -406,7 +404,6 @@ class MCTSTree:
                 pv_list = self.get_best_move_sequence([root.action[i]], i)
                 pv_dict[coord.convert_to_gtp_format(root.action[i])] = \
                     [coord.convert_to_gtp_format(pv) for pv in pv_list]
-
 
         return pv_dict
 

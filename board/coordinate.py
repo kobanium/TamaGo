@@ -52,18 +52,6 @@ class Coordinate:
             str: Go Text Protocol形式の座標。
         """
         if pos == PASS:
-            return "PASS"
-
-        if pos == RESIGN:
-            return "RESIGN"
-
-        x_coord = pos % self.board_size_with_ob - OB_SIZE + 1
-        y_coord = self.board_size - (pos // self.board_size_with_ob - OB_SIZE)
-
-        return GTP_X_COORDINATE[x_coord] + str(y_coord)
-
-    def convert_to_analyze_format(self, pos: int) -> str:
-        if pos == PASS:
             return "pass"
 
         if pos == RESIGN:
