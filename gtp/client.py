@@ -455,6 +455,9 @@ class GtpClient: # pylint: disable=R0902,R0903
                 print("= ")
                 pos = self._genmove_analyze("cgos", command_list[1:])
                 print("play {}\n".format(self.coordinate.convert_to_gtp_format(pos)))
+            elif input_gtp_command == "hash_record":
+                print_err(self.board.record.get_hash_history())
+                respond_success("")
             else:
                 respond_failure("unknown_command")
 

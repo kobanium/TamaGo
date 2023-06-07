@@ -91,7 +91,7 @@ def generate_rl_target_data(board: GoBoard, improved_policy_data: str, sym: int=
     split_data = improved_policy_data.split(" ")[1:]
     target_data = [1e-18] * len(board.board)
 
-    for datum in split_data[1:]:
+    for datum in split_data:
         pos, target = datum.split(":")
         coord = board.coordinate.convert_from_gtp_format(pos)
         target_data[coord] = float(target)

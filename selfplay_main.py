@@ -62,7 +62,7 @@ def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
 
     finish_time = time.time() - start_time
 
-    print(f"{finish_time}sec, {3600.0 * num_data / finish_time} games/hour")
+    print(f"{finish_time:3f} seconds, {(3600.0 * num_data / finish_time):3f} games/hour")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # TamaGo
 
-* 此翻譯對應 v0.6.0
+* 此翻譯對應 v0.6.5
 
 TamaGo 是以一個用 python 撰寫的圍棋程式。它有以下的功能
 
@@ -20,12 +20,12 @@ TamaGo 需要 python 3.6 或更高的版本
 # 需求
 | 套件 | 用途 |
 |---|---|
-| click | 支援選項 |
+| click | 支援內建選項 |
 | numpy | 用於計算和其它 |
 | pytorch | 構成神經網路和學習 |
 
 # 安裝套件
-在 Python 3.6 下輸入下列指令安裝套件。
+可通過 Python 輸入下列指令直接安裝套件。
 ```
 pip install -r requirements.txt
 ```
@@ -53,6 +53,7 @@ TamaGo 支援以下的指令
 | `--visits` | 每手棋的訪問數 | 1 以上的整數 | 1000 | 1000 | 當使用 --const-time 或 --time 參數時，此選項會被忽略 |
 | `--const-time` | 每手棋的思考時間 (秒) | 0 以上的任意數 | 10.0 |  | 當使用 --time 參數時，此選項會被忽略 |
 | `--time` | 總思考時間 (秒) | 0 以上的任意數 | 600.0 | |
+| `--batch-size` | MCTS 搜索使用的 batch 大小 | 大於零的整數 | 13 | NN_BATCH_SIZE | NN_BATCH_SIZE 定義在 mcts/constant.py |
 
 ## 執行範例
 
@@ -88,24 +89,24 @@ python main.py --const-time 10.0
 
 ## 使用預先訓練好的權重
 
-你可以從[這裡](https://github.com/kobanium/TamaGo/releases)下載訓練好的全權重，直接權重 ```model.bin``` 放置在 ```model``` 路徑之下即可使用。請注意每不同版本的網路結構可能不一樣，不同版本的 TamaGo 可能需要對應對不同版本的權重。
+你可以從[這裡](https://github.com/kobanium/TamaGo/releases)下載預先訓練好的權重，將權重改名成 ```model.bin``` 後放置在 ```model``` 路徑之下即可使用。請注意每不同版本的網路結構可能不一樣，不同版本的 TamaGo 可能需要對應對不同版本的權重。
 
 * 0.3.0 版本，不使用搜索的條件下強 GNU Go（lv10） 約 90 elo，搜索的條件下大概強約 160 elo。
-* 0.6.0 版本後的網路結構改變，之前的網路無法使用。
-
+* 0.6.0 版本後，網路的結構有改變，早於此版本的網路無法使用。
+* 0.6.3 版本，強 GNU Go（lv10） 約 420 elo。搜索的條件下（100 visits/move），強 [Ray](https://github.com/kobanium/Ray)（10k playouts/move） 約 180 elo。
 
 # 如何使用監督學習
-監督學習請看[這裡](supervised_learning.md)。
+監督學習教程請看[這裡](supervised_learning.md)。
 
 # 如何使用強化學習
-強化學習請看[這裡](reinforcement_learning.md)。
+強化學習教程請看[這裡](reinforcement_learning.md)。
 
 # GoGui analyze commands
 [GoGui](https://sourceforge.net/projects/gogui/) 可以用顏色顯示 policy 網路輸出的分佈，或是用數值直接顯示。
 
 ![Display policy value](../../img/gogui_analyze_policy.png)
 
-下圖裡的越紅代表其 policy 的數值越高。
+下圖裡的越紅位置代表其 policy 的數值越高。
 
 ![Coloring policy value](../../img/gogui_analyze_policy_color.png)
 

@@ -9,6 +9,7 @@ import numpy as np
 import torch
 
 from board.constant import PASS, RESIGN
+from board.coordinate import Coordinate
 from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 from common.print_console import print_err
@@ -49,14 +50,14 @@ class MCTSTree:
         Args:
             board (GoBoard): 評価する局面情報。
             color (Stone): 評価する局面の手番の色。
-            time_manager (TimeManager):
+            time_manager (TimeManager): 思考時間管理インスタンス。
 
         Returns:
             int: 着手する座標。
         """
         self.num_nodes = 0
 
-        start_time = time.time()
+        time_manager.start_timer()
 
         self.current_root = self.expand_node(board, color)
         input_plane = generate_input_planes(board, color, 0)
@@ -71,7 +72,7 @@ class MCTSTree:
             return PASS
 
         # 探索を実行する
-        self.search(board, color, time_manager.get_num_visits_threshold(color), analysis_query)
+        self.search(board, color, time_manager, analysis_query)
 
         if len(self.batch_queue.node_index) > 0:
             self.process_mini_batch(board)
@@ -81,14 +82,15 @@ class MCTSTree:
         next_index = root.get_best_move_index()
 
         # 探索結果と探索にかかった時間を表示する
-        root.print_search_result(board)
-        search_time = time.time() - start_time
+        pv_list = self.get_pv_lists(board.coordinate)
+        root.print_search_result(board, pv_list)
+        search_time = time_manager.calculate_consumption_time()
         po_per_sec = root.node_visits / search_time
 
         time_manager.set_search_speed(root.node_visits, search_time)
         time_manager.substract_consumption_time(color, search_time)
 
-        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f} visits/sec")
+        print_err(f"{search_time:.2f} seconds, {po_per_sec:.2f} visits/s")
 
         value = root.calculate_value_evaluation(next_index)
 
@@ -112,22 +114,26 @@ class MCTSTree:
             self.process_mini_batch(board)
 
 
-    def search(self, board: GoBoard, color: Stone, threshold: int, \
-        analysis_query: Dict) -> NoReturn:
-        """探索を指定回数実行する。
 
+    def search(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
+        analysis_query: Dict) -> NoReturn:
+        """探索を実行する。
         Args:
             board (GoBoard): 現在の局面情報。
             color (Stone): 現局面の手番の色。
-            threshold (int): この探索で実行する探索回数。
+            time_manager (TimeManager): 思考時間管理インスタンス。
         """
 
         analysis_clock = time.time()
         search_board = copy.deepcopy(board)
+
+        threshold = time_manager.get_num_visits_threshold(color)
         for p in range(threshold):
             copy_board(dst=search_board,src=board)
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
+            if time_manager.is_time_over():
+                break
 
             if len(analysis_query) > 0:
                 interval = analysis_query.get("interval", 0)
@@ -379,6 +385,53 @@ class MCTSTree:
             MCTSNode: モンテカルロ木探索で使用する木のルート。
         """
         return self.node[self.current_root]
+
+    def get_pv_lists(self, coord: Coordinate) -> Dict[str, List[str]]:
+        """探索した手の最善応手系列を取得する。
+
+        Args:
+            coordinate (Coordinate): 座標変換処理インスタンス。
+
+        Returns:
+            Dict[str, List[str]]: 各手の最善応手系列を記録した辞書。
+        """
+        root = self.get_root()
+
+        pv_dict = {}
+
+        for i in range(root.num_children):
+            if root.children_visits[i] > 0:
+                pv_list = self.get_best_move_sequence([root.action[i]], i)
+                pv_dict[coord.convert_to_gtp_format(root.action[i])] = \
+                    [coord.convert_to_gtp_format(pv) for pv in pv_list]
+
+
+        return pv_dict
+
+    def get_best_move_sequence(self, pv_list: List[str], index: int) -> List[str]:
+        """最善応手系列を取得する。
+
+        Args:
+            pv_list (List[str]): 今までの経路の最善応手系列。
+            index (int): ノードのインデックス。
+
+        Returns:
+            List[str]: 最善応手系列。
+        """
+        node = self.node[index]
+
+        if node.node_visits == 0:
+            return pv_list
+
+        next_index = node.get_child_index(node.get_best_move_index())
+        next_action = node.get_best_move()
+        pv_list.append(next_action)
+
+        if next_index == NOT_EXPANDED:
+            return pv_list
+
+        return self.get_best_move_sequence(pv_list, next_index)
+
 
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:
     """ニューラルネットワークの計算が行われるまでに使用するPolicyを取得する。

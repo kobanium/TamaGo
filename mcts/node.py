@@ -1,6 +1,6 @@
 """モンテカルロ木探索で使用するノードの実装。
 """
-from typing import Dict, NoReturn
+from typing import Dict, List, NoReturn
 
 import numpy as np
 from board.constant import BOARD_SIZE
@@ -201,7 +201,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.children_index[index] = child_index
 
 
-    def print_search_result(self, board: GoBoard) -> NoReturn:
+    def print_search_result(self, board: GoBoard, pv_dict: Dict[str, List[str]]) -> NoReturn:
         """探索結果を表示する。探索した手の探索回数とValueの平均値を表示する。
 
         Args:
@@ -215,7 +215,8 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 msg = f"pos={pos}, "
                 msg += f"visits={self.children_visits[i]}, "
                 msg += f"policy={self.children_policy[i]:.4f}, "
-                msg += f"value={value[i]:.4f}"
+                msg += f"value={value[i]:.4f}, "
+                msg += f"pv={','.join(pv_dict[pos])}"
                 print_err(msg)
 
 

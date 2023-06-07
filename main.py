@@ -10,6 +10,8 @@ from mcts.time_manager import TimeControl
 
 default_model_path = os.path.join("model", "model.bin")
 
+# pylint: disable=R0913
+
 @click.command()
 @click.option('--size', type=click.IntRange(2, BOARD_SIZE), default=BOARD_SIZE, \
     help=f"碁盤のサイズを指定。デフォルトは{BOARD_SIZE}。")
@@ -36,7 +38,7 @@ default_model_path = os.path.join("model", "model.bin")
     help="探索時のミニバッチサイズ。デフォルトはNN_BATCH_SIZE。")
 def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
     policy_move: bool, komi: float, visits: int, const_time: float, time: float, \
-    batch_size: int): # pylint: disable=R0913
+    batch_size: int):
     """GTPクライアントの起動。
 
     Args:
