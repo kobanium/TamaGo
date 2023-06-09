@@ -388,7 +388,7 @@ class MCTSTree:
         """
         return self.node[self.current_root]
 
-    def get_pv_lists(self, root, coord: Coordinate) -> Dict[str, List[str]]:
+    def get_pv_lists(self, root: MCTSNode, coord: Coordinate) -> Dict[str, List[str]]:
         """探索した手の最善応手系列を取得する。
 
         Args:
@@ -401,7 +401,7 @@ class MCTSTree:
 
         for i in range(root.num_children):
             if root.children_visits[i] > 0:
-                pv_list = self.get_best_move_sequence([root.action[i]], i)
+                pv_list = self.get_best_move_sequence([root.action[i]], root.children_index[i])
                 pv_dict[coord.convert_to_gtp_format(root.action[i])] = \
                     [coord.convert_to_gtp_format(pv) for pv in pv_list]
 
