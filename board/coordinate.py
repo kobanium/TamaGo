@@ -52,10 +52,10 @@ class Coordinate:
             str: Go Text Protocol形式の座標。
         """
         if pos == PASS:
-            return "PASS"
+            return "pass"
 
         if pos == RESIGN:
-            return "RESIGN"
+            return "resign"
 
         x_coord = pos % self.board_size_with_ob - OB_SIZE + 1
         y_coord = self.board_size - (pos // self.board_size_with_ob - OB_SIZE)

@@ -1,6 +1,8 @@
 """モンテカルロ木探索の実装。
 """
 from typing import Dict, List, NoReturn, Tuple
+import sys
+import select
 import copy
 import time
 import numpy as np
@@ -18,8 +20,7 @@ from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
     MAX_CONSIDERED_NODES, RESIGN_THRESHOLD
 from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
-from mcts.time_manager import TimeManager
-
+from mcts.time_manager import TimeControl, TimeManager
 
 class MCTSTree:
     """モンテカルロ木探索の実装クラス。
@@ -41,7 +42,8 @@ class MCTSTree:
         self.batch_size = batch_size
 
 
-    def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager) -> int:
+    def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
+        analysis_query: Dict = dict()) -> int:
         """モンテカルロ木探索を実行して最善手を返す。
 
         Args:
@@ -69,7 +71,7 @@ class MCTSTree:
             return PASS
 
         # 探索を実行する
-        self.search(board, color, time_manager)
+        self.search(board, color, time_manager, analysis_query)
 
         if len(self.batch_queue.node_index) > 0:
             self.process_mini_batch(board)
@@ -79,7 +81,7 @@ class MCTSTree:
         next_index = root.get_best_move_index()
 
         # 探索結果と探索にかかった時間を表示する
-        pv_list = self.get_pv_lists(board.coordinate)
+        pv_list = self.get_pv_lists(self.get_root(), board.coordinate)
         root.print_search_result(board, pv_list)
         search_time = time_manager.calculate_consumption_time()
         po_per_sec = root.node_visits / search_time
@@ -96,23 +98,65 @@ class MCTSTree:
 
         return next_move
 
+    def ponder(self, board: GoBoard, color: Stone, analysis_query: Dict) -> NoReturn:
+        self.num_nodes = 0
 
-    def search(self, board: GoBoard, color: Stone, time_manager: TimeManager) -> NoReturn:
+        self.current_root = self.expand_node(board, color)
+        input_plane = generate_input_planes(board, color, 0)
+        self.batch_queue.push(input_plane, [], self.current_root)
+        self.process_mini_batch(board)
+
+        # 探索を実行する
+        max_visits = 999999999
+        mode = TimeControl.CONSTANT_PLAYOUT
+        time_manager = TimeManager(mode=mode, constant_visits=max_visits)
+        time_manager.initialize()
+        time_manager.start_timer()
+        self.search(board, color, time_manager, analysis_query)
+
+        if len(self.batch_queue.node_index) > 0:
+            self.process_mini_batch(board)
+
+    def search(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
+        analysis_query: Dict) -> NoReturn:
         """探索を実行する。
-
         Args:
             board (GoBoard): 現在の局面情報。
             color (Stone): 現局面の手番の色。
             time_manager (TimeManager): 思考時間管理インスタンス。
         """
+
+        analysis_clock = time.time()
         search_board = copy.deepcopy(board)
+
+        interval = analysis_query.get("interval", 0)
         threshold = time_manager.get_num_visits_threshold(color)
-        for _ in range(threshold):
+        for p in range(threshold):
             copy_board(dst=search_board,src=board)
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
             if time_manager.is_time_over():
                 break
+
+            if len(analysis_query) > 0:
+                elapsed = time.time() - analysis_clock
+                root = self.node[self.current_root]
+
+                if interval > 0 and \
+                       (p == threshold-1 or elapsed > interval):
+                    analysis_clock = time.time()
+                    mode = analysis_query.get("mode", "lz")
+                    sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
+                    sys.stdout.flush()
+
+                if analysis_query.get("ponder", False):
+                    rlist, _, _ = select.select([sys.stdin], [], [], 0)
+                    if rlist:
+                        break
+        if len(analysis_query) > 0 and interval == 0:
+            mode = analysis_query.get("mode", "lz")
+            sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
+            sys.stdout.flush()
 
 
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \
@@ -344,7 +388,7 @@ class MCTSTree:
         """
         return self.node[self.current_root]
 
-    def get_pv_lists(self, coord: Coordinate) -> Dict[str, List[str]]:
+    def get_pv_lists(self, root, coord: Coordinate) -> Dict[str, List[str]]:
         """探索した手の最善応手系列を取得する。
 
         Args:
@@ -353,8 +397,6 @@ class MCTSTree:
         Returns:
             Dict[str, List[str]]: 各手の最善応手系列を記録した辞書。
         """
-        root = self.get_root()
-
         pv_dict = {}
 
         for i in range(root.num_children):
@@ -362,7 +404,6 @@ class MCTSTree:
                 pv_list = self.get_best_move_sequence([root.action[i]], i)
                 pv_dict[coord.convert_to_gtp_format(root.action[i])] = \
                     [coord.convert_to_gtp_format(pv) for pv in pv_list]
-
 
         return pv_dict
 
