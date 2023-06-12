@@ -43,7 +43,9 @@ python main.py
 | `--visits` | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
 | `--const-time` | 1手あたりの探索時間 (秒) | 0より大きい実数 | 10.0 |  | --timeオプションの指定があるときは本オプションを無視します。 |
 | `--time` | 持ち時間 (秒) | 0より大きい実数 | 600.0 | |
-| `--batch-size` | 探索時のニューラルネットワークのミニバッチサイズ | 0より大きい整数 | NN_BATCH_SIZE | NN_BATCH_SIZEはmcts/constant.pyに定義してあります。 |
+| `--batch-size` | 探索時のニューラルネットワークのミニバッチサイズ | 1以上の整数 | 13 | NN_BATCH_SIZE | NN_BATCH_SIZEはmcts/constant.pyに定義してあります。 |
+| `--tree-size` | 探索木を構成するノードの最大数 | 1以上の整数 | 100000| MCTS_TREE_SIZE | MCTS_TREE_SIZEはmcts/constant.pyに定義してあります。 |
+| `--cgos-mode` | 石を打ち上げるまでパスを抑制するフラグ | true または false | true | false | |
 
 ## プログラムの実行例は下記のとおりです
 1) 碁盤のサイズを5、model/model.binを学習済みモデルとして使用し、GPUを使用せずに実行するケース
@@ -70,6 +72,10 @@ python main.py --visits 500
 ```
 python main.py --const-time 10.0
 ```
+7) CGOSの9路盤で動かすケース
+```
+python main.py --model model/sl-model.bin --use-gpu true --cgos-mode true --superko true --batch-size 13 --time 600 --komi 7 --tree-size 200000
+```
 
 ## 学習済みモデルファイルについて
 学習済みのモデルファイルについては[こちら](https://github.com/kobanium/TamaGo/releases)から取得してください。modelフォルダ以下にmodel.binファイルを配置するとコマンドラインオプションの指定無しで動かせます。ニューラルネットワークの構造と学習済みモデルファイルが一致しないとロードできないので、取得したモデルファイルのリリースバージョンとTamaGoのバージョンが一致しているかに注意してください。  
@@ -90,7 +96,21 @@ Policyの値は0.0〜1.0の範囲で表示されます。
 
 
 Policyの値による色付けはPolicyの値が大きいほど赤く、小さいほど青く表示されます。
+
 ![Policyの値で色付け](../../img/gogui_analyze_policy_color.png)
+
+# Analyze commands
+TamaGoはバージョン0.7.0からlz-analyze, lz-genmove_analyzeをサポートしています。
+SabakiやLizzieからご利用ください。
+
+![解析コマンドの例](../../img/lz_analyze_sample.png)
+
+# CGOS analyze mode
+TamaGoはバージョン0.7.0からcgos-analyze, cgos-genmove_analyzeをサポートしています。[Computer Go Server (CGOS)](http://www.yss-aya.com/cgos/)に接続する際は、--cgos-modeオプションをTrueにすることで読み筋などの情報を表示することができます。
+
+![CGOSでの動作例](../../img/cgos-analyze.png)
+
+![CGOSでの読み筋表示](../../img/cgos-analyze-pv.png)
 
 # License
 ライセンスはApache License ver 2.0です。
@@ -104,7 +124,7 @@ Policyの値による色付けはPolicyの値が大きいほど赤く、小さ�
   - [x] Super Koの判定処理
 - 探索部の実装
   - [x] 木とノードのデータ構造
-  - [ ] モンテカルロ木探索
+  - [x] モンテカルロ木探索
     - ~~クラシックなMCTS~~
       - ~~UCT~~
       - ~~RAVE~~
@@ -113,9 +133,9 @@ Policyの値による色付けはPolicyの値が大きいほど赤く、小さ�
       - [x] PUCB値の計算
       - [x] ニューラルネットワークのミニバッチ処理  
     - [x] Sequential Halving applied to tree探索
-    - [ ] CGOS対応
-      - [ ] 死石がなくなるまでパスを抑制
-      - [ ] cgos_genmove対応
+    - [x] CGOS対応
+      - [x] 死石がなくなるまでパスを抑制
+      - [x] cgos_genmove対応
     - [x] 持ち時間による探索時間制御
 - 学習の実装
   - [x] SGFファイルの読み込み処理
