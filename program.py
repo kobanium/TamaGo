@@ -21,4 +21,6 @@ PROTOCOL_VERSION="2"
 # Version 0.6.4 : time_leftコマンドが来ないと持ち時間を正しく消費しないバグの修正。
 # Version 0.6.5 : GPU使用時のGoGUI解析コマンドが落ちるバグの修正。--window-sizeオプションのバグ修正。
 #                 思考時間管理処理の改良。
-VERSION="0.6.5"
+# Version 0.7.0 : lz-analyze, lz-genmove_analyze, cgos-analyze, cgos-genmove_analyzeコマンドのサポート。
+#                 強化学習に関するバグと超劫の判定処理のバグの修正。
+VERSION="0.7.0"

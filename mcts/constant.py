@@ -36,3 +36,6 @@ VISITS_PER_SEC = 20
 
 # 投了の閾値
 RESIGN_THRESHOLD = 0.05
+
+# 探索木のサイズ
+MCTS_TREE_SIZE = 65536

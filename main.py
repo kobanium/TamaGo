@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """GTPクライアントのエントリーポイント。
 """
 import os
@@ -5,12 +6,12 @@ import click
 
 from gtp.client import GtpClient
 from board.constant import BOARD_SIZE
-from mcts.constant import NN_BATCH_SIZE
+from mcts.constant import NN_BATCH_SIZE, MCTS_TREE_SIZE
 from mcts.time_manager import TimeControl
 
 default_model_path = os.path.join("model", "model.bin")
 
-# pylint: disable=R0913
+# pylint: disable=R0913, R0914
 
 @click.command()
 @click.option('--size', type=click.IntRange(2, BOARD_SIZE), default=BOARD_SIZE, \
@@ -35,10 +36,14 @@ default_model_path = os.path.join("model", "model.bin")
 @click.option('--time', type=click.FLOAT, \
     help="持ち時間の指定。")
 @click.option('--batch-size', type=click.IntRange(min=1), default=NN_BATCH_SIZE, \
-    help="探索時のミニバッチサイズ。デフォルトはNN_BATCH_SIZE。")
+    help=f"探索時のミニバッチサイズ。デフォルトはNN_BATCH_SIZE = {NN_BATCH_SIZE}。")
+@click.option('--tree-size', type=click.IntRange(min=1), default=MCTS_TREE_SIZE, \
+    help=f"探索木を構成するノードの最大数。デフォルトはMCTS_TREE_SIZE = {MCTS_TREE_SIZE}。")
+@click.option('--cgos-mode', type=click.BOOL, default=False, \
+    help="全ての石を打ち上げるまでパスしないモード設定。デフォルトはFalse。")
 def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
     policy_move: bool, komi: float, visits: int, const_time: float, time: float, \
-    batch_size: int):
+    batch_size: int, tree_size: int, cgos_mode: bool):
     """GTPクライアントの起動。
 
     Args:
@@ -53,6 +58,8 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
         const_time (float): 1手あたりの探索時間。
         time (float): 対局時の持ち時間。
         batch_size (int): 探索実行時のニューラルネットワークのミニバッチサイズ。デフォルトはNN_BATCH_SIZE。
+        tree_size (int): 探索木を構成するノードの最大数。デフォルトはMCTS_TREE_SIZE。
+        cgos_mode (bool): 全ての石を打ち上げるまでパスしないモード設定。デフォルトはFalse。
     """
     mode = TimeControl.CONSTANT_PLAYOUT
 
@@ -63,7 +70,8 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
 
     program_dir = os.path.dirname(__file__)
     client = GtpClient(size, superko, os.path.join(program_dir, model), use_gpu, policy_move, \
-        sequential_halving, komi, mode, visits, const_time, time, batch_size)
+        sequential_halving, komi, mode, visits, const_time, time, batch_size, tree_size, \
+        cgos_mode)
     client.run()
 
 

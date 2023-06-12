@@ -1,6 +1,6 @@
 """モンテカルロ木探索の実装。
 """
-from typing import Dict, List, NoReturn, Tuple
+from typing import Any, Dict, List, NoReturn, Tuple
 import sys
 import select
 import copy
@@ -17,15 +17,16 @@ from nn.feature import generate_input_planes
 from nn.network.dual_net import DualNet
 from mcts.batch_data import BatchQueue
 from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
-    MAX_CONSIDERED_NODES, RESIGN_THRESHOLD
+    MAX_CONSIDERED_NODES, RESIGN_THRESHOLD, MCTS_TREE_SIZE
 from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
 from mcts.time_manager import TimeControl, TimeManager
 
-class MCTSTree:
+class MCTSTree: # pylint: disable=R0902
     """モンテカルロ木探索の実装クラス。
     """
-    def __init__(self, network: DualNet, tree_size=65536, batch_size=NN_BATCH_SIZE):
+    def __init__(self, network: DualNet, tree_size: int=MCTS_TREE_SIZE, \
+        batch_size: int=NN_BATCH_SIZE, cgos_mode: bool=False):
         """MCTSTreeクラスのコンストラクタ。
 
         Args:
@@ -40,10 +41,11 @@ class MCTSTree:
         self.batch_queue = BatchQueue()
         self.current_root = 0
         self.batch_size = batch_size
+        self.cgos_mode = cgos_mode
 
 
     def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
-        analysis_query: Dict = dict()) -> int:
+        analysis_query: Dict[str, Any]) -> int:
         """モンテカルロ木探索を実行して最善手を返す。
 
         Args:
@@ -98,7 +100,15 @@ class MCTSTree:
 
         return next_move
 
-    def ponder(self, board: GoBoard, color: Stone, analysis_query: Dict) -> NoReturn:
+
+    def ponder(self, board: GoBoard, color: Stone, analysis_query: Dict[str, Any]) -> NoReturn:
+        """探索回数の制限なく探索を実行する。
+
+        Args:
+            board (GoBoard): 局面情報。
+            color (Stone): 思考する手番の色。
+            analysis_query (Dict): 解析情報。
+        """
         self.num_nodes = 0
 
         self.current_root = self.expand_node(board, color)
@@ -117,21 +127,23 @@ class MCTSTree:
         if len(self.batch_queue.node_index) > 0:
             self.process_mini_batch(board)
 
+
     def search(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
-        analysis_query: Dict) -> NoReturn:
+        analysis_query: Dict[str, Any]) -> NoReturn: # pylint: disable=R0914
         """探索を実行する。
         Args:
             board (GoBoard): 現在の局面情報。
             color (Stone): 現局面の手番の色。
             time_manager (TimeManager): 思考時間管理インスタンス。
+            analysis_query (Dict[str, Any]) : 解析情報。
         """
-
         analysis_clock = time.time()
         search_board = copy.deepcopy(board)
 
         interval = analysis_query.get("interval", 0)
         threshold = time_manager.get_num_visits_threshold(color)
-        for p in range(threshold):
+
+        for counter in range(threshold):
             copy_board(dst=search_board,src=board)
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
@@ -143,7 +155,7 @@ class MCTSTree:
                 root = self.node[self.current_root]
 
                 if interval > 0 and \
-                       (p == threshold-1 or elapsed > interval):
+                       (counter == threshold - 1 or elapsed > interval):
                     analysis_clock = time.time()
                     mode = analysis_query.get("mode", "lz")
                     sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
@@ -153,6 +165,7 @@ class MCTSTree:
                     rlist, _, _ = select.select([sys.stdin], [], [], 0)
                     if rlist:
                         break
+
         if len(analysis_query) > 0 and interval == 0:
             mode = analysis_query.get("mode", "lz")
             sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
@@ -171,7 +184,7 @@ class MCTSTree:
         """
 
         # UCB値最大の手を求める
-        next_index = self.node[current_index].select_next_action()
+        next_index = self.node[current_index].select_next_action(self.cgos_mode)
         next_move = self.node[current_index].get_child_move(next_index)
 
         path.append((current_index, next_index))
@@ -236,7 +249,6 @@ class MCTSTree:
             board (GoBoard): 碁盤の情報。
             use_logit (bool): Policyの出力をlogitにするフラグ
         """
-
         input_planes = torch.Tensor(np.array(self.batch_queue.input_plane))
 
         if use_logit:
@@ -276,15 +288,15 @@ class MCTSTree:
 
     def generate_move_with_sequential_halving(self, board: GoBoard, color: Stone, \
         time_manager: TimeManager, never_resign: bool) -> int:
-        """_summary_
+        """SHOTで探索して着手生成する。
 
         Args:
-            board (GoBoard): _description_
-            color (Stone): _description_
-            time (TimeManager):
+            board (GoBoard): 局面情報。
+            color (Stone): 思考する手番の色。
+            time (TimeManager): 思考時間管理用インスタンス。
 
         Returns:
-            int: _description_
+            int: 生成した着手の座標。
         """
         self.num_nodes = 0
         start_time = time.time()

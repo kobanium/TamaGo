@@ -20,6 +20,8 @@ TamaGo runs on Python 3.6 or higher.
 - [How to execute supervised learning](#how-to-execute-supervised-learning)
 - [How to execute reinforcement learning](#how-to-execute-reinforcement-learning)
 - [GoGui analyze commands](#gogui-analyze-commands)
+- [Analyze commands](#analyze-commands)
+- [CGOS analyze mode](#cgos-analyze-mode)
 - [License](#license)
 
 # Requirements
@@ -56,6 +58,8 @@ TamaGo's command line options are as follows,
 | `--const-time` | Time to thinking per move | Real number more than 0 | 10.0 | None | When you use '--const-time' or '--time' options, this option is ignored.|
 | `--time` | Total remaining time for a game | Real number more than 0 | 600.0 | None |
 | `--batch-size` | Mini-batch size for MCTS | Integer number more than 0 | 13 | NN_BATCH_SIZE | NN_BATCH_SIZE is defined in mcts/constant.py. |
+| `--tree-size` | Maximum number of MCTS nodes | Integer number more than 0 | 100000 | MCTS_TREE_SIZE | MCTS_TREE_SIZE is defined in mcts/constant.py. |
+| `--cgos-mode` | Enable to capture all dead stones. | true or false | true | false | |
 
 ## Examples of TamaGo execution as GTP engine.
 1) Setting board size to 5, using model/model.bin as a trained file, avoiding to use a GPU.
@@ -82,6 +86,11 @@ python main.py --visits 500
 ```
 python main.py --const-time 10.0
 ```
+7) Settings for testing on CGOS.
+```
+python main.py --model model/sl-model.bin --use-gpu true --cgos-mode true --superko true --batch-size 13 --time 600 --komi 7 --tree-size 200000
+```
+
 
 ## Trained neural network parameters file.
 Trained neural network parameters file is available [here](https://github.com/kobanium/TamaGo/releases). When you place a trained file in the "model" direcotry under the name "model.bin", you can run TamaGo using a trained file without a command line option. If TamaGo's structure of neural network and a trained neural network parameter files are unmached, TamaGo cannot load a trained file. Please care about version of the trained model file and version of TamaGo.
@@ -100,9 +109,20 @@ Value range of Policy is more than or equal 0.0 and less than or equal to 1.0.
 
 ![Display policy value](img/gogui_analyze_policy.png)
 
-
 Redder is higher value, bluer is lower value.
+
 ![Coloring policy value](img/gogui_analyze_policy_color.png)
+
+# Analyze commands
+TamaGo version 0.7.0 supports lz-analyze and lz-genmove_analyze commands. When you use Lizzie or Sabaki, you can analyze positions using these commands.
+![lz-analyze-sample](img/lz_analyze_sample.png)
+
+# CGOS analyze mode
+TamaGo version 0.7.0 supports cgos-analyze, cgos-genmove_analyze commands. When you connect [Computer Go Server (CGOS)](http://www.yss-aya.com/cgos/) for testing TamaGo, you can check search information enabling --cgos-mode option.
+
+![cgos-analyze](img/cgos-analyze.png)
+
+![cgos-analyze-pv](img/cgos-analyze-pv.png)
 
 # License
 You can use TamaGo under [Apache License 2.0](LICENSE).
