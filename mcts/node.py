@@ -1,6 +1,7 @@
 """モンテカルロ木探索で使用するノードの実装。
 """
-from typing import Dict, NoReturn
+import json
+from typing import Callable, Dict, List, NoReturn
 
 import numpy as np
 from board.constant import BOARD_SIZE
@@ -9,7 +10,6 @@ from common.print_console import print_err
 from mcts.constant import NOT_EXPANDED, C_VISIT, C_SCALE
 from mcts.pucb.pucb import calculate_pucb_value
 from nn.utility import apply_softmax
-
 
 MAX_ACTIONS = BOARD_SIZE ** 2 + 1
 PUCT_WEIGHT = 1.0
@@ -126,15 +126,21 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.virtual_loss -= 1
 
 
-    def select_next_action(self) -> int:
+    def select_next_action(self, cgos_mode: bool) -> int:
         """PUCB値に基づいて次の着手を選択する。
 
+        Args:
+            cgos_mode (bool): 全ての石を打ち上げるまでパスを抑制するモード。
         Returns:
             int: 次の着手として選ぶ子ノードのインデックス。
         """
         pucb_values = calculate_pucb_value(self.node_visits + self.virtual_loss, \
             self.children_visits + self.children_virtual_loss, \
             self.children_value_sum, self.children_policy + self.noise)
+
+        if cgos_mode:
+            # PASSのValueを0.1だけ引く
+            pucb_values[self.num_children - 1] -= 0.1
 
         return np.argmax(pucb_values[:self.num_children])
 
@@ -200,7 +206,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.children_index[index] = child_index
 
 
-    def print_search_result(self, board: GoBoard) -> NoReturn:
+    def print_search_result(self, board: GoBoard, pv_dict: Dict[str, List[str]]) -> NoReturn:
         """探索結果を表示する。探索した手の探索回数とValueの平均値を表示する。
 
         Args:
@@ -212,9 +218,10 @@ class MCTSNode: # pylint: disable=R0902, R0904
             if self.children_visits[i] > 0:
                 pos = board.coordinate.convert_to_gtp_format(self.action[i])
                 msg = f"pos={pos}, "
-                msg += f"visits={self.children_visits[i]}, "
+                msg += f"visits={self.children_visits[i]:5d}, "
                 msg += f"policy={self.children_policy[i]:.4f}, "
-                msg += f"value={value[i]:.4f}"
+                msg += f"value={value[i]:.4f}, "
+                msg += f"pv={','.join(pv_dict[pos])}"
                 print_err(msg)
 
 
@@ -331,3 +338,74 @@ class MCTSNode: # pylint: disable=R0902, R0904
             msg += f"\tchildren_value_sum : {self.children_value_sum[i]}\n"
             msg += f"\tnoise : {self.children_value_sum[i]}\n"
         print_err(msg)
+
+
+    def get_analysis(self, board: GoBoard, mode: str, \
+        pv_lists_func: Callable[[List[str], int], List[str]]) -> str: # pylint: disable=R0914
+        """解析結果文字列を生成する。
+
+        Args:
+            board (GoBoard): 局面情報。
+            mode (str): 解析モード。"lz"か"cgos"。
+            pv_lists_func (Callable[[List[str], int], List[str]]): PV情報生成関数。
+
+        Returns:
+            str: GTP応答用解析結果文字列。
+        """
+        sorted_list = []
+        for i in range(self.num_children):
+            sorted_list.append((self.children_visits[i], i))
+        sorted_list.sort(reverse=True)
+
+        coordinate = board.coordinate
+        pv_lists = pv_lists_func(self, coordinate)
+
+        children_status_list = []
+        order = 0
+        for visits, i in sorted_list:
+            if visits != 0:
+                pos = self.action[i]
+                winrate = self.children_value_sum[i] / visits
+                prior = self.children_policy[i]
+
+                pv_list = pv_lists[coordinate.convert_to_gtp_format(pos)]
+                pv_str = "".join([f"{p} " for p in pv_list])
+
+                children_status_list.append(
+                    {
+                        "move" : coordinate.convert_to_gtp_format(pos),
+                        "visits" : int(visits),
+                        "winrate" : float(winrate),
+                        "prior" : float(prior),
+                        "lcb" : float(winrate),
+                        "order" : int(order),
+                        "pv" : pv_str
+                    }
+                )
+                order += 1
+
+        out = ""
+        if mode == "cgos":
+            cgos_dict = {
+                "winrate" : float(self.node_value_sum) / self.node_visits,
+                "visits" : self.node_visits,
+                "moves" : []
+            }
+
+        for status in children_status_list:
+            if mode == "lz":
+                out += f"info move {status['move']} "
+                out += f"visits {status['visits']} "
+                out += f"winrate {int(10000 * status['winrate'])} "
+                out += f"prior {int(10000 * status['prior'])} "
+                out += f"lcb {int(10000 * status['lcb'])} "
+                out += f"order {status['order']} "
+                out += f"pv {status['pv']}"
+            elif mode == "cgos":
+                cgos_dict["moves"].append(status)
+
+        if mode == "cgos":
+            out = json.dumps(cgos_dict, indent=None, separators=(',', ':'))
+
+        out += '\n'
+        return out

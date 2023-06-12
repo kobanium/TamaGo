@@ -10,7 +10,7 @@ from board.constant import PASS, RESIGN
 from board.coordinate import Coordinate
 from board.go_board import GoBoard
 from board.stone import Stone
-from common.print_console import print_err
+from common.print_console import print_err, print_out
 from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution, \
     display_policy_score
 from mcts.time_manager import TimeControl, TimeManager
@@ -28,7 +28,7 @@ class GtpClient: # pylint: disable=R0902,R0903
     def __init__(self, board_size: int, superko: bool, model_file_path: str, \
         use_gpu: bool, policy_move: bool, use_sequential_halving: bool, \
         komi: float, mode: TimeControl, visits: int, const_time: float, \
-        time: float, batch_size: int): # pylint: disable=R0913
+        time: float, batch_size: int, tree_size: int, cgos_mode: bool): # pylint: disable=R0913
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -44,6 +44,8 @@ class GtpClient: # pylint: disable=R0902,R0903
             const_time (float): 1手あたりの探索時間。
             time (float): 持ち時間。
             batch_size (int): 探索時のニューラルネットワークのミニバッチサイズ。
+            tree_size (int): 探索木を構成するノードの最大数。
+            cgos_mode (bool): 全ての石を打ち上げるまでパスしない設定フラグ。
         """
         self.gtp_commands = [
             "version",
@@ -62,7 +64,11 @@ class GtpClient: # pylint: disable=R0902,R0903
             "komi",
             "showboard",
             "load_sgf",
-            "gogui-analyze_commands"
+            "gogui-analyze_commands",
+            "lz-analyze",
+            "lz-genmove_analyze",
+            "cgos-analyze",
+            "cgos-genmove_analyze"
         ]
         self.superko = superko
         self.board = GoBoard(board_size=board_size, komi=komi, check_superko=superko)
@@ -91,7 +97,8 @@ class GtpClient: # pylint: disable=R0902,R0903
         try:
             self.network = load_network(model_file_path, use_gpu)
             self.use_network = True
-            self.mcts = MCTSTree(network=self.network, batch_size=batch_size)
+            self.mcts = MCTSTree(network=self.network, batch_size=batch_size, \
+                tree_size=tree_size, cgos_mode=cgos_mode)
         except FileNotFoundError:
             print_err(f"Model file {model_file_path} is not found")
         except RuntimeError:
@@ -184,7 +191,8 @@ class GtpClient: # pylint: disable=R0902,R0903
                     pos = self.mcts.generate_move_with_sequential_halving(self.board, \
                         genmove_color, self.time_manager, False)
                 else:
-                    pos = self.mcts.search_best_move(self.board, genmove_color, self.time_manager)
+                    pos = self.mcts.search_best_move(self.board, \
+                        genmove_color, self.time_manager, {})
         else:
             # ランダムに着手生成
             legal_pos = [pos for pos in self.board.onboard_pos \
@@ -287,6 +295,77 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         respond_success("")
 
+    def _analyze(self, mode: str, arg_list: List[str]) -> NoReturn:
+        """analyzeコマンド（lz-analyze, cgos-analyze）を実行する。
+
+        Args:
+            mode (str): 解析モード。値は"lz"か"cgos"。
+            arg_list (List[str]): コマンドの引数リスト (手番の色, 更新間隔)。
+        """
+        color = arg_list[0]
+        interval = 0
+        if len(arg_list) >= 2:
+            interval = int(arg_list[1])/100
+
+        if color[0][0] in ['B', 'b']:
+            to_move = Stone.BLACK
+        elif color[0][0] == ['B', 'w']:
+            to_move = Stone.WHITE
+        else:
+            respond_failure("lz-analyze color")
+            return
+
+        analysis_query = {
+            "mode" : mode,
+            "interval" : interval,
+            "ponder" : True
+        }
+        self.mcts.ponder(self.board, to_move, analysis_query)
+
+    def _genmove_analyze(self, mode: str, arg_list: List[str]) -> NoReturn:
+        """genmove_analyzeコマンド（lz-genmove_analyze, cgos-genmove_analyze）を実行する。
+
+        Args:
+            mode (str): 解析モード。値は"lz"か"cgos"。
+            arg_list (List[str]): コマンドの引数リスト（手番の色, 更新間隔)。
+        """
+        color = arg_list[0]
+        interval = 0
+        if len(arg_list) >= 2:
+            interval = int(arg_list[1])/100
+
+        if color.lower()[0] == 'b':
+            genmove_color = Stone.BLACK
+        elif color.lower()[0] == 'w':
+            genmove_color = Stone.WHITE
+        else:
+            respond_failure("genmove_analyze color")
+            return
+
+        if self.use_network:
+            # モンテカルロ木探索で着手生成
+            analysis_query = {
+                "mode" : mode,
+                "interval" : interval,
+                "ponder" : False
+            }
+            pos = self.mcts.search_best_move(self.board, genmove_color, \
+                self.time_manager, analysis_query)
+        else:
+            # ランダムに着手生成
+            legal_pos = [pos for pos in self.board.onboard_pos \
+                if self.board.is_legal_not_eye(pos, genmove_color)]
+            if legal_pos:
+                pos = random.choice(legal_pos)
+            else:
+                pos = PASS
+
+        if pos != RESIGN:
+            self.board.put_stone(pos, genmove_color)
+
+        print_out(f"play {self.coordinate.convert_to_gtp_format(pos)}\n")
+
+
     def run(self) -> NoReturn: # pylint: disable=R0912,R0915
         """Go Text Protocolのクライアントの実行処理。
         入力されたコマンドに対応する処理を実行し、応答メッセージを表示する。
@@ -366,9 +445,25 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self.board.display_self_atari(Stone.BLACK)
                 self.board.display_self_atari(Stone.WHITE)
                 respond_success("")
+            elif input_gtp_command == "lz-analyze":
+                print_out("= ")
+                self._analyze("lz", command_list[1:])
+                print("")
+            elif input_gtp_command == "lz-genmove_analyze":
+                print_out("= ")
+                self._genmove_analyze("lz", command_list[1:])
+            elif input_gtp_command == "cgos-analyze":
+                print_out("= ")
+                self._analyze("cgos", command_list[1:])
+                print("")
+            elif input_gtp_command == "cgos-genmove_analyze":
+                print_out("= ")
+                self._genmove_analyze("cgos", command_list[1:])
+            elif input_gtp_command == "hash_record":
+                print_err(self.board.record.get_hash_history())
+                respond_success("")
             else:
                 respond_failure("unknown_command")
-
 
 def respond_success(response: str) -> NoReturn:
     """コマンド処理成功時の応答メッセージを表示する。

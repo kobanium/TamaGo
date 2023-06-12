@@ -63,6 +63,14 @@ class Record:
         """
         return (self.color[moves], self.pos[moves], self.hash_value[moves])
 
+    def get_hash_history(self) -> np.array:
+        """ハッシュ値の履歴を取得する。
+
+        Returns:
+            np.array: ハッシュ値の履歴。
+        """
+        return self.hash_value
+
 
 def copy_record(dst: Record, src: Record) -> NoReturn:
     """着手履歴をコピーする。
