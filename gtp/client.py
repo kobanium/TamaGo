@@ -302,17 +302,16 @@ class GtpClient: # pylint: disable=R0902,R0903
             mode (str): 解析モード。値は"lz"か"cgos"。
             arg_list (List[str]): コマンドの引数リスト (手番の色, 更新間隔)。
         """
-        color = arg_list[0]
         interval = 0
         if len(arg_list) >= 2:
             interval = int(arg_list[1])/100
 
-        if color[0][0] in ['B', 'b']:
+        if arg_list[0][0] in ['B', 'b']:
             to_move = Stone.BLACK
-        elif color[0][0] == ['B', 'w']:
+        elif arg_list[0][0] in ['W', 'w']:
             to_move = Stone.WHITE
         else:
-            respond_failure("lz-analyze color")
+            respond_failure(f"{mode}-analyze color")
             return
 
         analysis_query = {
@@ -339,7 +338,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         elif color.lower()[0] == 'w':
             genmove_color = Stone.WHITE
         else:
-            respond_failure("genmove_analyze color")
+            respond_failure(f"{mode}-genmove_analyze color")
             return
 
         if self.use_network:
