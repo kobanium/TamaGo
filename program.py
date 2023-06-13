@@ -23,4 +23,5 @@ PROTOCOL_VERSION="2"
 #                 思考時間管理処理の改良。
 # Version 0.7.0 : lz-analyze, lz-genmove_analyze, cgos-analyze, cgos-genmove_analyzeコマンドのサポート。
 #                 強化学習に関するバグと超劫の判定処理のバグの修正。
-VERSION="0.7.0"
+# Version 0.7.1 : 解析コマンドのバグ修正。
+VERSION="0.7.1"
