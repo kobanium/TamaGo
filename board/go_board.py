@@ -434,7 +434,7 @@ class GoBoard: # pylint: disable=R0902
         base_data = [0] * (self.board_size_with_ob ** 2)
         for index, string in enumerate(self.strings.string):
             if string.exist():
-                num_liberties = string.get_liberties()
+                num_liberties = string.get_num_liberties()
                 coordinates = self.strings.get_stone_coordinates(index)
                 for coordinate in coordinates:
                     base_data[coordinate] = num_liberties
