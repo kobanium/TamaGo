@@ -3,11 +3,12 @@
 import glob
 import math
 import os
+import threading
 import time
 from concurrent.futures import ProcessPoolExecutor
 import click
 from board.constant import BOARD_SIZE
-from selfplay.worker import selfplay_worker
+from selfplay.worker import selfplay_worker, display_selfplay_progress_worker
 from learning_param import SELF_PLAY_VISITS, NUM_SELF_PLAY_WORKERS, \
     NUM_SELF_PLAY_GAMES
 
@@ -57,6 +58,9 @@ def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
     with ProcessPoolExecutor(max_workers=process) as executor:
         futures = [executor.submit(selfplay_worker, os.path.join(save_dir, str(kifu_dir_index)), \
             model, file_list, size, visits, use_gpu) for file_list in file_indice]
+        monitoring_worker = threading.Thread(target=display_selfplay_progress_worker, \
+            args=(os.path.join(save_dir, str(kifu_dir_index)), num_data, ), daemon=True)
+        monitoring_worker.start()
         for future in futures:
             future.result()
 

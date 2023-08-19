@@ -20,7 +20,7 @@ from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
     MAX_CONSIDERED_NODES, RESIGN_THRESHOLD, MCTS_TREE_SIZE
 from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
-from mcts.time_manager import TimeControl, TimeManager
+from mcts.time_manager import TimeControl, TimeManager, is_move_decided
 
 class MCTSTree: # pylint: disable=R0902
     """モンテカルロ木探索の実装クラス。
@@ -147,7 +147,8 @@ class MCTSTree: # pylint: disable=R0902
             copy_board(dst=search_board,src=board)
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
-            if time_manager.is_time_over():
+            if time_manager.is_time_over() or \
+                is_move_decided(self.get_root(), threshold):
                 break
 
             if len(analysis_query) > 0:
@@ -167,6 +168,7 @@ class MCTSTree: # pylint: disable=R0902
                         break
 
         if len(analysis_query) > 0 and interval == 0:
+            root = self.node[self.current_root]
             mode = analysis_query.get("mode", "lz")
             sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
             sys.stdout.flush()
@@ -269,6 +271,7 @@ class MCTSTree: # pylint: disable=R0902
         for policy, value_dist, path, node_index in zip(policy_data, \
             value_data, self.batch_queue.path, self.batch_queue.node_index):
             self.node[node_index].update_policy(policy)
+            self.node[node_index].set_raw_value(value_dist[1] * 0.5 + value_dist[2])
 
             if path:
                 value = value_dist[0] + value_dist[1] * 0.5

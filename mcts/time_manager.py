@@ -6,6 +6,7 @@ import time
 
 from board.stone import Stone
 from mcts.constant import CONST_VISITS, CONST_TIME, REMAINING_TIME, VISITS_PER_SEC
+from mcts.node import MCTSNode
 
 
 class TimeControl(Enum):
@@ -70,12 +71,14 @@ class TimeManager:
             return int(self.constant_visits)
         if self.mode == TimeControl.CONSTANT_TIME:
             self.time_limit = self.constant_time
-            return int(self.search_speed * self.constant_time)
+            threshold = int(self.search_speed * self.constant_time)
+            return threshold if threshold > 0 else 1
         if self.mode == TimeControl.TIME_CONTROL:
             remaining_time = self.remaining_time[0] \
                 if color is Stone.BLACK else self.remaining_time[1]
             self.time_limit = remaining_time / 10.0
-            return int(self.search_speed * self.time_limit)
+            threshold = int(self.search_speed * self.time_limit)
+            return threshold if threshold > 0 else 1
         return int(self.constant_visits)
 
 
@@ -137,3 +140,20 @@ class TimeManager:
         if time.time() - self.start_time > self.time_limit:
             return True
         return False
+
+
+def is_move_decided(root: MCTSNode, threshold: int) -> bool:
+    """着手が決定したか否かを判定する。
+
+    Args:
+        root (MCTSNode): 現局面のルートノード。
+        threshold (int): 探索回数の閾値。
+
+    Returns:
+        bool: 探索打ち切り判定結果。
+    """
+    sorted_visits = sorted(root.children_visits)
+    remaining_visits = threshold - root.node_visits
+    if sorted_visits[-1] - sorted_visits[-2] > remaining_visits:
+        return True
+    return False
