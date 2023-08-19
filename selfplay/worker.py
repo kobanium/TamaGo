@@ -1,8 +1,10 @@
 """自己対戦実行ワーカの実装。
 """
+import glob
 import os
 import random
-from typing import List
+import time
+from typing import List, NoReturn
 import numpy as np
 
 from board.constant import PASS, RESIGN
@@ -17,7 +19,7 @@ from learning_param import SELF_PLAY_VISITS
 
 # pylint: disable=R0913,R0914
 def selfplay_worker(save_dir: str, model_file_path: str, index_list: List[int], \
-    size: int, visits: int, use_gpu: bool):
+    size: int, visits: int, use_gpu: bool) -> NoReturn:
     """自己対戦実行ワーカ。
 
     Args:
@@ -86,3 +88,19 @@ def selfplay_worker(save_dir: str, model_file_path: str, index_list: List[int], 
 
         record.set_index(index)
         record.write_record(winner, board.get_komi(), is_resign, score)
+
+
+def display_selfplay_progress_worker(save_dir: str, num_data: int) -> NoReturn:
+    """自己対戦の進捗を表示する。
+
+    Args:
+        save_dir (str): 生成した棋譜ファイルが保存されるディレクトリのパス。
+    """
+    start_time = time.time()
+    while True:
+        time.sleep(60)
+        current_num_data = len(glob.glob(os.path.join(save_dir, "*.sgf")))
+        current_time = time.time()
+        msg = f"Generating {current_num_data:5d}/{num_data:5d} games "
+        msg += f"({3600 * current_num_data / (current_time - start_time):.4f} games/hour)."
+        print(msg)
