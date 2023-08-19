@@ -26,6 +26,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.node_visits = 0
         self.virtual_loss = 0
         self.node_value_sum = 0.0
+        self.raw_value = 0.0
         self.action = [0] * num_actions
         self.children_index = np.zeros(num_actions, dtype=np.int32)
         self.children_value = np.zeros(num_actions, dtype=np.float64)
@@ -43,8 +44,9 @@ class MCTSNode: # pylint: disable=R0902, R0904
             policy (Dict[int, float]): 候補手に対応するPolicyのマップ。
         """
         self.node_visits = 0
-        self.node_value_sum = 0.0
         self.virtual_loss = 0
+        self.node_value_sum = 0.0
+        self.raw_value = 0.0
         self.action = [0] * MAX_ACTIONS
         self.children_index.fill(NOT_EXPANDED)
         self.children_value.fill(0.0)
@@ -101,6 +103,15 @@ class MCTSNode: # pylint: disable=R0902, R0904
             NoReturn: _description_
         """
         self.children_value[index] = value
+
+
+    def set_raw_value(self, value: float) -> NoReturn:
+        """ノードに対応する局面のValueを設定する。
+
+        Args:
+            value (float): 設定するValueの値。
+        """
+        self.raw_value = value
 
 
     def update_child_value(self, index: int, value: float) -> NoReturn:
@@ -214,6 +225,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         """
         value = np.divide(self.children_value_sum, self.children_visits, \
             out=np.zeros_like(self.children_value_sum), where=(self.children_visits != 0))
+        print_err(f"raw_value={self.raw_value:.4f}")
         for i in range(self.num_children):
             if self.children_visits[i] > 0:
                 pos = board.coordinate.convert_to_gtp_format(self.action[i])
@@ -221,6 +233,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 msg += f"visits={self.children_visits[i]:5d}, "
                 msg += f"policy={self.children_policy[i]:.4f}, "
                 msg += f"value={value[i]:.4f}, "
+                msg += f"raw_value={self.children_value[i]:.4f}, "
                 msg += f"pv={','.join(pv_dict[pos])}"
                 print_err(msg)
 
@@ -231,8 +244,11 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.noise = np.random.gumbel(loc=0.0, scale=1.0, size=self.noise.size)
 
 
-    def calculate_completed_q_value(self) -> np.array:
+    def calculate_completed_q_value(self, use_mixed_value :bool=True) -> np.array:
         """Completed-Q valueを計算する。
+
+        Args:
+            use_mixed_value (bool, optional): Mixed value approximation使用フラグ. デフォルトはTrue.
 
         Returns:
             np.array: Completed-Q value.
@@ -246,7 +262,13 @@ class MCTSNode: # pylint: disable=R0902, R0904
         sum_prob = np.sum(policy)
         v_pi = np.sum(policy * q_value)
 
-        return np.where(self.children_visits[:self.num_children] > 0, q_value, v_pi / sum_prob)
+        if use_mixed_value:
+            value = (self.raw_value * np.ones_like(self.children_policy[:self.num_children]) + \
+                self.node_visits * v_pi / sum_prob) / (self.node_visits + 1.0)
+        else:
+            value = self.raw_value
+
+        return np.where(self.children_visits[:self.num_children] > 0, q_value, value)
 
 
     def calculate_improved_policy(self) -> np.array:
