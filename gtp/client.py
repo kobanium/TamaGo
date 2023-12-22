@@ -164,6 +164,19 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         respond_success("")
 
+    def _undo(self) -> NoReturn:
+        """undoコマンドを処理する。
+        """
+        # 一旦クリアして初手から直前手まで打ち直す非効率実装
+        history = self.board.get_move_history()
+        if not history:
+            respond_failure("cannot undo")
+            return
+        self._clear_board()
+        for (color, pos, _) in history[:-1]:
+            self.board.put_stone(pos, color)
+        respond_success("")
+
     def _genmove(self, color: str) -> NoReturn:
         """genmoveコマンドを処理する。
         入力された手番で思考し、着手を生成する。
@@ -432,6 +445,8 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self._komi(command_list[1])
             elif input_gtp_command == "play":
                 self._play(command_list[1], command_list[2])
+            elif input_gtp_command == "undo":
+                self._undo()
             elif input_gtp_command == "genmove":
                 self._genmove(command_list[1])
             elif input_gtp_command == "boardsize":
