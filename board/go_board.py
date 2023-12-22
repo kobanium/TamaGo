@@ -469,6 +469,18 @@ class GoBoard: # pylint: disable=R0902
         """
         return self.komi
 
+    def get_to_move(self) -> Stone:
+        """手番の色を取得する。
+
+        Returns:
+            Stone: 手番の色。
+        """
+        if self.moves == 1:
+            return Stone.BLACK
+        else:
+            last_move_color, _, _ = self.record.get(self.moves - 1)
+            return Stone.get_opponent_color(last_move_color)
+
     def count_score(self) -> int: # pylint: disable=R0912
         """領地を簡易的にカウントする。
 
