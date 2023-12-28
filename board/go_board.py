@@ -1,6 +1,6 @@
 """碁盤のデータ定義と操作処理。
 """
-from typing import List, NoReturn
+from typing import List, Tuple, NoReturn
 from collections import deque
 import numpy as np
 
@@ -468,6 +468,26 @@ class GoBoard: # pylint: disable=R0902
             float: 現在のコミの値。
         """
         return self.komi
+
+    def get_to_move(self) -> Stone:
+        """手番の色を取得する。
+
+        Returns:
+            Stone: 手番の色。
+        """
+        if self.moves == 1:
+            return Stone.BLACK
+        else:
+            last_move_color, _, _ = self.record.get(self.moves - 1)
+            return Stone.get_opponent_color(last_move_color)
+
+    def get_move_history(self) -> List[Tuple[Stone, int, np.array]]:
+        """着手の履歴を取得する。
+
+        Returns:
+            [(Stone, int, np.array), ...]: (着手の色、座標、ハッシュ値) のリスト。
+        """
+        return [self.record.get(m) for m in range(1, self.moves)]
 
     def count_score(self) -> int: # pylint: disable=R0912
         """領地を簡易的にカウントする。
