@@ -17,6 +17,7 @@ class Record:
         self.color = [Stone.EMPTY] * MAX_RECORDS
         self.pos = [PASS] * MAX_RECORDS
         self.hash_value = np.zeros(shape=MAX_RECORDS, dtype=np.uint64)
+        self.handicap_pos = []
 
     def clear(self) -> NoReturn:
         """データを初期化する。
@@ -24,6 +25,7 @@ class Record:
         self.color = [Stone.EMPTY] * MAX_RECORDS
         self.pos = [PASS] * MAX_RECORDS
         self.hash_value.fill(0)
+        self.handicap_pos = []
 
     def save(self, moves: int, color: Stone, pos: int, hash_value: np.array) -> NoReturn:
         """着手の履歴の記録する。
@@ -40,6 +42,14 @@ class Record:
             self.hash_value[moves] = hash_value
         else:
             print_err("Cannot save move record.")
+
+    def save_handicap(self, pos: int) -> NoReturn:
+        """置き石の座標を記録する。
+
+        Args:
+            pos (int): 置き石の座標。
+        """
+        self.handicap_pos.append(pos)
 
     def has_same_hash(self, hash_value: np.array) -> bool:
         """同じハッシュ値があるかを確認する。

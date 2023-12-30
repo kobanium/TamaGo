@@ -184,6 +184,56 @@ class GoBoard: # pylint: disable=R0902
         self.record.save(self.moves, color, pos, self.positional_hash)
         self.moves += 1
 
+    def put_handicap_stone(self, pos: int, color: Stone) -> NoReturn:
+        """指定された座標に指定された色の置き石を置く。
+
+        Args:
+            pos (int): 石を置く座標。
+            color (Stone): 置く石の色。
+        """
+        opponent_color = Stone.get_opponent_color(color)
+
+        self.board[pos] = color
+        self.pattern.put_stone(pos, color)
+        self.positional_hash = affect_stone_hash(self.positional_hash, pos, color)
+
+        neighbor4 = self.get_neighbor4(pos)
+
+        connection = []
+        prisoner = 0
+
+        for neighbor in neighbor4:
+            if self.board[neighbor] == color:
+                self.strings.remove_liberty(neighbor, pos)
+                connection.append(self.strings.get_id(neighbor))
+            elif self.board[neighbor] == opponent_color:
+                self.strings.remove_liberty(neighbor, pos)
+                if self.strings.get_num_liberties(neighbor) == 0:
+                    removed_stones = self.strings.remove_string(self.board, neighbor)
+                    prisoner += len(removed_stones)
+                    for removed_pos in removed_stones:
+                        self.pattern.remove_stone(removed_pos)
+                    self.positional_hash = affect_string_hash(self.positional_hash, \
+                        removed_stones, opponent_color)
+
+        if color == Stone.BLACK:
+            self.prisoner[0] += prisoner
+        elif color == Stone.WHITE:
+            self.prisoner[1] += prisoner
+
+        if len(connection) == 0:
+            self.strings.make_string(self.board, pos, color)
+            if prisoner == 1 and self.strings.get_num_liberties(pos) == 1:
+                self.ko_move = self.moves
+                self.ko_pos = self.strings.string[self.strings.get_id(pos)].lib[0]
+        elif len(connection) == 1:
+            self.strings.add_stone(self.board, pos, color, connection[0])
+        else:
+            self.strings.connect_string(self.board, pos, color, connection)
+
+        # 着手した時に記録
+        self.record.save_handicap(pos)
+
     def _is_suicide(self, pos: int, color: Stone) -> bool:
         """自殺手か否かを判定する。
         自殺手ならTrue、そうでなければFalseを返す。
@@ -477,9 +527,8 @@ class GoBoard: # pylint: disable=R0902
         """
         if self.moves == 1:
             return Stone.BLACK
-        else:
-            last_move_color, _, _ = self.record.get(self.moves - 1)
-            return Stone.get_opponent_color(last_move_color)
+        last_move_color, _, _ = self.record.get(self.moves - 1)
+        return Stone.get_opponent_color(last_move_color)
 
     def get_move_history(self) -> List[Tuple[Stone, int, np.array]]:
         """着手の履歴を取得する。
@@ -488,6 +537,14 @@ class GoBoard: # pylint: disable=R0902
             [(Stone, int, np.array), ...]: (着手の色、座標、ハッシュ値) のリスト。
         """
         return [self.record.get(m) for m in range(1, self.moves)]
+
+    def get_handicap_history(self) -> List[int]:
+        """置き石の座標を取得する。
+
+        Returns:
+            List[int]: 置き石の座標のリスト。
+        """
+        return self.record.handicap_pos[:]
 
     def count_score(self) -> int: # pylint: disable=R0912
         """領地を簡易的にカウントする。
