@@ -9,6 +9,7 @@ from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
 from board.constant import PASS, RESIGN
 from board.coordinate import Coordinate
 from board.go_board import GoBoard
+from board.handicap import get_handicap_coordinates
 from board.stone import Stone
 from common.print_console import print_err, print_out
 from gtp.gogui import GoguiAnalyzeCommand, display_policy_distribution, \
@@ -65,6 +66,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             "komi",
             "showboard",
             "load_sgf",
+            "fixed_handicap",
             "gogui-analyze_commands",
             "lz-analyze",
             "lz-genmove_analyze",
@@ -167,14 +169,21 @@ class GtpClient: # pylint: disable=R0902,R0903
     def _undo(self) -> NoReturn:
         """undoコマンドを処理する。
         """
-        # 一旦クリアして初手から直前手まで打ち直す非効率実装
         history = self.board.get_move_history()
         if not history:
             respond_failure("cannot undo")
             return
-        self._clear_board()
+
+        handicap_history = self.board.get_handicap_history()
+
+        self.board.clear()
+
+        for handicap in handicap_history:
+            self.board.put_handicap_stone(handicap, Stone.BLACK)
+
         for (color, pos, _) in history[:-1]:
             self.board.put_stone(pos, color)
+
         respond_success("")
 
     def _genmove(self, color: str) -> NoReturn:
@@ -308,6 +317,32 @@ class GtpClient: # pylint: disable=R0902,R0903
             self.board.put_stone(pos, color)
 
         respond_success("")
+
+    def _fixed_handicap(self, handicaps: str) -> NoReturn:
+        """fixed_handicapコマンドを処理する。
+        指定した数の置き石を置く。
+
+        Args:
+            handicaps (str): 置き石の個数
+        """
+        if self.board.moves > 1 or len(self.board.get_handicap_history()) > 1 :
+            respond_failure("board not empty")
+            return
+
+        num_handicaps = int(handicaps)
+        board_size = self.board.get_board_size()
+
+        handicap_list = get_handicap_coordinates(board_size, num_handicaps)
+
+        if handicap_list is None:
+            respond_failure(f"size {board_size}, handicaps {handicaps} is not supported")
+            return
+
+        for handicap in handicap_list:
+            pos = self.board.coordinate.convert_from_gtp_format(handicap)
+            self.board.put_handicap_stone(pos, Stone.BLACK)
+
+        respond_success(" ".join(handicap_list))
 
     def _decode_analyze_arg(self, arg_list: List[str]) -> (Stone, float):
         """analyzeコマンド（lz-analyze, cgos-analyze）の引数を解釈する。
@@ -463,6 +498,8 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self._showboard()
             elif input_gtp_command == "load_sgf":
                 self._load_sgf(command_list[1:])
+            elif input_gtp_command == "fixed_handicap":
+                self._fixed_handicap(command_list[1])
             elif input_gtp_command == "final_score":
                 respond_success("?")
             elif input_gtp_command == "showstring":
