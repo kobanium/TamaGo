@@ -27,4 +27,6 @@ PROTOCOL_VERSION="2"
 # Version 0.8.0 : SHOTでMixed value approximationを使うように変更
 #                 持ち時間の残りが少なくなった時にプログラムが落ちる不具合を修正。
 #                 強化学習の棋譜生成時に経過情報の表示を追加。
-VERSION="0.8.0"
+# Version 0.9.0 : undo, fixed_handicapコマンド、コマンドID付きGTPコマンドのサポート。
+#                 不正なGTPコマンドの応答誤りを修正。
+VERSION="0.9.0"
