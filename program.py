@@ -29,4 +29,5 @@ PROTOCOL_VERSION="2"
 #                 強化学習の棋譜生成時に経過情報の表示を追加。
 # Version 0.9.0 : undo, fixed_handicapコマンド、コマンドID付きGTPコマンドのサポート。
 #                 不正なGTPコマンドの応答誤りを修正。
-VERSION="0.9.0"
+# Version 0.9.1 : PVに空文字が混入する不具合の修正。
+VERSION="0.9.1"

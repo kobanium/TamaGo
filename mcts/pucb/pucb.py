@@ -12,7 +12,7 @@ def calculate_pucb_value(node_visits: int, children_visits: np.ndarray, \
     Args:
         node_visits (int): ノードの探索回数。
         children_visits (np.ndarray): 子ノードの探索回数。
-        value (np.ndarray): 子ノードのValueの合計値。
+        value_sum (np.ndarray): 子ノードのValueの合計値。
         policy (np.ndarray): 子ノードのPolicy。
 
     Returns:
