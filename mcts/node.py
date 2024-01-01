@@ -391,7 +391,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 prior = self.children_policy[i]
 
                 pv_list = pv_lists[coordinate.convert_to_gtp_format(pos)]
-                pv_str = "".join([f"{p} " for p in pv_list])
+                pv_str = " ".join([f"{p}" for p in pv_list])
 
                 children_status_list.append(
                     {
@@ -423,11 +423,13 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 out += f"lcb {int(10000 * status['lcb'])} "
                 out += f"order {status['order']} "
                 out += f"pv {status['pv']}"
+                out += " "
             elif mode == "cgos":
                 cgos_dict["moves"].append(status)
 
         if mode == "cgos":
             out = json.dumps(cgos_dict, indent=None, separators=(',', ':'))
-
+        else:
+            out = out[:-1]
         out += '\n'
         return out
