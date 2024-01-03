@@ -67,6 +67,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             "komi",
             "showboard",
             "loadsgf",
+            "tamago-read_sgf",
             "fixed_handicap",
             "gogui-analyze_commands",
             "lz-analyze",
@@ -306,10 +307,31 @@ class GtpClient: # pylint: disable=R0902,R0903
         sgf_data = SGFReader(arg_list[0], board_size=self.board.get_board_size())
 
         if len(arg_list) < 2:
-            moves = sgf_data.get_n_moves()
+            moves = 9999
         else:
             moves = int(arg_list[1])
+        self._load_sgf_data(sgf_data, moves)
 
+    def _read_sgf(self, arg_list: List[str]) -> NoReturn:
+        """tamago-read_sgfコマンドを処理する。
+        指定したSGF文字列の局面にする。
+
+        Args:
+            arg_list (List[str]): コマンドの引数リスト（SGF文字列を空白文字ごとに分割したもの）
+        """
+        sgf_text = ' '.join(arg_list)
+        sgf_data = SGFReader(sgf_text, board_size=self.board.get_board_size(), literal=True)
+        self._load_sgf_data(sgf_data)
+
+    def _load_sgf_data(self, sgf_data: SGFReader, moves: int=9999) -> NoReturn:
+        """SGFデータを読み込み、指定手番まで進めた局面にする。
+
+        Args:
+            arg_list (List[str]): コマンドの引数リスト（SGF文字列を空白文字ごとに分割したもの）
+            sgf_data (SGFReader): SGFデータ
+            moves (int): 手数（SGFデータの手数を超える値を指定した場合は最終局面となる）
+        """
+        moves = min(moves, sgf_data.get_n_moves())
         self.board.clear()
 
         for i in range(moves):
@@ -499,6 +521,8 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self._showboard()
             elif input_gtp_command == "loadsgf":
                 self._loadsgf(command_list[1:])
+            elif input_gtp_command == "tamago-read_sgf":
+                self._read_sgf(command_list[1:])
             elif input_gtp_command == "fixed_handicap":
                 self._fixed_handicap(command_list[1])
             elif input_gtp_command == "final_score":

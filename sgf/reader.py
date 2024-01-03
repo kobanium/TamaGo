@@ -33,12 +33,13 @@ sgf_coord_map = {
 class SGFReader: # pylint: disable=R0902
     """SGFファイル読み込み。
     """
-    def __init__(self, filename: str, board_size: int): # pylint: disable=R0912
+    def __init__(self, filename_or_text: str, board_size: int, literal: bool=False): # pylint: disable=R0912
         """コンストラクタ
 
         Args:
-            filename (str): SGFファイルパス
+            filename_or_text (str): SGFファイルパスまたはSGF文字列
             board_size (int): 碁盤の大きさ
+            literal (bool): 第一引数をSGF文字列とみなすかどうか
         """
         self.board_size = board_size
         self.board_size_with_ob = board_size + OB_SIZE * 2
@@ -54,8 +55,12 @@ class SGFReader: # pylint: disable=R0902
         self.application = None
         self.copyright = None
 
-        with open(filename, mode='r', encoding='utf-8') as sgf_file:
-            sgf_text = sgf_file.read()
+        if literal:
+            sgf_text = filename_or_text
+        else:
+            filename = filename_or_text
+            with open(filename, mode='r', encoding='utf-8') as sgf_file:
+                sgf_text = sgf_file.read()
 
         sgf_text = sgf_text.replace('\n', '')
 
