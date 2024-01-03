@@ -91,7 +91,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.use_sequential_halving = use_sequential_halving
         self.use_network = False
 
-        if mode is TimeControl.CONSTANT_PLAYOUT:
+        if mode is TimeControl.CONSTANT_PLAYOUT or mode is TimeControl.STRICT_PLAYOUT:
             self.time_manager = TimeManager(mode=mode, constant_visits=visits)
         if mode is TimeControl.CONSTANT_TIME:
             self.time_manager = TimeManager(mode=mode, constant_time=const_time)

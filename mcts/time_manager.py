@@ -15,6 +15,7 @@ class TimeControl(Enum):
     CONSTANT_PLAYOUT = 0
     CONSTANT_TIME = 1
     TIME_CONTROL = 2
+    STRICT_PLAYOUT = 3  # 着手が確定しても打ち切らず指定回数までプレイアウト
 
 
 class TimeManager:
@@ -66,7 +67,7 @@ class TimeManager:
         Returns:
             int: 探索回数の閾値。
         """
-        if self.mode == TimeControl.CONSTANT_PLAYOUT:
+        if self.mode == TimeControl.CONSTANT_PLAYOUT or self.mode == TimeControl.STRICT_PLAYOUT:
             self.time_limit = 10000.0
             return int(self.constant_visits)
         if self.mode == TimeControl.CONSTANT_TIME:
@@ -142,18 +143,21 @@ class TimeManager:
         return False
 
 
-def is_move_decided(root: MCTSNode, threshold: int) -> bool:
-    """着手が決定したか否かを判定する。
+    def is_move_decided(self, root: MCTSNode, threshold: int) -> bool:
+        """着手が決定したか否かを判定する。
 
-    Args:
-        root (MCTSNode): 現局面のルートノード。
-        threshold (int): 探索回数の閾値。
+        Args:
+            root (MCTSNode): 現局面のルートノード。
+            threshold (int): 探索回数の閾値。
 
-    Returns:
-        bool: 探索打ち切り判定結果。
-    """
-    sorted_visits = sorted(root.children_visits)
-    remaining_visits = threshold - root.node_visits
-    if sorted_visits[-1] - sorted_visits[-2] > remaining_visits:
-        return True
-    return False
+        Returns:
+            bool: 探索打ち切り判定結果。
+        """
+        sorted_visits = sorted(root.children_visits)
+        remaining_visits = threshold - root.node_visits
+        cutoff = sorted_visits[-1] - sorted_visits[-2]
+        if self.mode == TimeControl.STRICT_PLAYOUT:
+            cutoff = 0
+        if remaining_visits < cutoff:
+            return True
+        return False
