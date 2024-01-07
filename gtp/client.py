@@ -57,6 +57,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             "known_command",
             "list_commands",
             "play",
+            "undo",
             "genmove",
             "clear_board",
             "boardsize",
