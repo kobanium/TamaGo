@@ -20,7 +20,7 @@ from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
     MAX_CONSIDERED_NODES, RESIGN_THRESHOLD, MCTS_TREE_SIZE
 from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
-from mcts.time_manager import TimeControl, TimeManager, is_move_decided
+from mcts.time_manager import TimeControl, TimeManager
 from mcts.dump import dump_mcts_to_json
 
 class MCTSTree: # pylint: disable=R0902
@@ -151,7 +151,7 @@ class MCTSTree: # pylint: disable=R0902
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
             if time_manager.is_time_over() or \
-                is_move_decided(self.get_root(), threshold):
+                time_manager.is_move_decided(self.get_root(), threshold):
                 break
 
             if len(analysis_query) > 0:

@@ -40,7 +40,8 @@ python main.py
 | `--use-gpu` | GPU使用フラグ | true または false | true | false | |
 | `--policy-move` | Policyの分布に従って着手するフラグ | true または false | true | false | Policyのみの強さを確認するときに使用します。 |
 | `--sequential-halving` | Sequential Halving applied to treesの探索手法で探索するフラグ | true または false | true | false | 自己対戦時に使う探索なので、基本的にデバッグ用です。 |
-| `--visits` | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
+| `--visits` | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --strict-visitsオプション、--const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
+| `--strict-visits` | --visitsと同様だが、途中で最善手が確定しても探索を打ち切らない | 1以上の整数 | 1000 | None | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
 | `--const-time` | 1手あたりの探索時間 (秒) | 0より大きい実数 | 10.0 |  | --timeオプションの指定があるときは本オプションを無視します。 |
 | `--time` | 持ち時間 (秒) | 0より大きい実数 | 600.0 | |
 | `--batch-size` | 探索時のニューラルネットワークのミニバッチサイズ | 1以上の整数 | 13 | NN_BATCH_SIZE | NN_BATCH_SIZEはmcts/constant.pyに定義してあります。 |
@@ -111,6 +112,13 @@ TamaGoはバージョン0.7.0からcgos-analyze, cgos-genmove_analyzeをサポ�
 ![CGOSでの動作例](../../img/cgos-analyze.png)
 
 ![CGOSでの読み筋表示](../../img/cgos-analyze-pv.png)
+
+# Misc.
+TamaGoはGTPの独自拡張としてtamago-readsgfコマンドをサポートします。これはGTP標準のloadsgfコマンドと似ていますが、SGFファイルのパスではなくSGF文字列そのものを引数として、次の例のように使います。loadsgfとは異なり`move_number`の指定はできません。また、SGF文字列は改行を含んではいけません。
+
+```
+tamago-readsgf (;SZ[9]KM[7];B[fe];W[de])
+```
 
 # License
 ライセンスはApache License ver 2.0です。

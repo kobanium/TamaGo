@@ -30,6 +30,9 @@ default_model_path = os.path.join("model", "model.bin")
     help="コミの値の設定。デフォルトは7.0。")
 @click.option('--visits', type=click.IntRange(min=1), default=1000, \
     help="1手あたりの探索回数の指定。デフォルトは1000。\
+    --strict-visitsオプション、--const-timeオプション、または--timeオプションが指定された時は無視する。")
+@click.option('--strict-visits', type=click.IntRange(min=1), \
+    help="1手あたりの探索回数の厳密指定（着手が確定しても打ち切らない）。\
     --const-timeオプション、または--timeオプションが指定された時は無視する。")
 @click.option('--const-time', type=click.FLOAT, \
     help="1手あたりの探索時間の指定。--timeオプションが指定された時は無視する。")
@@ -42,7 +45,7 @@ default_model_path = os.path.join("model", "model.bin")
 @click.option('--cgos-mode', type=click.BOOL, default=False, \
     help="全ての石を打ち上げるまでパスしないモード設定。デフォルトはFalse。")
 def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
-    policy_move: bool, komi: float, visits: int, const_time: float, time: float, \
+    policy_move: bool, komi: float, visits: int, strict_visits: int, const_time: float, time: float, \
     batch_size: int, tree_size: int, cgos_mode: bool):
     """GTPクライアントの起動。
 
@@ -55,6 +58,7 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
         sequential_halving (bool): Gumbel AlphaZeroの探索手法で着手生成するフラグ。デフォルトはFalse。
         komi (float): コミの値。デフォルトは7.0。
         visits (int): 1手あたりの探索回数。デフォルトは1000。
+        strict_visits (int): 1手あたりの厳密な探索回数（着手が確定しても打ち切らない）。
         const_time (float): 1手あたりの探索時間。
         time (float): 対局時の持ち時間。
         batch_size (int): 探索実行時のニューラルネットワークのミニバッチサイズ。デフォルトはNN_BATCH_SIZE。
@@ -63,6 +67,9 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
     """
     mode = TimeControl.CONSTANT_PLAYOUT
 
+    if strict_visits is not None:
+        mode = TimeControl.STRICT_PLAYOUT
+        visits = strict_visits
     if const_time is not None:
         mode = TimeControl.CONSTANT_TIME
     if time is not None:
