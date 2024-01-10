@@ -54,7 +54,8 @@ TamaGo's command line options are as follows,
 | `--use-gpu` | Flag to use a GPU | true or false | true | false | |
 | `--policy-move` | Flag to move according to Policy distribution | true or false | true | false | |
 | `--sequential-halving` | Flag to use SHOT (Sequential Halving applied to trees) for searching | true or false | true | false | It's for debugging |
-| `--visits` | The number of visits per move | Integer number more than 0 | 1000 | 1000 | When you use '--const-time' or '--time' options, this option is ignored. |
+| `--visits` | The number of visits per move | Integer number more than 0 | 1000 | 1000 | When you use '--strict-visits', '--const-time' or '--time' options, this option is ignored. |
+| `--strict-visits` | Same as `--visits`, but never stop early even if the best move is clear | Integer number more than 0 | 1000 | None | When you use '--const-time' or '--time' options, this option is ignored. |
 | `--const-time` | Time to thinking per move | Real number more than 0 | 10.0 | None | When you use '--const-time' or '--time' options, this option is ignored.|
 | `--time` | Total remaining time for a game | Real number more than 0 | 600.0 | None |
 | `--batch-size` | Mini-batch size for MCTS | Integer number more than 0 | 13 | NN_BATCH_SIZE | NN_BATCH_SIZE is defined in mcts/constant.py. |
