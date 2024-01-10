@@ -327,7 +327,6 @@ class GtpClient: # pylint: disable=R0902,R0903
         """SGFデータを読み込み、指定手番まで進めた局面にする。
 
         Args:
-            arg_list (List[str]): コマンドの引数リスト（SGF文字列を空白文字ごとに分割したもの）
             sgf_data (SGFReader): SGFデータ
             moves (int): 手数（SGFデータの手数を超える値を指定した場合は最終局面となる）
         """

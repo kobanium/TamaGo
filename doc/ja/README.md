@@ -113,7 +113,7 @@ TamaGoはバージョン0.7.0からcgos-analyze, cgos-genmove_analyzeをサポ�
 ![CGOSでの読み筋表示](../../img/cgos-analyze-pv.png)
 
 # Misc.
-TamaGoはGTPの独自拡張としてtamago-readsgfコマンドをサポートします。これはGTP標準のloadsgfコマンドと似ていますが、SGFファイルのパスではなくSGF文字列そのものを引数として、次の例のように使います。loadsgfとは異なりmove_numberの指定はできません。また、SGF文字列は改行を含んではいけません。
+TamaGoはGTPの独自拡張としてtamago-readsgfコマンドをサポートします。これはGTP標準のloadsgfコマンドと似ていますが、SGFファイルのパスではなくSGF文字列そのものを引数として、次の例のように使います。loadsgfとは異なり`move_number`の指定はできません。また、SGF文字列は改行を含んではいけません。
 
 ```
 tamago-readsgf (;SZ[9]KM[7];B[fe];W[de])
