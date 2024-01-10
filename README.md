@@ -124,5 +124,12 @@ TamaGo version 0.7.0 supports cgos-analyze, cgos-genmove_analyze commands. When 
 
 ![cgos-analyze-pv](img/cgos-analyze-pv.png)
 
+# Misc.
+TamaGo supports tamago-read_sgf command as an original extension of GTP. Similar to the standard GTP command loadsgf, it accepts a literal SGF string instead of an SGF file path, as illustrated in the following example. However, unlike loadsgf, `move_number` is not supported. Additionally, the SGF string must not contain any newlines.
+
+```
+tamago-read_sgf (;SZ[9]KM[7];B[fe];W[de])
+```
+
 # License
 You can use TamaGo under [Apache License 2.0](LICENSE).
