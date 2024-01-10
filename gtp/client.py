@@ -66,7 +66,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             "get_komi",
             "komi",
             "showboard",
-            "load_sgf",
+            "loadsgf",
             "fixed_handicap",
             "gogui-analyze_commands",
             "lz-analyze",
@@ -293,8 +293,8 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.board.display()
         respond_success("")
 
-    def _load_sgf(self, arg_list: List[str]) -> NoReturn:
-        """load_sgfコマンドを処理する。
+    def _loadsgf(self, arg_list: List[str]) -> NoReturn:
+        """loadsgfコマンドを処理する。
         指定したSGFファイルの指定手番まで進めた局面にする。
 
         Args:
@@ -497,8 +497,8 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self._get_komi()
             elif input_gtp_command == "showboard":
                 self._showboard()
-            elif input_gtp_command == "load_sgf":
-                self._load_sgf(command_list[1:])
+            elif input_gtp_command == "loadsgf":
+                self._loadsgf(command_list[1:])
             elif input_gtp_command == "fixed_handicap":
                 self._fixed_handicap(command_list[1])
             elif input_gtp_command == "final_score":
