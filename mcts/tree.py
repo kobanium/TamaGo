@@ -21,6 +21,7 @@ from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
 from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
 from mcts.time_manager import TimeControl, TimeManager, is_move_decided
+from mcts.dump import dump_mcts_to_json
 
 class MCTSTree: # pylint: disable=R0902
     """モンテカルロ木探索の実装クラス。
@@ -42,6 +43,7 @@ class MCTSTree: # pylint: disable=R0902
         self.current_root = 0
         self.batch_size = batch_size
         self.cgos_mode = cgos_mode
+        self.to_move = Stone.BLACK
 
 
     def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
@@ -137,6 +139,7 @@ class MCTSTree: # pylint: disable=R0902
             time_manager (TimeManager): 思考時間管理インスタンス。
             analysis_query (Dict[str, Any]) : 解析情報。
         """
+        self.to_move = color
         analysis_clock = time.time()
         search_board = copy.deepcopy(board)
 
@@ -445,6 +448,39 @@ class MCTSTree: # pylint: disable=R0902
             return pv_list
 
         return self.get_best_move_sequence(pv_list, next_index)
+
+
+    def dump_to_json(self, board: GoBoard, superko: bool) -> str:
+        """MCTSの状態を表すJSON文字列を返す。
+
+        Args:
+            board (GoBoard): 現在の碁盤。
+            superko (bool): 超劫判定の有効化。
+
+        Returns:
+            str: MCTSの状態を表すJSON文字列。
+        """
+        return dump_mcts_to_json(self.to_dict(), board, superko)
+
+
+    def to_dict(self) -> Dict[str, Any]:
+        """ツリーの状態を辞書化して返す。
+
+        Returns:
+            Dict[str, Any]: ツリーの状態を表す辞書。
+        """
+        state = {
+            "node": [self.node[i].to_dict() for i in range(self.num_nodes)],
+            "num_nodes": self.num_nodes,
+            "root": self.root,
+            #"network": self.network,  # ダンプに含めない
+            #"batch_queue": self.batch_queue,  # ダンプに含めない
+            "current_root": self.current_root,
+            "batch_size": self.batch_size,
+            "cgos_mode": self.cgos_mode,
+            "to_move": 'black' if self.to_move == Stone.BLACK else 'white',
+        }
+        return state
 
 
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:

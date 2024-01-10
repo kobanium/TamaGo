@@ -72,7 +72,8 @@ class GtpClient: # pylint: disable=R0902,R0903
             "lz-analyze",
             "lz-genmove_analyze",
             "cgos-analyze",
-            "cgos-genmove_analyze"
+            "cgos-genmove_analyze",
+            "tamago-dump_tree",
         ]
         self.superko = superko
         self.board = GoBoard(board_size=board_size, komi=komi, check_superko=superko)
@@ -443,6 +444,15 @@ class GtpClient: # pylint: disable=R0902,R0903
         print_out(f"play {self.coordinate.convert_to_gtp_format(pos)}\n")
 
 
+    def _dump_tree(self) -> NoReturn:
+        """tamago-dump_treeコマンドを実行する。現在のMCTSツリーの状態をJSON形式で出力する。
+        """
+        json_str = self.mcts.dump_to_json(self.board, self.superko)
+        respond_success("", ongoing=True)
+        print(json_str)
+        print("")
+
+
     def run(self) -> NoReturn: # pylint: disable=R0912,R0915
         """Go Text Protocolのクライアントの実行処理。
         入力されたコマンドに対応する処理を実行し、応答メッセージを表示する。
@@ -547,6 +557,8 @@ class GtpClient: # pylint: disable=R0902,R0903
                 print("")
             elif input_gtp_command == "cgos-genmove_analyze":
                 self._genmove_analyze("cgos", command_list[1:])
+            elif input_gtp_command == "tamago-dump_tree":
+                self._dump_tree()
             elif input_gtp_command == "hash_record":
                 print_err(self.board.record.get_hash_history())
                 respond_success("")

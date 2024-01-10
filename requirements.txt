@@ -1,3 +1,4 @@
 click>=6.7
 numpy>=1.19.5
 torch>=1.10.0
+graphviz>=0.20.1
