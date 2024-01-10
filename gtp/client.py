@@ -67,7 +67,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             "komi",
             "showboard",
             "loadsgf",
-            "tamago-read_sgf",
+            "tamago-readsgf",
             "fixed_handicap",
             "gogui-analyze_commands",
             "lz-analyze",
@@ -312,8 +312,8 @@ class GtpClient: # pylint: disable=R0902,R0903
             moves = int(arg_list[1])
         self._load_sgf_data(sgf_data, moves)
 
-    def _read_sgf(self, arg_list: List[str]) -> NoReturn:
-        """tamago-read_sgfコマンドを処理する。
+    def _readsgf(self, arg_list: List[str]) -> NoReturn:
+        """tamago-readsgfコマンドを処理する。
         指定したSGF文字列の局面にする。
 
         Args:
@@ -521,8 +521,8 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self._showboard()
             elif input_gtp_command == "loadsgf":
                 self._loadsgf(command_list[1:])
-            elif input_gtp_command == "tamago-read_sgf":
-                self._read_sgf(command_list[1:])
+            elif input_gtp_command == "tamago-readsgf":
+                self._readsgf(command_list[1:])
             elif input_gtp_command == "fixed_handicap":
                 self._fixed_handicap(command_list[1])
             elif input_gtp_command == "final_score":
