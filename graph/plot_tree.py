@@ -99,8 +99,12 @@ def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool
         )
 
         # エッジの作成
+        freshness = (item['index'] + 1) / len(node)
+        whiteness = 0.9
+        c = f"{int(freshness * whiteness * 255):02x}"
+        color = f"#{c}{c}{c}"
         penwidth = max(0.5, item['policy'] * 10)
-        dot.edge(str(parent_index), str(index), penwidth=f"{penwidth}")
+        dot.edge(str(parent_index), str(index), color=color, penwidth=f"{penwidth}")
 
     dot.render(output_image_path, format='png', view=False, cleanup=True)
 
