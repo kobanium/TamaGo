@@ -46,6 +46,14 @@ class MCTSTree: # pylint: disable=R0902
         self.to_move = Stone.BLACK
 
 
+    def _initialize_search(self, board: GoBoard, color: Stone) -> NoReturn:
+        self.num_nodes = 0
+        self.current_root = self.expand_node(board, color)
+        input_plane = generate_input_planes(board, color, 0)
+        self.batch_queue.push(input_plane, [], self.current_root)
+        self.process_mini_batch(board)
+
+
     def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
         analysis_query: Dict[str, Any]) -> int:
         """モンテカルロ木探索を実行して最善手を返す。
@@ -58,15 +66,9 @@ class MCTSTree: # pylint: disable=R0902
         Returns:
             int: 着手する座標。
         """
-        self.num_nodes = 0
+        self._initialize_search(board, color)
 
         time_manager.start_timer()
-
-        self.current_root = self.expand_node(board, color)
-        input_plane = generate_input_planes(board, color, 0)
-        self.batch_queue.push(input_plane, [], self.current_root)
-
-        self.process_mini_batch(board)
 
         root = self.node[self.current_root]
 
@@ -111,12 +113,7 @@ class MCTSTree: # pylint: disable=R0902
             color (Stone): 思考する手番の色。
             analysis_query (Dict): 解析情報。
         """
-        self.num_nodes = 0
-
-        self.current_root = self.expand_node(board, color)
-        input_plane = generate_input_planes(board, color, 0)
-        self.batch_queue.push(input_plane, [], self.current_root)
-        self.process_mini_batch(board)
+        self._initialize_search(board, color)
 
         # 探索を実行する
         max_visits = 999999999
