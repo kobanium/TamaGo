@@ -19,6 +19,7 @@ from mcts.tree import MCTSTree
 from nn.policy_player import generate_move_from_policy
 from nn.utility import load_network
 from sgf.reader import SGFReader
+from animation.animation import animate_mcts
 
 
 gtp_command_id = ""
@@ -30,7 +31,8 @@ class GtpClient: # pylint: disable=R0902,R0903
     def __init__(self, board_size: int, superko: bool, model_file_path: str, \
         use_gpu: bool, policy_move: bool, use_sequential_halving: bool, \
         komi: float, mode: TimeControl, visits: int, const_time: float, \
-        time: float, batch_size: int, tree_size: int, cgos_mode: bool): # pylint: disable=R0913
+        time: float, batch_size: int, tree_size: int, cgos_mode: bool, \
+        animation_pv_wait: float, animation_move_wait:float): # pylint: disable=R0913
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -92,6 +94,8 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.policy_move = policy_move
         self.use_sequential_halving = use_sequential_halving
         self.use_network = False
+        self.animation_pv_wait = animation_pv_wait
+        self.animation_move_wait = animation_move_wait
 
         if mode is TimeControl.CONSTANT_PLAYOUT or mode is TimeControl.STRICT_PLAYOUT:
             self.time_manager = TimeManager(mode=mode, constant_visits=visits)
@@ -406,6 +410,18 @@ class GtpClient: # pylint: disable=R0902,R0903
             return error_value
         return (to_move, interval)
 
+    def _analyze_or_animate(self, mode: str, arg_list: List[str]) -> NoReturn:
+        if max(self.animation_pv_wait, self.animation_move_wait) >= 0:
+            self._animate(arg_list, self.animation_pv_wait, self.animation_move_wait)
+        else:
+            self._analyze(mode, arg_list)
+
+    def _animate(self, arg_list: List[str], pv_wait: float, move_wait: float) -> NoReturn:
+        to_move, _ = self._decode_analyze_arg(arg_list)
+        respond_success("", ongoing=True)
+        animate_mcts(self.mcts, self.board, to_move, pv_wait, move_wait)
+        print_out("")
+
     def _analyze(self, mode: str, arg_list: List[str]) -> NoReturn:
         """analyzeコマンド（lz-analyze, cgos-analyze）を実行する。
 
@@ -571,7 +587,7 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self.board.display_self_atari(Stone.WHITE)
                 respond_success("")
             elif input_gtp_command == "lz-analyze":
-                self._analyze("lz", command_list[1:])
+                self._analyze_or_animate("lz", command_list[1:])
                 print("")
             elif input_gtp_command == "lz-genmove_analyze":
                 self._genmove_analyze("lz", command_list[1:])

@@ -1,6 +1,6 @@
 """モンテカルロ木探索の実装。
 """
-from typing import Any, Dict, List, NoReturn, Tuple
+from typing import Any, Dict, List, NoReturn, Tuple, Callable
 import sys
 import select
 import copy
@@ -172,6 +172,28 @@ class MCTSTree: # pylint: disable=R0902
             mode = analysis_query.get("mode", "lz")
             sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
             sys.stdout.flush()
+
+
+    def search_with_callback(self, board: GoBoard, color: Stone, callback: Callable[List[Tuple[int, int]], bool]) -> NoReturn:
+        """探索を実行し、探索系列をコールバック関数へ渡す動作をくり返す。
+コールバック関数の戻り値が真になれば終了する。
+        Args:
+            board (GoBoard): 現在の局面情報。
+            color (Stone): 現局面の手番の色。
+            callback (Callable[List[Tuple[int, int]], bool]): コールバック関数。
+        """
+        original_batch_size = self.batch_size
+        self.batch_size = 1
+        self._initialize_search(board, color)
+        search_board = copy.deepcopy(board)
+        while True:
+            path = []
+            copy_board(dst=search_board, src=board)
+            self.search_mcts(search_board, color, self.current_root, path)
+            finished = callback(path)
+            if finished:
+                break
+        self.batch_size = original_batch_size
 
 
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \

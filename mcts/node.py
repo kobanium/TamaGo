@@ -466,6 +466,10 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 out += f"lcb {int(10000 * status['lcb'])} "
                 out += f"order {status['order']} "
                 out += f"pv {status['pv']}"
+                # if "pvVisits" in status:
+                #     out += f" pvVisits {status['pvVisits']}"
+                # if "pvWinrate" in status:
+                #     out += f" lizgobanPvWinrate {status['pvWinrate']}"
                 out += " "
             elif mode == "cgos":
                 cgos_dict["moves"].append(status)
