@@ -179,13 +179,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         handicap_history = self.board.get_handicap_history()
 
-        self.board.clear()
-
-        for handicap in handicap_history:
-            self.board.put_handicap_stone(handicap, Stone.BLACK)
-
-        for (color, pos, _) in history[:-1]:
-            self.board.put_stone(pos, color)
+        self.board.set_history(history[:-1], handicap_history)
 
         respond_success("")
 

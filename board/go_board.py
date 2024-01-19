@@ -411,6 +411,11 @@ class GoBoard: # pylint: disable=R0902
     def display(self, sym: int=0) -> NoReturn:
         """盤面を表示する。
         """
+        print_err(self.get_board_string(sym=sym))
+
+    def get_board_string(self, sym: int=0) -> str:
+        """盤面を表わす文字列を返す。
+        """
         board_string = f"Move : {self.moves}\n"
         board_string += f"Prisoner(Black) : {self.prisoner[0]}\n"
         board_string += f"Prisoner(White) : {self.prisoner[1]}\n"
@@ -432,7 +437,7 @@ class GoBoard: # pylint: disable=R0902
 
         board_string += "  +" + "-" * (self.board_size * 2 + 1) + "+\n"
 
-        print_err(board_string)
+        return board_string
 
 
     def display_self_atari(self, color: Stone) -> NoReturn:
@@ -545,6 +550,13 @@ class GoBoard: # pylint: disable=R0902
             List[int]: 置き石の座標のリスト。
         """
         return self.record.handicap_pos[:]
+
+    def set_history(self, move_history, handicap_history):
+        self.clear()
+        for handicap in handicap_history:
+            self.board.put_handicap_stone(handicap, Stone.BLACK)
+        for (color, pos, _) in move_history:
+            self.put_stone(pos, color)
 
     def count_score(self) -> int: # pylint: disable=R0912
         """領地を簡易的にカウントする。
