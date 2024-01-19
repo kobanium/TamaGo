@@ -36,11 +36,12 @@ def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool
         cd tamago
         (echo 'tamago-readsgf (;SZ[9]KM[7];B[fe];W[de];B[ec])';
          echo 'lz-genmove_analyze 7777777';
+         echo 'undo';
          echo 'tamago-dump_tree') \\
         | python3 main.py --model model/model.bin --strict-visits 100 \\
         | grep dump_version | gzip > tree.json.gz
         python3 graph/plot_tree.py tree.json.gz tree_graph
-        display tree_graph.png
+        display tree_graph.svg
     """
 
     opener = gzip.open if input_json_path.endswith('.gz') else open
@@ -61,13 +62,15 @@ def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool
 
     for index in sorted_indices_list:
         item = node[index]
+        item_id = get_graphviz_id(index, node)
         # ルートノードの場合
         if "parent_index" not in item:
-            dot.node(str(index), label=f"root\n{item['node_visits']} visits")
+            dot.node(item_id, label=f"root\n{item['node_visits']} visits")
             continue
 
         parent_index = item['parent_index']
         parent = node[parent_index]
+        parent_id = get_graphviz_id(parent_index, node)
         # around_pv が指定された場合は、PV とその直下の子のみ表示する。
         if around_pv and any(order > 0 for order in parent["orders_along_path"]):
             continue
@@ -86,7 +89,7 @@ def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool
         raw_wr = int(raw_winrate * 100)
         label = f"{move}\n{wr}%" if visits < 10 else f"{move}\n{wr}% (raw {raw_wr}%)\n{visits} visits"
         dot.node(
-            str(index),
+            item_id,
             label=label,
             color=border_color,
             fillcolor=node_color,
@@ -104,9 +107,9 @@ def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool
         c = f"{int(freshness * whiteness * 255):02x}"
         color = f"#{c}{c}{c}"
         penwidth = max(0.5, item['policy'] * 10)
-        dot.edge(str(parent_index), str(index), color=color, penwidth=f"{penwidth}")
+        dot.edge(parent_id, item_id, color=color, penwidth=f"{penwidth}")
 
-    dot.render(output_image_path, format='png', view=False, cleanup=True)
+    dot.render(output_image_path, format='svg', view=False, cleanup=True)
 
 def get_color(value, colormap):
     emphasis = 1.5  # 色の違いを強調
@@ -118,6 +121,14 @@ def get_size(visits, shape):
     # 正方形と円の面積が同じになるように
     size = size0 if shape == 'square' else size0 * 2 / (math.pi ** 0.5)
     return str(size)
+
+def get_graphviz_id(index, node):
+    max_board_str_len = 400  # 9路盤が340文字程度
+    index_str = f"node{index}"
+    # IDが文字「:」を含むと、graphvizで不具合が生じる。
+    board_str = node[index]['board_string'].replace(':', ' ')
+    too_long = len(board_str) > max_board_str_len
+    return index_str if too_long else f"{index_str}\n{board_str}"
 
 if __name__ == "__main__":
     plot_tree_main()
