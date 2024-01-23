@@ -18,6 +18,17 @@ pattern_mask = np.array([
     [0xfffc, 0x00000001, 0x00000002],
 ], dtype=np.uint32)
 
+nb4_empty = [0] * 65536
+for i, _ in enumerate(nb4_empty):
+    if ((i >> 2) & 0x3) == 0:
+        nb4_empty[i] += 1
+    if ((i >> 6) & 0x3) == 0:
+        nb4_empty[i] += 1
+    if ((i >> 8) & 0x3) == 0:
+        nb4_empty[i] += 1
+    if ((i >> 12) & 0x3) == 0:
+        nb4_empty[i] += 1
+
 
 class Pattern:
     """配石パターンクラス。
@@ -37,17 +48,6 @@ class Pattern:
             -board_size_with_ob - 1, -board_size_with_ob, -board_size_with_ob + 1,
             -1, 1, board_size_with_ob - 1, board_size_with_ob, board_size_with_ob + 1
         ]
-
-        self.nb4_empty = [0] * 65536
-        for i, _ in enumerate(self.nb4_empty):
-            if ((i >> 2) & 0x3) == 0:
-                self.nb4_empty[i] += 1
-            if ((i >> 6) & 0x3) == 0:
-                self.nb4_empty[i] += 1
-            if ((i >> 8) & 0x3) == 0:
-                self.nb4_empty[i] += 1
-            if ((i >> 12) & 0x3) == 0:
-                self.nb4_empty[i] += 1
 
         # 眼のパターン
         eye_pat3 = [
@@ -148,7 +148,7 @@ class Pattern:
         Returns:
             int: 上下左右の空点数（最大4）
         """
-        return self.nb4_empty[self.pat3[pos]]
+        return nb4_empty[self.pat3[pos]]
 
     def get_eye_color(self, pos: int) -> Stone:
         """指定した座標の眼の色を取得する。
