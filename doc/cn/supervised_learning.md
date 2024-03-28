@@ -37,6 +37,8 @@ TamaGo 可以使用 SGF 格式的棋譜作為訓練資料，關於 SGF 的更多
 | [nn/network/head/policy_head.py](../../nn/network/head/policy_head.py) | 定義 Policy Head |
 | [nn/network/head/value_head.py](../../nn/network/head/value_head.py) | 定義 Value Head |
 
+如果你想改進網路結構，建議可以先簡單的提昇 filter 和 block 數目，它們定義在 dual_net.py 裡
+
 # TamaGo 的監督學習步驟
 
 請通過以下順序執行 TamaGo 的監督學習
@@ -80,7 +82,7 @@ python train.py
 | 選項 | 描述 | 設定範例 | 預設值 | 備註 |
 | --- | --- | --- | --- | --- |
 | `--kifu-dir` | 訓練時使用的棋譜的路徑 | /home/user/sgf_files | None | |
-| `--size` | 棋盤大小 | 5 | 9 |  |
+| `--size` | 棋盤大小 | 9 | 9 |  |
 | `--use-gpu` | 是否使用 GPU | true | true | Value is true or false. |
 | `--rl` | 是否為強化學習 | false | false |  |
 | `--window-size` | 學習時使用的資料數目（最新的優先讀取） | 500000 | 300000 | |
