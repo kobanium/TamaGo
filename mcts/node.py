@@ -408,6 +408,12 @@ class MCTSNode: # pylint: disable=R0902, R0904
         Returns:
             str: GTP応答用解析結果文字列。
         """
+        children_status_list = self.get_analysis_status_list(board, pv_lists_func)
+        return self.get_analysis_from_status_list(mode, children_status_list)
+
+
+    def get_analysis_status_list(self, board: GoBoard, \
+        pv_lists_func: Callable[[List[str], int], List[str]]):
         sorted_list = []
         for i in range(self.num_children):
             sorted_list.append((self.children_visits[i], i))
@@ -439,7 +445,10 @@ class MCTSNode: # pylint: disable=R0902, R0904
                     }
                 )
                 order += 1
+        return children_status_list
 
+
+    def get_analysis_from_status_list(self, mode, children_status_list):
         out = ""
         if mode == "cgos":
             cgos_dict = {
@@ -457,6 +466,10 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 out += f"lcb {int(10000 * status['lcb'])} "
                 out += f"order {status['order']} "
                 out += f"pv {status['pv']}"
+                # if "pvVisits" in status:
+                #     out += f" pvVisits {status['pvVisits']}"
+                # if "pvWinrate" in status:
+                #     out += f" lizgobanPvWinrate {status['pvWinrate']}"
                 out += " "
             elif mode == "cgos":
                 cgos_dict["moves"].append(status)

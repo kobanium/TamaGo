@@ -1,6 +1,6 @@
 """モンテカルロ木探索の実装。
 """
-from typing import Any, Dict, List, NoReturn, Tuple
+from typing import Any, Dict, List, NoReturn, Tuple, Callable
 import sys
 import select
 import copy
@@ -46,6 +46,14 @@ class MCTSTree: # pylint: disable=R0902
         self.to_move = Stone.BLACK
 
 
+    def _initialize_search(self, board: GoBoard, color: Stone) -> NoReturn:
+        self.num_nodes = 0
+        self.current_root = self.expand_node(board, color)
+        input_plane = generate_input_planes(board, color, 0)
+        self.batch_queue.push(input_plane, [], self.current_root)
+        self.process_mini_batch(board)
+
+
     def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
         analysis_query: Dict[str, Any]) -> int:
         """モンテカルロ木探索を実行して最善手を返す。
@@ -58,15 +66,9 @@ class MCTSTree: # pylint: disable=R0902
         Returns:
             int: 着手する座標。
         """
-        self.num_nodes = 0
+        self._initialize_search(board, color)
 
         time_manager.start_timer()
-
-        self.current_root = self.expand_node(board, color)
-        input_plane = generate_input_planes(board, color, 0)
-        self.batch_queue.push(input_plane, [], self.current_root)
-
-        self.process_mini_batch(board)
 
         root = self.node[self.current_root]
 
@@ -111,12 +113,7 @@ class MCTSTree: # pylint: disable=R0902
             color (Stone): 思考する手番の色。
             analysis_query (Dict): 解析情報。
         """
-        self.num_nodes = 0
-
-        self.current_root = self.expand_node(board, color)
-        input_plane = generate_input_planes(board, color, 0)
-        self.batch_queue.push(input_plane, [], self.current_root)
-        self.process_mini_batch(board)
+        self._initialize_search(board, color)
 
         # 探索を実行する
         max_visits = 999999999
@@ -175,6 +172,28 @@ class MCTSTree: # pylint: disable=R0902
             mode = analysis_query.get("mode", "lz")
             sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
             sys.stdout.flush()
+
+
+    def search_with_callback(self, board: GoBoard, color: Stone, callback: Callable[List[Tuple[int, int]], bool]) -> NoReturn:
+        """探索を実行し、探索系列をコールバック関数へ渡す動作をくり返す。
+コールバック関数の戻り値が真になれば終了する。
+        Args:
+            board (GoBoard): 現在の局面情報。
+            color (Stone): 現局面の手番の色。
+            callback (Callable[List[Tuple[int, int]], bool]): コールバック関数。
+        """
+        original_batch_size = self.batch_size
+        self.batch_size = 1
+        self._initialize_search(board, color)
+        search_board = copy.deepcopy(board)
+        while True:
+            path = []
+            copy_board(dst=search_board, src=board)
+            self.search_mcts(search_board, color, self.current_root, path)
+            finished = callback(path)
+            if finished:
+                break
+        self.batch_size = original_batch_size
 
 
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \

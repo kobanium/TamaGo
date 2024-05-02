@@ -44,9 +44,14 @@ default_model_path = os.path.join("model", "model.bin")
     help=f"探索木を構成するノードの最大数。デフォルトはMCTS_TREE_SIZE = {MCTS_TREE_SIZE}。")
 @click.option('--cgos-mode', type=click.BOOL, default=False, \
     help="全ての石を打ち上げるまでパスしないモード設定。デフォルトはFalse。")
+@click.option('--animation-pv-wait', type=click.FLOAT, default=-1.0, \
+    help="lz-analyzeの出力をMCTSアニメーションに差しかえて、系列ごとに指定秒停止。")
+@click.option('--animation-move-wait', type=click.FLOAT, default=-1.0, \
+    help="lz-analyzeの出力をMCTSアニメーションに差しかえて、一手ごとに指定秒停止。")
 def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
     policy_move: bool, komi: float, visits: int, strict_visits: int, const_time: float, time: float, \
-    batch_size: int, tree_size: int, cgos_mode: bool):
+    batch_size: int, tree_size: int, cgos_mode: bool, \
+    animation_pv_wait: float, animation_move_wait: float):
     """GTPクライアントの起動。
 
     Args:
@@ -64,6 +69,8 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
         batch_size (int): 探索実行時のニューラルネットワークのミニバッチサイズ。デフォルトはNN_BATCH_SIZE。
         tree_size (int): 探索木を構成するノードの最大数。デフォルトはMCTS_TREE_SIZE。
         cgos_mode (bool): 全ての石を打ち上げるまでパスしないモード設定。デフォルトはFalse。
+        animation_pv_wait (float): lz-analyzeの出力をMCTSアニメーションに差しかえて、系列ごとに指定秒停止。
+        animation_move_wait (float): lz-analyzeの出力をMCTSアニメーションに差しかえて、一手ごとに指定秒停止。
     """
     mode = TimeControl.CONSTANT_PLAYOUT
 
@@ -78,7 +85,7 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
     program_dir = os.path.dirname(__file__)
     client = GtpClient(size, superko, os.path.join(program_dir, model), use_gpu, policy_move, \
         sequential_halving, komi, mode, visits, const_time, time, batch_size, tree_size, \
-        cgos_mode)
+        cgos_mode, animation_pv_wait, animation_move_wait)
     client.run()
 
 
