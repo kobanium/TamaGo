@@ -4,3 +4,4 @@
 **/*.bin
 **/*.ckpt
 archive/*
+.coverage

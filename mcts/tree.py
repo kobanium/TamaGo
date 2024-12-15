@@ -1,6 +1,6 @@
 """モンテカルロ木探索の実装。
 """
-from typing import Any, Dict, List, NoReturn, Tuple
+from typing import Any, Dict, List, NoReturn, Tuple, Callable
 import sys
 import select
 import copy
@@ -20,7 +20,8 @@ from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
     MAX_CONSIDERED_NODES, RESIGN_THRESHOLD, MCTS_TREE_SIZE
 from mcts.sequential_halving import get_candidates_and_visit_pairs
 from mcts.node import MCTSNode
-from mcts.time_manager import TimeControl, TimeManager, is_move_decided
+from mcts.time_manager import TimeControl, TimeManager
+from mcts.dump import dump_mcts_to_json
 
 class MCTSTree: # pylint: disable=R0902
     """モンテカルロ木探索の実装クラス。
@@ -42,6 +43,15 @@ class MCTSTree: # pylint: disable=R0902
         self.current_root = 0
         self.batch_size = batch_size
         self.cgos_mode = cgos_mode
+        self.to_move = Stone.BLACK
+
+
+    def _initialize_search(self, board: GoBoard, color: Stone) -> NoReturn:
+        self.num_nodes = 0
+        self.current_root = self.expand_node(board, color)
+        input_plane = generate_input_planes(board, color, 0)
+        self.batch_queue.push(input_plane, [], self.current_root)
+        self.process_mini_batch(board)
 
 
     def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
@@ -56,15 +66,9 @@ class MCTSTree: # pylint: disable=R0902
         Returns:
             int: 着手する座標。
         """
-        self.num_nodes = 0
+        self._initialize_search(board, color)
 
         time_manager.start_timer()
-
-        self.current_root = self.expand_node(board, color)
-        input_plane = generate_input_planes(board, color, 0)
-        self.batch_queue.push(input_plane, [], self.current_root)
-
-        self.process_mini_batch(board)
 
         root = self.node[self.current_root]
 
@@ -109,12 +113,7 @@ class MCTSTree: # pylint: disable=R0902
             color (Stone): 思考する手番の色。
             analysis_query (Dict): 解析情報。
         """
-        self.num_nodes = 0
-
-        self.current_root = self.expand_node(board, color)
-        input_plane = generate_input_planes(board, color, 0)
-        self.batch_queue.push(input_plane, [], self.current_root)
-        self.process_mini_batch(board)
+        self._initialize_search(board, color)
 
         # 探索を実行する
         max_visits = 999999999
@@ -137,6 +136,7 @@ class MCTSTree: # pylint: disable=R0902
             time_manager (TimeManager): 思考時間管理インスタンス。
             analysis_query (Dict[str, Any]) : 解析情報。
         """
+        self.to_move = color
         analysis_clock = time.time()
         search_board = copy.deepcopy(board)
 
@@ -148,7 +148,7 @@ class MCTSTree: # pylint: disable=R0902
             start_color = color
             self.search_mcts(search_board, start_color, self.current_root, [])
             if time_manager.is_time_over() or \
-                is_move_decided(self.get_root(), threshold):
+                time_manager.is_move_decided(self.get_root(), threshold):
                 break
 
             if len(analysis_query) > 0:
@@ -172,6 +172,28 @@ class MCTSTree: # pylint: disable=R0902
             mode = analysis_query.get("mode", "lz")
             sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
             sys.stdout.flush()
+
+
+    def search_with_callback(self, board: GoBoard, color: Stone, callback: Callable[[Tuple[int, int]], bool]) -> NoReturn:
+        """探索を実行し、探索系列をコールバック関数へ渡す動作をくり返す。
+コールバック関数の戻り値が真になれば終了する。
+        Args:
+            board (GoBoard): 現在の局面情報。
+            color (Stone): 現局面の手番の色。
+            callback (Callable[List[Tuple[int, int]], bool]): コールバック関数。
+        """
+        original_batch_size = self.batch_size
+        self.batch_size = 1
+        self._initialize_search(board, color)
+        search_board = copy.deepcopy(board)
+        while True:
+            path = []
+            copy_board(dst=search_board, src=board)
+            self.search_mcts(search_board, color, self.current_root, path)
+            finished = callback(path)
+            if finished:
+                break
+        self.batch_size = original_batch_size
 
 
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \
@@ -230,6 +252,10 @@ class MCTSTree: # pylint: disable=R0902
             color (Stone): 現在の手番の色。
         """
         node_index = self.num_nodes
+        tree_size = len(self.node)
+        if node_index >= tree_size:
+            self.node.extend([MCTSNode() for i in range(tree_size)])
+            sys.stderr.write(f"Tree is full. Allocate new space {tree_size} -> {len(self.node)}\n")
 
         candidates = board.get_all_legal_pos(color)
         candidates = [candidate for candidate in candidates \
@@ -445,6 +471,39 @@ class MCTSTree: # pylint: disable=R0902
             return pv_list
 
         return self.get_best_move_sequence(pv_list, next_index)
+
+
+    def dump_to_json(self, board: GoBoard, superko: bool) -> str:
+        """MCTSの状態を表すJSON文字列を返す。
+
+        Args:
+            board (GoBoard): 現在の碁盤。
+            superko (bool): 超劫判定の有効化。
+
+        Returns:
+            str: MCTSの状態を表すJSON文字列。
+        """
+        return dump_mcts_to_json(self.to_dict(), board, superko)
+
+
+    def to_dict(self) -> Dict[str, Any]:
+        """ツリーの状態を辞書化して返す。
+
+        Returns:
+            Dict[str, Any]: ツリーの状態を表す辞書。
+        """
+        state = {
+            "node": [self.node[i].to_dict() for i in range(self.num_nodes)],
+            "num_nodes": self.num_nodes,
+            "root": self.root,
+            #"network": self.network,  # ダンプに含めない
+            #"batch_queue": self.batch_queue,  # ダンプに含めない
+            "current_root": self.current_root,
+            "batch_size": self.batch_size,
+            "cgos_mode": self.cgos_mode,
+            "to_move": 'black' if self.to_move == Stone.BLACK else 'white',
+        }
+        return state
 
 
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:

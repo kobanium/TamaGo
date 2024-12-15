@@ -2,13 +2,15 @@
 TamaGoはPythonで実装された囲碁の思考エンジンです。  
 SGF形式の棋譜ファイルを利用した教師あり学習、Gumbel AlphaZero方式の強化学習をお試しできるプログラムとなっています。  
 学習したニューラルネットワークのモデルを使用したモンテカルロ木探索による着手生成ができます。  
-Python 3.6で動作確認をしています。
+Python 3.8で動作確認をしています。
 
 * [使用する前提パッケージ](#requirements)
 * [セットアップ手順](#installation)
 * [思考エンジンとしての使い方](#how-to-execute-gtp-engine)
 * [教師あり学習の実行](#how-to-execute-supervised-learning)
 * [強化学習の実行](#how-to-execute-reinforcement-learning)
+* [GTP](#gtp-extension-command)
+* [探索木の可視化](#tree-visualization)
 * [ライセンス](#license)
 
 # Requirements
@@ -17,6 +19,8 @@ Python 3.6で動作確認をしています。
 |click|コマンドライン引数の実装|
 |numpy|雑多な計算|
 |pytorch|Neural Networkの構成と学習の実装|
+|graphviz|探索木の可視化|
+|matplotlib|探索木の可視化|
 
 # Installation
 Python 3.6が使える環境で下記コマンドで前提パッケージをインストールします。
@@ -40,7 +44,8 @@ python main.py
 | `--use-gpu` | GPU使用フラグ | true または false | true | false | |
 | `--policy-move` | Policyの分布に従って着手するフラグ | true または false | true | false | Policyのみの強さを確認するときに使用します。 |
 | `--sequential-halving` | Sequential Halving applied to treesの探索手法で探索するフラグ | true または false | true | false | 自己対戦時に使う探索なので、基本的にデバッグ用です。 |
-| `--visits` | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
+| `--visits` | 1手あたりの探索回数 | 1以上の整数 | 1000 | 1000 | --strict-visitsオプション、--const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
+| `--strict-visits` | --visitsと同様だが、途中で最善手が確定しても探索を打ち切らない | 1以上の整数 | 1000 | None | --const-timeオプション、または--timeオプションの指定があるときは本オプションを無視します。 |
 | `--const-time` | 1手あたりの探索時間 (秒) | 0より大きい実数 | 10.0 |  | --timeオプションの指定があるときは本オプションを無視します。 |
 | `--time` | 持ち時間 (秒) | 0より大きい実数 | 600.0 | |
 | `--batch-size` | 探索時のニューラルネットワークのミニバッチサイズ | 1以上の整数 | 13 | NN_BATCH_SIZE | NN_BATCH_SIZEはmcts/constant.pyに定義してあります。 |
@@ -111,6 +116,16 @@ TamaGoはバージョン0.7.0からcgos-analyze, cgos-genmove_analyzeをサポ�
 ![CGOSでの動作例](../../img/cgos-analyze.png)
 
 ![CGOSでの読み筋表示](../../img/cgos-analyze-pv.png)
+
+# GTP extension command
+TamaGoはGTPの独自拡張としてtamago-readsgfコマンドをサポートします。これはGTP標準のloadsgfコマンドと似ていますが、SGFファイルのパスではなくSGF文字列そのものを引数として、次の例のように使います。loadsgfとは異なり`move_number`の指定はできません。また、SGF文字列は改行を含んではいけません。
+
+```
+tamago-readsgf (;SZ[9]KM[7];B[fe];W[de])
+```
+
+# Tree visualization
+TamaGoはバージョン0.10.0から探索木の可視化機能をサポートしています。詳細については[こちら](tree_visualization.md)をご参照ください。
 
 # License
 ライセンスはApache License ver 2.0です。

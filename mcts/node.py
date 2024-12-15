@@ -1,9 +1,10 @@
 """モンテカルロ木探索で使用するノードの実装。
 """
 import json
-from typing import Callable, Dict, List, NoReturn
+from typing import Any, Callable, Dict, List, NoReturn
 
 import numpy as np
+import torch
 from board.constant import BOARD_SIZE
 from board.go_board import GoBoard
 from common.print_console import print_err
@@ -217,6 +218,39 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.children_index[index] = child_index
 
 
+    def to_dict(self) -> Dict[str, Any]:
+        """ノードの状態を辞書化して返す。
+
+        Returns:
+            Dict[str, Any]: ノードの状態を表す辞書。
+        """
+        state = {
+            "node_visits": self.node_visits,
+            "virtual_loss": self.virtual_loss,
+            "node_value_sum": self.node_value_sum,
+            "raw_value": self.raw_value,
+            "action": self.action,
+            "children_index": self.children_index,
+            "children_value": self.children_value,
+            "children_visits": self.children_visits,
+            "children_policy": self.children_policy,
+            "children_virtual_loss": self.children_virtual_loss,
+            "children_value_sum": self.children_value_sum,
+            "noise": self.noise,
+            "num_children": self.num_children,
+        }
+        self._make_serializable(state)
+        return state
+
+    def _make_serializable(self, dic):
+        for key in dic:
+            val = dic[key]
+            if isinstance(val, np.ndarray):
+                val = val.tolist()
+            elif isinstance(val, torch.Tensor):
+                val = val.item()
+            dic[key] = val
+
     def print_search_result(self, board: GoBoard, pv_dict: Dict[str, List[str]]) -> NoReturn:
         """探索結果を表示する。探索した手の探索回数とValueの平均値を表示する。
 
@@ -374,6 +408,12 @@ class MCTSNode: # pylint: disable=R0902, R0904
         Returns:
             str: GTP応答用解析結果文字列。
         """
+        children_status_list = self.get_analysis_status_list(board, pv_lists_func)
+        return self.get_analysis_from_status_list(mode, children_status_list)
+
+
+    def get_analysis_status_list(self, board: GoBoard, \
+        pv_lists_func: Callable[[List[str], int], List[str]]):
         sorted_list = []
         for i in range(self.num_children):
             sorted_list.append((self.children_visits[i], i))
@@ -405,7 +445,10 @@ class MCTSNode: # pylint: disable=R0902, R0904
                     }
                 )
                 order += 1
+        return children_status_list
 
+
+    def get_analysis_from_status_list(self, mode, children_status_list):
         out = ""
         if mode == "cgos":
             cgos_dict = {
@@ -423,6 +466,10 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 out += f"lcb {int(10000 * status['lcb'])} "
                 out += f"order {status['order']} "
                 out += f"pv {status['pv']}"
+                # if "pvVisits" in status:
+                #     out += f" pvVisits {status['pvVisits']}"
+                # if "pvWinrate" in status:
+                #     out += f" lizgobanPvWinrate {status['pvWinrate']}"
                 out += " "
             elif mode == "cgos":
                 cgos_dict["moves"].append(status)

@@ -19,6 +19,7 @@ from mcts.tree import MCTSTree
 from nn.policy_player import generate_move_from_policy
 from nn.utility import load_network
 from sgf.reader import SGFReader
+from animation.animation import animate_mcts
 
 
 gtp_command_id = ""
@@ -30,7 +31,8 @@ class GtpClient: # pylint: disable=R0902,R0903
     def __init__(self, board_size: int, superko: bool, model_file_path: str, \
         use_gpu: bool, policy_move: bool, use_sequential_halving: bool, \
         komi: float, mode: TimeControl, visits: int, const_time: float, \
-        time: float, batch_size: int, tree_size: int, cgos_mode: bool): # pylint: disable=R0913
+        time: float, batch_size: int, tree_size: int, cgos_mode: bool, \
+        animation_pv_wait: float, animation_move_wait:float): # pylint: disable=R0913
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -66,13 +68,15 @@ class GtpClient: # pylint: disable=R0902,R0903
             "get_komi",
             "komi",
             "showboard",
-            "load_sgf",
+            "loadsgf",
+            "tamago-readsgf",
             "fixed_handicap",
             "gogui-analyze_commands",
             "lz-analyze",
             "lz-genmove_analyze",
             "cgos-analyze",
-            "cgos-genmove_analyze"
+            "cgos-genmove_analyze",
+            "tamago-dump_tree",
         ]
         self.superko = superko
         self.board = GoBoard(board_size=board_size, komi=komi, check_superko=superko)
@@ -90,8 +94,10 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.policy_move = policy_move
         self.use_sequential_halving = use_sequential_halving
         self.use_network = False
+        self.animation_pv_wait = animation_pv_wait
+        self.animation_move_wait = animation_move_wait
 
-        if mode is TimeControl.CONSTANT_PLAYOUT:
+        if mode is TimeControl.CONSTANT_PLAYOUT or mode is TimeControl.STRICT_PLAYOUT:
             self.time_manager = TimeManager(mode=mode, constant_visits=visits)
         if mode is TimeControl.CONSTANT_TIME:
             self.time_manager = TimeManager(mode=mode, constant_time=const_time)
@@ -177,13 +183,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         handicap_history = self.board.get_handicap_history()
 
-        self.board.clear()
-
-        for handicap in handicap_history:
-            self.board.put_handicap_stone(handicap, Stone.BLACK)
-
-        for (color, pos, _) in history[:-1]:
-            self.board.put_stone(pos, color)
+        self.board.set_history(history[:-1], handicap_history)
 
         respond_success("")
 
@@ -293,8 +293,8 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.board.display()
         respond_success("")
 
-    def _load_sgf(self, arg_list: List[str]) -> NoReturn:
-        """load_sgfコマンドを処理する。
+    def _loadsgf(self, arg_list: List[str]) -> NoReturn:
+        """loadsgfコマンドを処理する。
         指定したSGFファイルの指定手番まで進めた局面にする。
 
         Args:
@@ -306,10 +306,30 @@ class GtpClient: # pylint: disable=R0902,R0903
         sgf_data = SGFReader(arg_list[0], board_size=self.board.get_board_size())
 
         if len(arg_list) < 2:
-            moves = sgf_data.get_n_moves()
+            moves = 9999
         else:
             moves = int(arg_list[1])
+        self._load_sgf_data(sgf_data, moves)
 
+    def _readsgf(self, arg_list: List[str]) -> NoReturn:
+        """tamago-readsgfコマンドを処理する。
+        指定したSGF文字列の局面にする。
+
+        Args:
+            arg_list (List[str]): コマンドの引数リスト（SGF文字列を空白文字ごとに分割したもの）
+        """
+        sgf_text = ' '.join(arg_list)
+        sgf_data = SGFReader(sgf_text, board_size=self.board.get_board_size(), literal=True)
+        self._load_sgf_data(sgf_data)
+
+    def _load_sgf_data(self, sgf_data: SGFReader, moves: int=9999) -> NoReturn:
+        """SGFデータを読み込み、指定手番まで進めた局面にする。
+
+        Args:
+            sgf_data (SGFReader): SGFデータ
+            moves (int): 手数（SGFデータの手数を超える値を指定した場合は最終局面となる）
+        """
+        moves = min(moves, sgf_data.get_n_moves())
         self.board.clear()
 
         for i in range(moves):
@@ -384,6 +404,18 @@ class GtpClient: # pylint: disable=R0902,R0903
             return error_value
         return (to_move, interval)
 
+    def _analyze_or_animate(self, mode: str, arg_list: List[str]) -> NoReturn:
+        if max(self.animation_pv_wait, self.animation_move_wait) >= 0:
+            self._animate(arg_list, self.animation_pv_wait, self.animation_move_wait)
+        else:
+            self._analyze(mode, arg_list)
+
+    def _animate(self, arg_list: List[str], pv_wait: float, move_wait: float) -> NoReturn:
+        to_move, _ = self._decode_analyze_arg(arg_list)
+        respond_success("", ongoing=True)
+        animate_mcts(self.mcts, self.board, to_move, pv_wait, move_wait)
+        print_out("")
+
     def _analyze(self, mode: str, arg_list: List[str]) -> NoReturn:
         """analyzeコマンド（lz-analyze, cgos-analyze）を実行する。
 
@@ -443,6 +475,15 @@ class GtpClient: # pylint: disable=R0902,R0903
         print_out(f"play {self.coordinate.convert_to_gtp_format(pos)}\n")
 
 
+    def _dump_tree(self) -> NoReturn:
+        """tamago-dump_treeコマンドを実行する。現在のMCTSツリーの状態をJSON形式で出力する。
+        """
+        json_str = self.mcts.dump_to_json(self.board, self.superko)
+        respond_success("", ongoing=True)
+        print(json_str)
+        print("")
+
+
     def run(self) -> NoReturn: # pylint: disable=R0912,R0915
         """Go Text Protocolのクライアントの実行処理。
         入力されたコマンドに対応する処理を実行し、応答メッセージを表示する。
@@ -497,8 +538,10 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self._get_komi()
             elif input_gtp_command == "showboard":
                 self._showboard()
-            elif input_gtp_command == "load_sgf":
-                self._load_sgf(command_list[1:])
+            elif input_gtp_command == "loadsgf":
+                self._loadsgf(command_list[1:])
+            elif input_gtp_command == "tamago-readsgf":
+                self._readsgf(command_list[1:])
             elif input_gtp_command == "fixed_handicap":
                 self._fixed_handicap(command_list[1])
             elif input_gtp_command == "final_score":
@@ -538,7 +581,7 @@ class GtpClient: # pylint: disable=R0902,R0903
                 self.board.display_self_atari(Stone.WHITE)
                 respond_success("")
             elif input_gtp_command == "lz-analyze":
-                self._analyze("lz", command_list[1:])
+                self._analyze_or_animate("lz", command_list[1:])
                 print("")
             elif input_gtp_command == "lz-genmove_analyze":
                 self._genmove_analyze("lz", command_list[1:])
@@ -547,6 +590,8 @@ class GtpClient: # pylint: disable=R0902,R0903
                 print("")
             elif input_gtp_command == "cgos-genmove_analyze":
                 self._genmove_analyze("cgos", command_list[1:])
+            elif input_gtp_command == "tamago-dump_tree":
+                self._dump_tree()
             elif input_gtp_command == "hash_record":
                 print_err(self.board.record.get_hash_history())
                 respond_success("")
