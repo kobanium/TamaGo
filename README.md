@@ -53,7 +53,7 @@ TamaGo's command line options are as follows,
 | Option | Description | Value | Example of value | Default value | Note |
 | --- | --- | --- | --- | --- | --- |
 | `--size` | Size of go board | Integer number more than 1 and less than or equal to BOARD_SIZE | 9  | BOARD_SIZE | BOARD_SIZE is defined in board/constant.py.
-| `--superko` | Activation super-ko rule | true or false | true | true | It supports only positional super-ko. |
+| `--superko` | Activation super-ko rule | true or false | true | false | It supports only positional super-ko. |
 | `--model` | Path to a trained neural network parameters file | String of model file path | model/model.bin| None |  It must be relative path from TamaGo's home directory |
 | `--use-gpu` | Flag to use a GPU | true or false | true | false | |
 | `--policy-move` | Flag to move according to Policy distribution | true or false | true | false | |

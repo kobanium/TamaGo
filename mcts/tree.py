@@ -252,6 +252,10 @@ class MCTSTree: # pylint: disable=R0902
             color (Stone): 現在の手番の色。
         """
         node_index = self.num_nodes
+        tree_size = len(self.node)
+        if node_index >= tree_size:
+            self.node.extend([MCTSNode() for i in range(tree_size)])
+            sys.stderr.write(f"Tree is full. Allocate new space {tree_size} -> {len(self.node)}\n")
 
         candidates = board.get_all_legal_pos(color)
         candidates = [candidate for candidate in candidates \
