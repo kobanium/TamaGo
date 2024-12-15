@@ -174,7 +174,7 @@ class MCTSTree: # pylint: disable=R0902
             sys.stdout.flush()
 
 
-    def search_with_callback(self, board: GoBoard, color: Stone, callback: Callable[List[Tuple[int, int]], bool]) -> NoReturn:
+    def search_with_callback(self, board: GoBoard, color: Stone, callback: Callable[[Tuple[int, int]], bool]) -> NoReturn:
         """探索を実行し、探索系列をコールバック関数へ渡す動作をくり返す。
 コールバック関数の戻り値が真になれば終了する。
         Args:

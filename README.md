@@ -22,14 +22,18 @@ TamaGo runs on Python 3.6 or higher.
 - [GoGui analyze commands](#gogui-analyze-commands)
 - [Analyze commands](#analyze-commands)
 - [CGOS analyze mode](#cgos-analyze-mode)
+- [GTP extension command](#gtp-extension-command)
+- [Tree visualization](#tree-visualization)
 - [License](#license)
 
 # Requirements
-| Package name | Purpose |
-| --- | --- |
-| click | Implementation of command line options |
-| numpy | Fast calculation |
-| pytorch | Implementation of neural network construction and learning |
+| Package name | Purpose | Note |
+| --- | --- | --- |
+| click | Implementation of command line options | |
+| numpy | Fast calculation | |
+| pytorch | Implementation of neural network construction and learning | |
+| graphviz | Visualization for MCTS tree | Optional |
+| matplotlib | Visualization for MCTS tree | Optional |
 
 # Installation
 You can install TamaGo by executing the following command in a Python-installed computer.
@@ -125,12 +129,15 @@ TamaGo version 0.7.0 supports cgos-analyze, cgos-genmove_analyze commands. When 
 
 ![cgos-analyze-pv](img/cgos-analyze-pv.png)
 
-# Misc.
+# GTP extension command
 TamaGo supports tamago-readsgf command as an original extension of GTP. Similar to the standard GTP command loadsgf, it accepts a literal SGF string instead of an SGF file path, as illustrated in the following example. However, unlike loadsgf, `move_number` is not supported. Additionally, the SGF string must not contain any newlines.
 
 ```
 tamago-readsgf (;SZ[9]KM[7];B[fe];W[de])
 ```
+
+# Tree visualization
+TamaGo version 0.10.0 supports visualization of a search tree, please check [here](doc/en/tree_visualization.md).
 
 # License
 You can use TamaGo under [Apache License 2.0](LICENSE).

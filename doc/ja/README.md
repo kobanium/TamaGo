@@ -2,13 +2,15 @@
 TamaGoはPythonで実装された囲碁の思考エンジンです。  
 SGF形式の棋譜ファイルを利用した教師あり学習、Gumbel AlphaZero方式の強化学習をお試しできるプログラムとなっています。  
 学習したニューラルネットワークのモデルを使用したモンテカルロ木探索による着手生成ができます。  
-Python 3.6で動作確認をしています。
+Python 3.8で動作確認をしています。
 
 * [使用する前提パッケージ](#requirements)
 * [セットアップ手順](#installation)
 * [思考エンジンとしての使い方](#how-to-execute-gtp-engine)
 * [教師あり学習の実行](#how-to-execute-supervised-learning)
 * [強化学習の実行](#how-to-execute-reinforcement-learning)
+* [GTP](#gtp-extension-command)
+* [探索木の可視化](#tree-visualization)
 * [ライセンス](#license)
 
 # Requirements
@@ -17,6 +19,8 @@ Python 3.6で動作確認をしています。
 |click|コマンドライン引数の実装|
 |numpy|雑多な計算|
 |pytorch|Neural Networkの構成と学習の実装|
+|graphviz|探索木の可視化|
+|matplotlib|探索木の可視化|
 
 # Installation
 Python 3.6が使える環境で下記コマンドで前提パッケージをインストールします。
@@ -113,12 +117,15 @@ TamaGoはバージョン0.7.0からcgos-analyze, cgos-genmove_analyzeをサポ�
 
 ![CGOSでの読み筋表示](../../img/cgos-analyze-pv.png)
 
-# Misc.
+# GTP extension command
 TamaGoはGTPの独自拡張としてtamago-readsgfコマンドをサポートします。これはGTP標準のloadsgfコマンドと似ていますが、SGFファイルのパスではなくSGF文字列そのものを引数として、次の例のように使います。loadsgfとは異なり`move_number`の指定はできません。また、SGF文字列は改行を含んではいけません。
 
 ```
 tamago-readsgf (;SZ[9]KM[7];B[fe];W[de])
 ```
+
+# Tree visualization
+TamaGoはバージョン0.10.0から探索木の可視化機能をサポートしています。詳細については[こちら](tree_visualization.md)をご参照ください。
 
 # License
 ライセンスはApache License ver 2.0です。

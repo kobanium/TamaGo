@@ -18,7 +18,7 @@ def _stdin_has_data():
 
 
 def _animate_path(path, mcts, board, pv_wait_sec, move_wait_sec, previous_pv):
-    # º£²óÃµº÷¤·¤¿·ÏÎó¤ÎÂ°À­ÃÍ
+    # ä»Šå›æ¢ç´¢ã—ãŸç³»åˆ—ã®å±æ€§å€¤
     root_index, i = path[0]
     root = mcts.node[root_index]
     if root.children_visits[i] == 0:
@@ -29,21 +29,21 @@ def _animate_path(path, mcts, board, pv_wait_sec, move_wait_sec, previous_pv):
     pv_visits = [str(mcts.node[index].children_visits[child_index]) for (index, child_index) in path]
     pv_winrate = [str(int(10000 * _get_winrate(mcts, index, child_index, depth))) for depth, (index, child_index) in enumerate(path)]
 
-    # lz-analyze ¤ÎËÜÍè¤Î½ĞÎÏÆâÍÆ¤ò²Ã¹©
+    # lz-analyze ã®æœ¬æ¥ã®å‡ºåŠ›å†…å®¹ã‚’åŠ å·¥
     children_status_list = root.get_analysis_status_list(board, mcts.get_pv_lists)
     fake_status_list = [status.copy() for status in children_status_list]
     target = next((status for status in fake_status_list if status["move"] == move), None)
     if target is None:
         return  # can't happen
-    # º£²óÃµº÷¤·¤¿·ÏÎó¤Î½é¼ê¤òºÇÁ±¼ê¤Èµ¶¤Ã¤Æ½ç°Ì¤ò¤Õ¤êÄ¾¤¹
+    # ä»Šå›æ¢ç´¢ã—ãŸç³»åˆ—ã®åˆæ‰‹ã‚’æœ€å–„æ‰‹ã¨å½ã£ã¦é †ä½ã‚’ãµã‚Šç›´ã™
     target["order"] = -1
     fake_status_list.sort(key=lambda status: status["order"])
     for order, status in enumerate(fake_status_list):
         status["order"] = order
 
-    # PV Íó¤òº¹¤·¤«¤¨¤Ê¤¬¤éÊ£¿ô²ó½ĞÎÏ¤¹¤ë¤³¤È¤Ç°ì¼ê¤º¤Ä¥¢¥Ë¥á¡¼¥·¥ç¥ó
+    # PV æ¬„ã‚’å·®ã—ã‹ãˆãªãŒã‚‰è¤‡æ•°å›å‡ºåŠ›ã™ã‚‹ã“ã¨ã§ä¸€æ‰‹ãšã¤ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
     for k in range(1, len(pv) + 1):
-        # Á°²ó¤Î·ÏÎó¤È¶¦ÄÌ¤Ê¼ê½ç¤Ï¥¹¥­¥Ã¥×
+        # å‰å›ã®ç³»åˆ—ã¨å…±é€šãªæ‰‹é †ã¯ã‚¹ã‚­ãƒƒãƒ—
         if pv[:k] == previous_pv[:k]:
             continue
 
