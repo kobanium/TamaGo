@@ -4,6 +4,7 @@ from typing import NoReturn, Dict, List, Tuple
 import time
 import torch
 import numpy as np
+import onnxruntime as ort
 
 from common.print_console import print_err
 from nn.network.dual_net import DualNet
@@ -146,6 +147,8 @@ def load_network(model_file_path: str, use_gpu: bool) -> DualNet:
     Returns:
         DualNet: パラメータロード済みのニューラルネットワーク。
     """
+    if model_file_path.endswith(".onnx"):
+        return OrtWrapper(model_file_path, use_gpu)
     device = get_torch_device(use_gpu=use_gpu)
     network = DualNet(device)
     network.to(device)
@@ -157,3 +160,51 @@ def load_network(model_file_path: str, use_gpu: bool) -> DualNet:
     torch.set_grad_enabled(False)
 
     return network
+
+class OrtWrapper:
+    def __init__(self, model_file_path: str, use_gpu: bool):
+        providers = []
+        if use_gpu:
+            providers += [
+                "DmlExecutionProvider",
+                "CUDAExecutionProvider",
+            ]
+        providers.append("CPUExecutionProvider")
+        self.ort_sess = ort.InferenceSession(model_file_path, providers=providers)
+
+
+    def _run(self, input):
+        outputs = self.ort_sess.run(None, {'input': input})
+        return outputs[0], outputs[1]
+
+
+    def _softmax(self, x):
+        return np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+
+
+    def inference(self, input_plane: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """前向き伝搬処理を実行する。探索用に使うメソッドのため、デバイス間データ転送も内部処理する。
+
+        Args:
+            input_plane (np.ndarray): 入力特徴テンソル。
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: Policy, Valueの推論結果。
+        """
+        policy, value = self._run(input_plane)
+        return self._softmax(policy), self._softmax(value)
+
+
+    def inference_with_policy_logits(self, input_plane: np.ndarray) \
+        -> Tuple[np.ndarray, np.ndarray]:
+        """前向き伝搬処理を実行する。Gumbel AlphaZero用の探索に使うメソッドのため、
+        デバイス間データ転送も内部処理する。
+
+        Args:
+            input_plane (np.ndarray): 入力特徴テンソル。
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: Policy, Valueの推論結果。
+        """
+        policy, value = self._run(input_plane)
+        return policy, self._softmax(value)

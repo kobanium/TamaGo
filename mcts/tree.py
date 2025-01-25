@@ -6,7 +6,6 @@ import select
 import copy
 import time
 import numpy as np
-import torch
 
 from board.constant import PASS, RESIGN
 from board.coordinate import Coordinate
@@ -277,7 +276,7 @@ class MCTSTree: # pylint: disable=R0902
             board (GoBoard): 碁盤の情報。
             use_logit (bool): Policyの出力をlogitにするフラグ
         """
-        input_planes = torch.Tensor(np.array(self.batch_queue.input_plane))
+        input_planes = np.array(self.batch_queue.input_plane)
 
         if use_logit:
             raw_policy, value_data = self.network.inference_with_policy_logits(input_planes)
