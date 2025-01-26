@@ -9,7 +9,7 @@ from board.coordinate import Coordinate
 from board.pattern import Pattern, copy_pattern
 from board.record import Record, copy_record
 from board.stone import Stone
-from board.string import StringData, copy_strings
+from board.go_string import StringData, copy_strings
 from board.zobrist_hash import affect_stone_hash, affect_string_hash
 from common.print_console import print_err
 
