@@ -1,11 +1,11 @@
 """Sequential Halving
 """
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 import math
 
 
 def get_sequence_of_considered_visits(max_num_considered_actions: int, \
-    num_simulations: int) -> Tuple[int]:
+    num_simulations: int) -> Tuple[int, ...]:
     """探索回数に対応する探索回数閾値の列を取得する。
 
     Args:
@@ -18,7 +18,7 @@ def get_sequence_of_considered_visits(max_num_considered_actions: int, \
     if max_num_considered_actions <= 1:
         return tuple(range(num_simulations))
     log2max = int(math.ceil(math.log2(max_num_considered_actions)))
-    sequence = []
+    sequence: List[int] = []
     visits = [0] * max_num_considered_actions
     num_considered = max_num_considered_actions
 
@@ -44,7 +44,7 @@ def get_candidates_and_visit_pairs(max_num_considered_actions: int, \
     Returns:
         Dict[int, int]: 探索幅をキー、探索回数をバリューに持つ辞書。
     """
-    visit_dict = {}
+    visit_dict: Dict[int, int] = {}
     visit_list = get_sequence_of_considered_visits(max_num_considered_actions, num_simulations)
     max_count = max(visit_list)
     count_list = [0] * (max_count + 1)

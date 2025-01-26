@@ -1,6 +1,6 @@
 """碁盤のデータ定義と操作処理。
 """
-from typing import List, Tuple, NoReturn
+from typing import Deque, List, Tuple
 from collections import deque
 import numpy as np
 
@@ -106,7 +106,7 @@ class GoBoard: # pylint: disable=R0902
         self.clear()
 
 
-    def clear(self) -> NoReturn:
+    def clear(self) -> None:
         """盤面の初期化
         """
         self.moves = 1
@@ -128,7 +128,7 @@ class GoBoard: # pylint: disable=R0902
         self.strings.clear()
         self.record.clear()
 
-    def put_stone(self, pos: int, color: Stone) -> NoReturn:
+    def put_stone(self, pos: int, color: Stone) -> None:
         """指定された座標に指定された色の石を石を置く。
 
         Args:
@@ -184,7 +184,7 @@ class GoBoard: # pylint: disable=R0902
         self.record.save(self.moves, color, pos, self.positional_hash)
         self.moves += 1
 
-    def put_handicap_stone(self, pos: int, color: Stone) -> NoReturn:
+    def put_handicap_stone(self, pos: int, color: Stone) -> None:
         """指定された座標に指定された色の置き石を置く。
 
         Args:
@@ -408,7 +408,7 @@ class GoBoard: # pylint: disable=R0902
         """
         return [pos for pos in self.onboard_pos if self.is_legal(pos, color)]
 
-    def display(self, sym: int=0) -> NoReturn:
+    def display(self, sym: int=0) -> None:
         """盤面を表示する。
         """
         print_err(self.get_board_string(sym=sym))
@@ -440,7 +440,7 @@ class GoBoard: # pylint: disable=R0902
         return board_string
 
 
-    def display_self_atari(self, color: Stone) -> NoReturn:
+    def display_self_atari(self, color: Stone) -> None:
         """アタリに突っ込んだ時に取られる石の数を表示する。取られない場合は0。デバッグ用。
 
         Args:
@@ -457,7 +457,7 @@ class GoBoard: # pylint: disable=R0902
                 self_atari_string += '\n'
         print_err(self_atari_string)
 
-    def get_board_size(self) -> NoReturn:
+    def get_board_size(self) -> int:
         """碁盤の大きさを取得する。
 
         Returns:
@@ -508,7 +508,7 @@ class GoBoard: # pylint: disable=R0902
         """
         return self.sym_map[sym][pos]
 
-    def set_komi(self, komi: float) -> NoReturn:
+    def set_komi(self, komi: float) -> None:
         """コミを設定する。
 
         Args:
@@ -535,7 +535,7 @@ class GoBoard: # pylint: disable=R0902
         last_move_color, _, _ = self.record.get(self.moves - 1)
         return Stone.get_opponent_color(last_move_color)
 
-    def get_move_history(self) -> List[Tuple[Stone, int, np.array]]:
+    def get_move_history(self) -> List[Tuple[Stone, int, np.ndarray]]:
         """着手の履歴を取得する。
 
         Returns:
@@ -579,7 +579,7 @@ class GoBoard: # pylint: disable=R0902
         for pos in self.onboard_pos: # pylint: disable=R1702
             if board[pos] is Stone.EMPTY:
                 pos_list = []
-                pos_queue = deque()
+                pos_queue: Deque[int] = deque()
                 pos_queue.append(pos)
                 color = Stone.EMPTY
                 while pos_queue:
