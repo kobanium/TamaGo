@@ -10,6 +10,14 @@ from common.print_console import print_err
 from nn.network.dual_net import DualNet
 
 
+class GoNet(Protocol):
+    def inference(self, input_plane: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        pass
+
+    def inference_with_policy_logits(self, input_plane: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        pass
+
+
 def get_torch_device(use_gpu: bool) -> torch.device:
     """torch.deviceを取得する。
 
