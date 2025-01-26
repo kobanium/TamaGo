@@ -33,7 +33,7 @@ for i, _ in enumerate(nb4_empty):
 class Pattern:
     """配石パターンクラス。
     """
-    def __init__(self, board_size: int, pos_func: Callable[[int], int]):
+    def __init__(self, board_size: int, pos_func: Callable[[int, int], int]):
         """Patternクラスのコンストラクタ。
 
         Args:
@@ -99,7 +99,7 @@ class Pattern:
 
         self.clear()
 
-    def clear(self) -> NoReturn:
+    def clear(self) -> None:
         """周囲の石のパターンを初期状態にする。
         """
         board_start = OB_SIZE
@@ -116,7 +116,7 @@ class Pattern:
             self.pat3[self.POS(board_start, y_pos)] = \
                 self.pat3[self.POS(board_start, y_pos)] | 0x0cc3
 
-    def remove_stone(self, pos: int) -> NoReturn:
+    def remove_stone(self, pos: int) -> None:
         """周囲の石のパターンから石を取り除く。
 
         Args:
@@ -125,7 +125,7 @@ class Pattern:
         for i, shift in enumerate(self.update_pos):
             self.pat3[pos + shift] = self.pat3[pos + shift] & pattern_mask[i][0]
 
-    def put_stone(self, pos: int, color: Stone) -> NoReturn:
+    def put_stone(self, pos: int, color: Stone) -> None:
         """周囲の石のパターンの石を追加する。
 
         Args:
@@ -161,7 +161,7 @@ class Pattern:
         """
         return self.eye[self.pat3[pos]]
 
-    def display(self, pos: int) -> NoReturn:
+    def display(self, pos: int) -> None:
         """指定した座標の周囲の石のパターンを表示する。（デバッグ用)
 
         Args:
@@ -299,7 +299,7 @@ def get_pat3_symmetry8(pat3: int) -> List[int]:
     return symmetries
 
 
-def copy_pattern(dst: Pattern, src: Pattern) -> NoReturn:
+def copy_pattern(dst: Pattern, src: Pattern) -> None:
     """配石パターンのデータをコピーする。
 
     Args:

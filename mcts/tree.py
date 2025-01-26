@@ -1,6 +1,6 @@
 """モンテカルロ木探索の実装。
 """
-from typing import Any, Dict, List, NoReturn, Tuple, Callable
+from typing import Any, Dict, List, Tuple, Callable
 import sys
 import select
 import copy
@@ -46,7 +46,7 @@ class MCTSTree: # pylint: disable=R0902
         self.to_move = Stone.BLACK
 
 
-    def _initialize_search(self, board: GoBoard, color: Stone) -> NoReturn:
+    def _initialize_search(self, board: GoBoard, color: Stone) -> None:
         self.num_nodes = 0
         self.current_root = self.expand_node(board, color)
         input_plane = generate_input_planes(board, color, 0)
@@ -105,7 +105,7 @@ class MCTSTree: # pylint: disable=R0902
         return next_move
 
 
-    def ponder(self, board: GoBoard, color: Stone, analysis_query: Dict[str, Any]) -> NoReturn:
+    def ponder(self, board: GoBoard, color: Stone, analysis_query: Dict[str, Any]) -> None:
         """探索回数の制限なく探索を実行する。
 
         Args:
@@ -128,7 +128,7 @@ class MCTSTree: # pylint: disable=R0902
 
 
     def search(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
-        analysis_query: Dict[str, Any]) -> NoReturn: # pylint: disable=R0914
+        analysis_query: Dict[str, Any]) -> None: # pylint: disable=R0914
         """探索を実行する。
         Args:
             board (GoBoard): 現在の局面情報。
@@ -174,7 +174,7 @@ class MCTSTree: # pylint: disable=R0902
             sys.stdout.flush()
 
 
-    def search_with_callback(self, board: GoBoard, color: Stone, callback: Callable[[Tuple[int, int]], bool]) -> NoReturn:
+    def search_with_callback(self, board: GoBoard, color: Stone, callback: Callable[[List[Tuple[int, int]]], bool]) -> None:
         """探索を実行し、探索系列をコールバック関数へ渡す動作をくり返す。
 コールバック関数の戻り値が真になれば終了する。
         Args:
@@ -187,7 +187,7 @@ class MCTSTree: # pylint: disable=R0902
         self._initialize_search(board, color)
         search_board = copy.deepcopy(board)
         while True:
-            path = []
+            path: List[Tuple[int, int]] = []
             copy_board(dst=search_board, src=board)
             self.search_mcts(search_board, color, self.current_root, path)
             finished = callback(path)
@@ -197,7 +197,7 @@ class MCTSTree: # pylint: disable=R0902
 
 
     def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \
-        path: List[Tuple[int, int]]) -> NoReturn:
+        path: List[Tuple[int, int]]) -> None:
         """モンテカルロ木探索を実行する。
 
         Args:
@@ -244,7 +244,7 @@ class MCTSTree: # pylint: disable=R0902
             self.search_mcts(board, color, next_node_index, path)
 
 
-    def expand_node(self, board: GoBoard, color: Stone) -> NoReturn:
+    def expand_node(self, board: GoBoard, color: Stone) -> int:
         """ノードを展開する。
 
         Args:
@@ -357,7 +357,7 @@ class MCTSTree: # pylint: disable=R0902
 
 
     def search_by_sequential_halving(self, board: GoBoard, color: Stone, \
-        threshold: int) -> NoReturn:
+        threshold: int) -> None:
         """指定された探索回数だけSequential Halving探索を実行する。
 
         Args:
@@ -385,7 +385,7 @@ class MCTSTree: # pylint: disable=R0902
 
 
     def search_sequential_halving(self, board: GoBoard, color: Stone, current_index: int, \
-        path: List[Tuple[int, int]], count_threshold: int) -> NoReturn: # pylint: disable=R0913
+        path: List[Tuple[int, int]], count_threshold: int) -> None: # pylint: disable=R0913
         """Sequential Halving探索を実行する。
 
         Args:
@@ -438,7 +438,7 @@ class MCTSTree: # pylint: disable=R0902
         Returns:
             Dict[str, List[str]]: 各手の最善応手系列を記録した辞書。
         """
-        pv_dict = {}
+        pv_dict: Dict[str, List[str]] = {}
 
         for i in range(root.num_children):
             if root.children_visits[i] > 0:
@@ -448,7 +448,7 @@ class MCTSTree: # pylint: disable=R0902
 
         return pv_dict
 
-    def get_best_move_sequence(self, pv_list: List[str], index: int) -> List[str]:
+    def get_best_move_sequence(self, pv_list: List[int], index: int) -> List[int]:
         """最善応手系列を取得する。
 
         Args:

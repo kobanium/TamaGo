@@ -1,6 +1,6 @@
 """深層学習に関するユーティリティ。
 """
-from typing import NoReturn, Dict, List, Tuple
+from typing import Dict, List, Protocol, Tuple
 import time
 import torch
 import numpy as np
@@ -41,7 +41,7 @@ def _calculate_losses(loss: Dict[str, float], iteration: int) \
 
 
 def print_learning_process(loss_data: Dict[str, float], epoch: int, index: int, \
-    iteration: int, start_time: float) -> NoReturn:
+    iteration: int, start_time: float) -> None:
     """学習経過情報を表示する。
 
     Args:
@@ -60,7 +60,7 @@ def print_learning_process(loss_data: Dict[str, float], epoch: int, index: int, 
 
 
 def print_evaluation_information(loss_data: Dict[str, float], epoch: int, \
-    iteration: int, start_time: float) -> NoReturn:
+    iteration: int, start_time: float) -> None:
     """テストデータの評価情報を表示する。
 
     Args:
@@ -77,7 +77,7 @@ def print_evaluation_information(loss_data: Dict[str, float], epoch: int, \
     print_err(f"\tvalue loss  : {value_loss:6f}")
 
 
-def save_model(network: torch.nn.Module, path: str) -> NoReturn:
+def save_model(network: torch.nn.Module, path: str) -> None:
     """ニューラルネットワークのパラメータを保存する。
 
     Args:
@@ -122,14 +122,14 @@ def split_train_test_set(file_list: List[str], train_data_ratio: float) \
     return train_data_set, test_data_set
 
 
-def apply_softmax(logits: np.array) -> np.array:
+def apply_softmax(logits: np.ndarray) -> np.ndarray:
     """Softmax関数を適用する。
 
     Args:
-        logits (np.array): Softmax関数の入力値。
+        logits (np.ndarray): Softmax関数の入力値。
 
     Returns:
-        np.array: Softmax関数適用後の値。
+        np.ndarray: Softmax関数適用後の値。
     """
     shift_exp = np.exp(logits - np.max(logits))
 

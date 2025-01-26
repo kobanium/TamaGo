@@ -1,5 +1,5 @@
 import json
-from typing import Any, Tuple, List, Dict, NoReturn
+from typing import Any, Tuple, List, Dict
 
 from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
 from board.go_board import GoBoard, copy_board
@@ -32,7 +32,7 @@ def dump_mcts_to_json(tree_dict: Dict[str, Any], board: GoBoard, superko: bool) 
     }
     return json.dumps(state)
 
-def enrich_mcts_dict(state: Dict[str, Any]) -> NoReturn:
+def enrich_mcts_dict(state: Dict[str, Any]) -> None:
     """MCTSの状態を表す辞書に便利項目をいろいろ追加する。
 
     Args:
@@ -62,7 +62,7 @@ def enrich_mcts_dict(state: Dict[str, Any]) -> NoReturn:
             assert child_index < tree["num_nodes"], "Child index must be less than num_nodes."
 
     # 「親は子より前」「兄弟は order の小さい方が前」を保証したリスト
-    sorted_indices_list = []
+    sorted_indices_list: List[Any] = []
     tree["sorted_indices_list"] = sorted_indices_list
 
     # expanded_children_index, sorted_indices_list, 兄弟内 order
@@ -142,7 +142,7 @@ def _recovered_move_history(converted_move_history: List[Tuple[str, int]]) -> Li
 def _stone_to_str(color: Stone) -> str:
     return 'black' if color == Stone.BLACK else 'white'
 
-def _str_to_stone(color_str: str) -> str:
+def _str_to_stone(color_str: str) -> Stone:
     return Stone.BLACK if color_str == 'black' else Stone.WHITE
 
 def _get_updated_board_string(root_board: GoBoard, initial_move_color: Stone, gtp_moves_along_path: List[str]) -> str:

@@ -45,11 +45,11 @@ def display_policy_distribution(model: DualNet, board: GoBoard, color: Stone) ->
         str: 表示用文字列。
     """
     board_size = board.get_board_size()
-    input_plane = generate_input_planes(board, color)
-    input_plane = torch.tensor(input_plane.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
+    input_plane_data = generate_input_planes(board, color)
+    input_plane = torch.tensor(input_plane_data.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
     policy, _ = model.inference(input_plane)
 
-    max_policy, min_policy = 0, 1
+    max_policy, min_policy = 0.0, 1.0
     log_policies = [math.log(policy[0][i]) for i in range(board_size * board_size)]
 
     for i, log_policy in enumerate(log_policies):
@@ -86,8 +86,8 @@ def display_policy_score(model: DualNet, board: GoBoard, color: Stone) -> str:
         str: 表示用文字列。
     """
     board_size = board.get_board_size()
-    input_plane = generate_input_planes(board, color)
-    input_plane = torch.tensor(input_plane.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
+    input_plane_data = generate_input_planes(board, color)
+    input_plane = torch.tensor(input_plane_data.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
     policy_predict, _ = model.inference(input_plane)
     policies = [policy_predict[0][i] for i in range(board_size ** 2)]
     response = ""
