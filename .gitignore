@@ -5,3 +5,5 @@
 **/*.ckpt
 archive/*
 .coverage
+.eggs/
+*.egg-info/

@@ -1,10 +1,12 @@
 """モンテカルロ木探索で使用するノードの実装。
 """
 import json
-from typing import Any, Callable, Dict, List, NoReturn
+from typing import Any, Callable, Dict, List, Self
 
 import numpy as np
 import torch
+
+from board.coordinate import Coordinate
 from board.constant import BOARD_SIZE
 from board.go_board import GoBoard
 from common.print_console import print_err
@@ -38,7 +40,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.noise = np.zeros(num_actions, dtype=np.float64)
         self.num_children = 0
 
-    def expand(self, policy: Dict[int, float]) -> NoReturn:
+    def expand(self, policy: Dict[int, float]) -> None:
         """ノードを展開し、初期化する。
 
         Args:
@@ -59,7 +61,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.set_policy(policy)
 
 
-    def set_policy(self, policy_map: Dict[int, float]) -> NoReturn:
+    def set_policy(self, policy_map: Dict[int, float]) -> None:
         """着手候補の座標とPolicyの値を設定する。
 
         Args:
@@ -73,7 +75,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.num_children = index
 
 
-    def add_virtual_loss(self, index) -> NoReturn:
+    def add_virtual_loss(self, index) -> None:
         """Virtual Lossを加算する。
 
         Args:
@@ -83,7 +85,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.children_virtual_loss[index] += 1
 
 
-    def update_policy(self, policy: Dict[int, float]) -> NoReturn:
+    def update_policy(self, policy: Dict[int, float]) -> None:
         """Policyを更新する。
 
         Args:
@@ -93,7 +95,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
             self.children_policy[i] = policy[self.action[i]]
 
 
-    def set_leaf_value(self, index: int, value: float) -> NoReturn:
+    def set_leaf_value(self, index: int, value: float) -> None:
         """末端のValueを設定する。
 
         Args:
@@ -101,12 +103,12 @@ class MCTSNode: # pylint: disable=R0902, R0904
             value (float): 設定するValueの値。
 
         Returns:
-            NoReturn: _description_
+            None: _description_
         """
         self.children_value[index] = value
 
 
-    def set_raw_value(self, value: float) -> NoReturn:
+    def set_raw_value(self, value: float) -> None:
         """ノードに対応する局面のValueを設定する。
 
         Args:
@@ -115,7 +117,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.raw_value = value
 
 
-    def update_child_value(self, index: int, value: float) -> NoReturn:
+    def update_child_value(self, index: int, value: float) -> None:
         """子ノードにValueを加算し、Virtual Lossを元に戻す。
 
         Args:
@@ -127,7 +129,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.children_virtual_loss[index] -= 1
 
 
-    def update_node_value(self, value: float) -> NoReturn:
+    def update_node_value(self, value: float) -> None:
         """ノードにValueを加算し、Virtual Lossを元に戻す。
 
         Args:
@@ -154,7 +156,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
             # PASSのValueを0.1だけ引く
             pucb_values[self.num_children - 1] -= 0.1
 
-        return np.argmax(pucb_values[:self.num_children])
+        return int(np.argmax(pucb_values[:self.num_children]))
 
 
     def get_num_children(self) -> int:
@@ -172,7 +174,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         Returns:
             int: 探索回数最大の子ノードのインデックス。
         """
-        return np.argmax(self.children_visits[:self.num_children])
+        return int(np.argmax(self.children_visits[:self.num_children]))
 
 
     def get_best_move(self) -> int:
@@ -208,7 +210,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         return self.children_index[index]
 
 
-    def set_child_index(self, index: int, child_index: int) -> NoReturn:
+    def set_child_index(self, index: int, child_index: int) -> None:
         """指定した子ノードの遷移先のインデックスを設定する。
 
         Args:
@@ -251,7 +253,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 val = val.item()
             dic[key] = val
 
-    def print_search_result(self, board: GoBoard, pv_dict: Dict[str, List[str]]) -> NoReturn:
+    def print_search_result(self, board: GoBoard, pv_dict: Dict[str, List[str]]) -> None:
         """探索結果を表示する。探索した手の探索回数とValueの平均値を表示する。
 
         Args:
@@ -272,13 +274,13 @@ class MCTSNode: # pylint: disable=R0902, R0904
                 print_err(msg)
 
 
-    def set_gumbel_noise(self) -> NoReturn:
+    def set_gumbel_noise(self) -> None:
         """Gumbelノイズを設定する。
         """
         self.noise = np.random.gumbel(loc=0.0, scale=1.0, size=self.noise.size)
 
 
-    def calculate_completed_q_value(self, use_mixed_value :bool=True) -> np.array:
+    def calculate_completed_q_value(self, use_mixed_value: bool=True) -> np.ndarray:
         """Completed-Q valueを計算する。
 
         Args:
@@ -305,7 +307,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         return np.where(self.children_visits[:self.num_children] > 0, q_value, value)
 
 
-    def calculate_improved_policy(self) -> np.array:
+    def calculate_improved_policy(self) -> np.ndarray:
         """Improved Policyを計算する。
 
         Returns:
@@ -343,7 +345,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         evaluation_value = np.where(counts >= count_threshold, -10000.0, \
             self.children_policy[:self.num_children] + self.noise[:self.num_children] \
             + sigma_base * q_mean)
-        return np.argmax(evaluation_value)
+        return int(np.argmax(evaluation_value))
 
 
     def select_move_by_sequential_halving_for_node(self) -> int:
@@ -358,7 +360,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         evaluation_value = improved_policy \
             - (self.children_visits[:self.num_children] / (1.0 + self.node_visits))
 
-        return np.argmax(evaluation_value)
+        return int(np.argmax(evaluation_value))
 
 
     def calculate_value_evaluation(self, index: int) -> float:
@@ -375,7 +377,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         return self.children_value_sum[index] / self.children_visits[index]
 
 
-    def print_all_node_info(self) -> NoReturn:
+    def print_all_node_info(self) -> None:
         """子ノードの情報を全て表示する。
         """
         msg = ""
@@ -396,8 +398,8 @@ class MCTSNode: # pylint: disable=R0902, R0904
         print_err(msg)
 
 
-    def get_analysis(self, board: GoBoard, mode: str, \
-        pv_lists_func: Callable[[List[str], int], List[str]]) -> str: # pylint: disable=R0914
+    def get_analysis(self, board: GoBoard, mode: str,
+        pv_lists_func: Callable[[Self, Coordinate], Dict[str, List[str]]]) -> str: # pylint: disable=R0914
         """解析結果文字列を生成する。
 
         Args:
@@ -412,8 +414,8 @@ class MCTSNode: # pylint: disable=R0902, R0904
         return self.get_analysis_from_status_list(mode, children_status_list)
 
 
-    def get_analysis_status_list(self, board: GoBoard, \
-        pv_lists_func: Callable[[List[str], int], List[str]]):
+    def get_analysis_status_list(self, board: GoBoard,
+        pv_lists_func: Callable[[Self, Coordinate], Dict[str, List[str]]]):
         sorted_list = []
         for i in range(self.num_children):
             sorted_list.append((self.children_visits[i], i))

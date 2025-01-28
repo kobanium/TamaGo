@@ -1,6 +1,6 @@
 """置き石の座標。
 """
-from typing import List
+from typing import List, Optional
 
 
 handicap_coordinate_map = {
@@ -67,7 +67,7 @@ handicap_coordinate_map = {
 }
 
 
-def get_handicap_coordinates(size: int, handicaps: int) -> List[int]:
+def get_handicap_coordinates(size: int, handicaps: int) -> Optional[List[str]]:
     """置き石の座標リストを取得する。
 
     Args:

@@ -1,6 +1,6 @@
 """SGF形式のファイル読み込み処理。
 """
-from typing import NoReturn
+from typing import Generator, List, Optional, Tuple
 from board.coordinate import Coordinate
 from board.constant import PASS, OB_SIZE
 from board.stone import Stone
@@ -33,6 +33,12 @@ sgf_coord_map = {
 class SGFReader: # pylint: disable=R0902
     """SGFファイル読み込み。
     """
+    move: List[Tuple[int, int, Stone]]
+    event: Optional[str]
+    black_player_name: Optional[str]
+    white_player_name: Optional[str]
+    application: Optional[str]
+    copyright: Optional[str]
     def __init__(self, filename_or_text: str, board_size: int, literal: bool=False): # pylint: disable=R0912
         """コンストラクタ
 
@@ -43,7 +49,7 @@ class SGFReader: # pylint: disable=R0902
         """
         self.board_size = board_size
         self.board_size_with_ob = board_size + OB_SIZE * 2
-        self.move = [0] * board_size * board_size * 3
+        self.move = [(0, 0, Stone.EMPTY)] * board_size * board_size * 3
         self.komi = 7.0
         self.result = MatchResult.DRAW
         self.comment = [""] * board_size * board_size * 3
@@ -289,7 +295,7 @@ class SGFReader: # pylint: disable=R0902
 
         return cursor + tmp_cursor
 
-    def get_moves(self) -> int:
+    def get_moves(self) -> Generator[int, None, None]:
         """最初から1つずつ着手を取得する。
 
         Yields:
@@ -368,7 +374,7 @@ class SGFReader: # pylint: disable=R0902
         """
         return self.comment[index]
 
-    def display(self) -> NoReturn:
+    def display(self) -> None:
         """読み込んだSGFファイルの情報を表示する。（デバッグ用）
         """
         message = ""

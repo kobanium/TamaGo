@@ -1,7 +1,7 @@
 """探索時間を制御する処理。
 """
 from enum import Enum
-from typing import NoReturn
+# from typing import NoReturn
 import time
 
 from board.stone import Stone
@@ -36,10 +36,10 @@ class TimeManager:
         self.constant_visits = constant_visits
         self.constant_time = constant_time
         self.default_time = remaining_time
-        self.search_speed = VISITS_PER_SEC
+        self.search_speed = float(VISITS_PER_SEC)
         self.remaining_time = [remaining_time] * 2
-        self.time_limit = 0
-        self.start_time = 0
+        self.time_limit = 0.0
+        self.start_time = 0.0
 
 
     def initialize(self):
@@ -48,7 +48,7 @@ class TimeManager:
         self.remaining_time = [self.default_time] * 2
 
 
-    def set_search_speed(self, visits: int, consumption_time: float) -> NoReturn:
+    def set_search_speed(self, visits: int, consumption_time: float) -> None:
         """探索速度を設定する。
 
         Args:
@@ -83,7 +83,7 @@ class TimeManager:
         return int(self.constant_visits)
 
 
-    def set_remaining_time(self, color: Stone, remaining_time: float) -> NoReturn:
+    def set_remaining_time(self, color: Stone, remaining_time: float) -> None:
         """残り時間を設定する。
 
         Args:
@@ -109,7 +109,7 @@ class TimeManager:
             self.remaining_time[1] -= consumption_time
 
 
-    def set_mode(self, mode:TimeControl) -> NoReturn:
+    def set_mode(self, mode:TimeControl) -> None:
         """思考時間管理の設定を変更する。
 
         Args:
@@ -118,7 +118,7 @@ class TimeManager:
         self.mode = mode
 
 
-    def start_timer(self) -> NoReturn:
+    def start_timer(self) -> None:
         """思考時間の計測を開始する。
         """
         self.start_time = time.time()
