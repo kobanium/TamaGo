@@ -96,7 +96,7 @@ def generate_rl_target_data(board: GoBoard, improved_policy_data: str, sym: int=
         coord = board.coordinate.convert_from_gtp_format(pos)
         target_data[coord] = float(target)
 
-    target = [target_data[board.get_symmetrical_coordinate(pos, sym)] for pos in board.onboard_pos]
-    target.append(target_data[PASS])
+    target_list = [target_data[board.get_symmetrical_coordinate(pos, sym)] for pos in board.onboard_pos]
+    target_list.append(target_data[PASS])
 
-    return np.array(target)
+    return np.array(target_list)

@@ -23,18 +23,18 @@ class SelfPlayRecord:
         """
         self.record_moves = 0
         self.color = [Stone.EMPTY] * MAX_RECORDS
-        self.pos = [0] * MAX_RECORDS
+        self.pos = ["0"] * MAX_RECORDS
         self.coord = coord
         self.policy_target = [""] * MAX_RECORDS
         self.save_dir = save_dir
         self.file_index = 1
 
-    def clear(self) -> NoReturn:
+    def clear(self) -> None:
         """レコードの初期化。
         """
         self.record_moves = 0
 
-    def set_index(self, index: int) -> NoReturn:
+    def set_index(self, index: int) -> None:
         """ファイルのインデックスを設定する。
 
         Args:
@@ -42,7 +42,7 @@ class SelfPlayRecord:
         """
         self.file_index = index
 
-    def save_record(self, root: MCTSNode, pos: int, color: Stone) -> NoReturn:
+    def save_record(self, root: MCTSNode, pos: int, color: Stone) -> None:
         """着手とImproved Policyを記録する。
 
         Args:
@@ -57,14 +57,14 @@ class SelfPlayRecord:
 
         policy_target = f"{root.get_num_children()}"
         for i in range(root.get_num_children()):
-            pos = self.coord.convert_to_gtp_format(root.get_child_move(i))
-            policy_target += f" {pos}:{improved_policy[i]:.3e}"
+            p = self.coord.convert_to_gtp_format(root.get_child_move(i))
+            policy_target += f" {p}:{improved_policy[i]:.3e}"
 
         self.policy_target[self.record_moves] = policy_target
 
         self.record_moves += 1
 
-    def write_record(self, winner: Stone, komi: float, is_resign: bool, score: float) -> NoReturn:
+    def write_record(self, winner: Stone, komi: float, is_resign: bool, score: float) -> None:
         """自己対戦のファイルを出力する。
 
         Args:

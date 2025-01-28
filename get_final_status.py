@@ -6,7 +6,7 @@ import glob
 import os
 import math
 import subprocess
-from typing import NoReturn
+from typing import List
 import click
 
 WORKER_THREAD = 4
@@ -43,6 +43,9 @@ def get_gnugo_judgment(filename: str, is_japanese_rule: bool) -> str:
     with subprocess.Popen(gnugo_command, stdin=subprocess.PIPE, \
         stdout=subprocess.PIPE, encoding='utf-8') as process:
 
+        assert process.stdin is not None
+        assert process.stdout is not None
+
         process.stdin.write("\n".join(exec_commands))
         process.stdin.flush()
         process.stdout.flush()
@@ -64,7 +67,7 @@ def get_gnugo_judgment(filename: str, is_japanese_rule: bool) -> str:
     return responses[2]
 
 
-def adjust_by_gnugo_judgment(filename: str) -> NoReturn:
+def adjust_by_gnugo_judgment(filename: str) -> None:
     """_summary_
 
     Args:
@@ -88,7 +91,7 @@ def adjust_by_gnugo_judgment(filename: str) -> NoReturn:
     with open(filename, encoding="utf-8", mode="w") as out_file:
         out_file.write(adjusted_sgf)
 
-def judgment_worker(kifu_list: str) -> NoReturn:
+def judgment_worker(kifu_list: List[str]) -> None:
     """_summary_
 
     Args:
@@ -100,7 +103,7 @@ def judgment_worker(kifu_list: str) -> NoReturn:
 
 @click.command()
 @click.option('--kifu-dir', type=click.STRING, default='archive', help='')
-def adjust_result(kifu_dir: str) -> NoReturn:
+def adjust_result(kifu_dir: str) -> None:
     """_summary_
 
     Args:

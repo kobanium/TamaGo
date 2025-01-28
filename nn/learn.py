@@ -1,6 +1,5 @@
 """深層学習の実装。
 """
-from typing import NoReturn
 import glob
 import os
 import time
@@ -19,7 +18,7 @@ from learning_param import SL_LEARNING_RATE, RL_LEARNING_RATE, \
 
 
 def train_on_cpu(program_dir: str, board_size: int, batch_size: \
-    int, epochs: int) -> NoReturn: # pylint: disable=R0914,R0915
+    int, epochs: int) -> None: # pylint: disable=R0914,R0915
     """教師あり学習を実行し、学習したモデルを保存する。
 
     Args:
@@ -124,7 +123,7 @@ def train_on_cpu(program_dir: str, board_size: int, batch_size: \
 
 
 def train_on_gpu(program_dir: str, board_size: int, batch_size: int, \
-    epochs: int) -> NoReturn: # pylint: disable=R0914,R0915
+    epochs: int) -> None: # pylint: disable=R0914,R0915
     """教師あり学習を実行し、学習したモデルを保存する。
 
     Args:
@@ -232,7 +231,7 @@ def train_on_gpu(program_dir: str, board_size: int, batch_size: int, \
 
 
 def train_with_gumbel_alphazero_on_cpu(program_dir: str, board_size: int, \
-    batch_size: int) -> NoReturn: # pylint: disable=R0914,R0915
+    batch_size: int) -> None: # pylint: disable=R0914,R0915
     """教師あり学習を実行し、学習したモデルを保存する。CPUで実行。
 
     Args:
@@ -316,7 +315,7 @@ def train_with_gumbel_alphazero_on_cpu(program_dir: str, board_size: int, \
 
 
 def train_with_gumbel_alphazero_on_gpu(program_dir: str, board_size: int, \
-    batch_size: int) -> NoReturn: # pylint: disable=R0914,R0915
+    batch_size: int) -> None: # pylint: disable=R0914,R0915
     """教師あり学習を実行し、学習したモデルを保存する。GPUで実行。
 
     Args:
