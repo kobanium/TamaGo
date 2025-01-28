@@ -7,7 +7,7 @@ import torch
 from board.go_board import GoBoard
 from board.stone import Stone
 from nn.feature import generate_input_planes
-from nn.network.dual_net import DualNet
+from nn.utility import DualNet
 
 class GoguiAnalyzeCommand: # pylint: disable=R0903
     """Gogui解析コマンドの基本情報クラス。
@@ -46,7 +46,7 @@ def display_policy_distribution(model: DualNet, board: GoBoard, color: Stone) ->
     """
     board_size = board.get_board_size()
     input_plane_data = generate_input_planes(board, color)
-    input_plane = torch.tensor(input_plane_data.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
+    input_plane = input_plane_data.reshape(1, 6, board_size, board_size) #pylint: disable=E1121
     policy, _ = model.inference(input_plane)
 
     max_policy, min_policy = 0.0, 1.0
@@ -87,7 +87,7 @@ def display_policy_score(model: DualNet, board: GoBoard, color: Stone) -> str:
     """
     board_size = board.get_board_size()
     input_plane_data = generate_input_planes(board, color)
-    input_plane = torch.tensor(input_plane_data.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
+    input_plane = input_plane_data.reshape(1, 6, board_size, board_size) #pylint: disable=E1121
     policy_predict, _ = model.inference(input_plane)
     policies = [policy_predict[0][i] for i in range(board_size ** 2)]
     response = ""

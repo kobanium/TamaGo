@@ -88,8 +88,7 @@ class DualNet(nn.Module): # pylint: disable=R0902
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: Policy, Valueの推論結果。
         """
-        input_plane = torch.Tensor(input_plane)
-        policy, value = self.forward(input_plane.to(self.device))
+        policy, value = self.forward(torch.Tensor(input_plane).to(self.device))
         return self.softmax(policy).detach().cpu().numpy(), self.softmax(value).detach().cpu().numpy()
 
 
@@ -104,8 +103,7 @@ class DualNet(nn.Module): # pylint: disable=R0902
         Returns:
             Tuple[torch.Tensor, torch.Tensor]: Policy, Valueの推論結果。
         """
-        input_plane = torch.Tensor(input_plane)
-        policy, value = self.forward(input_plane.to(self.device))
+        policy, value = self.forward(torch.Tensor(input_plane).to(self.device))
         return policy.detach().cpu().numpy(), self.softmax(value).detach().cpu().numpy()
 
 

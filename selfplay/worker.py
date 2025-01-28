@@ -15,6 +15,7 @@ from sgf.selfplay_record import SelfPlayRecord
 from mcts.tree import MCTSTree
 from mcts.time_manager import TimeManager, TimeControl
 from nn.utility import load_network
+from nn.network.dual_net import DualNet
 from learning_param import SELF_PLAY_VISITS
 
 # pylint: disable=R0913,R0914
@@ -34,6 +35,7 @@ def selfplay_worker(save_dir: str, model_file_path: str, index_list: List[int], 
     init_board = GoBoard(board_size=size, komi=7.0, check_superko=True)
     record = SelfPlayRecord(save_dir, board.coordinate)
     network = load_network(model_file_path=model_file_path, use_gpu=use_gpu)
+    assert isinstance(network, DualNet)
     network.training = False
 
     np.random.seed(random.choice(index_list))

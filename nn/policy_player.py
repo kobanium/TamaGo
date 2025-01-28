@@ -3,13 +3,11 @@
 import random
 from typing import Any, List
 
-import torch
-
 from board.constant import PASS
 from board.go_board import GoBoard
 from board.stone import Stone
 from nn.feature import generate_input_planes
-from nn.network.dual_net import DualNet
+from nn.utility import DualNet
 
 def generate_move_from_policy(network: DualNet, board: GoBoard, color: Stone) -> int:
     """Policy Networkを使用して着手を生成する。
@@ -24,10 +22,10 @@ def generate_move_from_policy(network: DualNet, board: GoBoard, color: Stone) ->
     """
     board_size = board.get_board_size()
     input_plane = generate_input_planes(board, color)
-    input_data = torch.tensor(input_plane.reshape(1, 6, board_size, board_size)) #pylint: disable=E1121
+    input_data = input_plane.reshape(1, 6, board_size, board_size) #pylint: disable=E1121
     policy, _ = network.inference(input_data)
 
-    policy = policy[0].numpy().tolist()
+    policy = policy[0].tolist()
 
     # 合法手のみ候補手としてピックアップ
     candidates: List[Any] = [{"pos": pos, "policy": policy[i]} \

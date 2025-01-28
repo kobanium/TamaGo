@@ -13,7 +13,7 @@ from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 from common.print_console import print_err
 from nn.feature import generate_input_planes
-from nn.network.dual_net import DualNet
+from nn.utility import DualNet
 from mcts.batch_data import BatchQueue
 from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
     MAX_CONSIDERED_NODES, RESIGN_THRESHOLD, MCTS_TREE_SIZE

@@ -7,10 +7,10 @@ import numpy as np
 import onnxruntime as ort
 
 from common.print_console import print_err
-from nn.network.dual_net import DualNet
+from nn.network.dual_net import DualNet as TorchDualNet
 
 
-class GoNet(Protocol):
+class DualNet(Protocol):
     def inference(self, input_plane: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         pass
 
@@ -158,7 +158,7 @@ def load_network(model_file_path: str, use_gpu: bool) -> DualNet:
     if model_file_path.endswith(".onnx"):
         return OrtWrapper(model_file_path, use_gpu)
     device = get_torch_device(use_gpu=use_gpu)
-    network = DualNet(device)
+    network = TorchDualNet(device)
     network.to(device)
     try:
         network.load_state_dict(torch.load(model_file_path))
@@ -168,6 +168,7 @@ def load_network(model_file_path: str, use_gpu: bool) -> DualNet:
     torch.set_grad_enabled(False)
 
     return network
+
 
 class OrtWrapper:
     def __init__(self, model_file_path: str, use_gpu: bool):
