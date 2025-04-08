@@ -149,7 +149,7 @@ def train_on_gpu(program_dir: str, board_size: int, batch_size: int, \
                                 weight_decay=WEIGHT_DECAY,
                                 nesterov=True)
 
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.amp.GradScaler(device.type)
 
     current_lr = SL_LEARNING_RATE
 
@@ -165,7 +165,7 @@ def train_on_gpu(program_dir: str, board_size: int, batch_size: int, \
             dual_net.train()
             epoch_time = time.time()
             for i in range(0, len(value_data) - batch_size + 1, batch_size):
-                with torch.cuda.amp.autocast(enabled=True):
+                with torch.amp.autocast(device.type, enabled=True):
                     plane = torch.tensor(plane_data[i:i+batch_size]).to(device)
                     policy = torch.tensor(policy_data[i:i+batch_size]).to(device)
                     value = torch.tensor(value_data[i:i+batch_size]).to(device)
@@ -338,7 +338,7 @@ def train_with_gumbel_alphazero_on_gpu(program_dir: str, board_size: int, \
                                 weight_decay=WEIGHT_DECAY,
                                 nesterov=True)
 
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.amp.GradScaler(device.type)
 
     num_trained_batches = 0
 
@@ -367,7 +367,7 @@ def train_with_gumbel_alphazero_on_gpu(program_dir: str, board_size: int, \
         dual_net.train()
         epoch_time = time.time()
         for i in range(0, len(value_data) - batch_size + 1, batch_size):
-            with torch.cuda.amp.autocast(enabled=True):
+            with torch.amp.autocast(device.type, enabled=True):
                 plane = torch.tensor(plane_data[i:i+batch_size]).to(device)
                 policy = torch.tensor(policy_data[i:i+batch_size]).to(device)
                 value = torch.tensor(value_data[i:i+batch_size]).to(device)
