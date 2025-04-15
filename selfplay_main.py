@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 import click
 from board.constant import BOARD_SIZE
-from selfplay.worker import selfplay_worker, display_selfplay_progress_worker
+from selfplay.worker import selfplay_worker, selfplay_worker_async, display_selfplay_progress_worker
 from learning_param import SELF_PLAY_VISITS, NUM_SELF_PLAY_WORKERS, \
     NUM_SELF_PLAY_GAMES
 
@@ -26,10 +26,12 @@ from learning_param import SELF_PLAY_VISITS, NUM_SELF_PLAY_WORKERS, \
     help="GPU使用フラグ。デフォルトはTrue。")
 @click.option('--visits', type=click.IntRange(min=2), default=SELF_PLAY_VISITS, \
     help=f"自己対戦時の探索回数。デフォルトは{SELF_PLAY_VISITS}。")
+@click.option('--async-mode', type=click.BOOL, default=True, \
+    help=f"自己対戦時の非同期実行。")
 @click.option('--model', type=click.STRING, default=os.path.join("model", "rl-model.bin"), \
     help="ニューラルネットワークのモデルファイルパス。デフォルトはmodelディレクトリ内のrl-model.bin。")
 def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
-    use_gpu: bool, visits: int, model: str):
+    use_gpu: bool, visits: int, model: str, async_mode: bool):
     """自己対戦を実行する。
 
     Args:
@@ -56,8 +58,11 @@ def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
     print(f"Self play visits : {visits}")
 
     with ProcessPoolExecutor(max_workers=process) as executor:
-        futures = [executor.submit(selfplay_worker, os.path.join(save_dir, str(kifu_dir_index)), \
-            model, file_list, size, visits, use_gpu) for file_list in file_indice]
+        futures = [
+            executor.submit(selfplay_worker_async if async_mode else selfplay_worker,
+                            os.path.join(save_dir, str(kifu_dir_index)),
+                            model, file_list, size, visits, use_gpu)
+                            for file_list in file_indice]
         monitoring_worker = threading.Thread(target=display_selfplay_progress_worker, \
             args=(os.path.join(save_dir, str(kifu_dir_index)), num_data, ), daemon=True)
         monitoring_worker.start()
