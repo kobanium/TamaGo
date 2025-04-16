@@ -48,6 +48,7 @@ def selfplay_worker(save_dir: str, model_file_path: str, index_list: List[int], 
             continue
         copy_board(board, init_board)
         color = Stone.BLACK
+        winner = Stone.OUT_OF_BOARD
         record.clear()
         pass_count = 0
         never_resign = True if random.randint(1, 10) == 1 else False # pylint: disable=R1719
