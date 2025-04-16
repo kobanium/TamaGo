@@ -5,11 +5,12 @@ from concurrent.futures import ThreadPoolExecutor
 import glob
 import os
 import math
+import multiprocessing
 import subprocess
 from typing import List
 import click
 
-WORKER_THREAD = 4
+WORKER_THREAD = multiprocessing.cpu_count()
 
 
 def get_gnugo_judgment(filename: str, is_japanese_rule: bool) -> str:
@@ -81,7 +82,11 @@ def adjust_by_gnugo_judgment(filename: str) -> None:
 
     current_result = sgf.split('RE[')[1].split(']')[0]
 
-    result = get_gnugo_judgment(filename, False)
+    try:
+        result = get_gnugo_judgment(filename, False)
+    except Exception:
+        print("get_gnugo_judgment failed", filename)
+        os.remove(filename)
 
     current_result_string = "RE[" + current_result + "]"
     adjust_result_string = "RE[" + result + "]"
@@ -115,7 +120,7 @@ def adjust_result(kifu_dir: str) -> None:
 
     sgf_file_list = sorted(glob.glob(os.path.join(kifu_dir, str(newest_index), '*')))
 
-    split_size = math.ceil(len(sgf_file_list) / WORKER_THREAD)
+    split_size = min(math.ceil(len(sgf_file_list) / WORKER_THREAD), 10)
     split_file_lists = [sgf_file_list[idx:idx+split_size] \
         for idx in range(0, len(sgf_file_list), split_size)]
 
