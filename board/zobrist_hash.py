@@ -10,7 +10,7 @@ hash_bit_mask = np.random.randint(low=0, high=np.iinfo(np.uint64).max, \
     size=[4, (BOARD_SIZE + OB_SIZE * 2) ** 2], dtype=np.uint64)
 
 
-def affect_stone_hash(hash_value: np.array, pos: int, color: Stone) -> np.array:
+def affect_stone_hash(hash_value: np.ndarray, pos: int, color: Stone) -> np.ndarray:
     """1つの石のハッシュ値を作用させる。
 
     Args:
@@ -24,7 +24,7 @@ def affect_stone_hash(hash_value: np.array, pos: int, color: Stone) -> np.array:
     return hash_value ^ hash_bit_mask[color.value][pos]
 
 
-def affect_string_hash(hash_value: np.array, pos_list: List[int], color: Stone) -> np.array:
+def affect_string_hash(hash_value: np.ndarray, pos_list: List[int], color: Stone) -> np.ndarray:
     """複数の石のハッシュ値を作用させる。
 
     Args:

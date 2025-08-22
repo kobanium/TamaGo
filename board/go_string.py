@@ -1,6 +1,6 @@
 """連の定義と処理の実装。
 """
-from typing import Callable, List, NoReturn
+from typing import Callable, List
 from board.constant import STRING_END, LIBERTY_END, NEIGHBOR_END, OB_SIZE
 from board.coordinate import Coordinate
 from board.stone import Stone
@@ -15,7 +15,7 @@ class String: # pylint: disable=R0902
         Args:
             board_size (int): 碁盤のサイズ。
         """
-        self.color = 0
+        self.color = Stone.EMPTY
         self.libs = 0
         self.lib = [0] * ((board_size + 2) ** 2)
         self.neighbors = 0
@@ -24,7 +24,7 @@ class String: # pylint: disable=R0902
         self.size = 0
         self.flag = False
 
-    def initialize(self, pos: int, color: Stone) -> NoReturn:
+    def initialize(self, pos: int, color: Stone) -> None:
         """連の生成処理。
 
         Args:
@@ -68,17 +68,17 @@ class String: # pylint: disable=R0902
         """
         return self.neighbor[neighbor] != 0
 
-    def remove(self) -> NoReturn:
+    def remove(self) -> None:
         """連を削除する。
         """
         self.flag = False
 
-    def add_stone(self) -> NoReturn:
+    def add_stone(self) -> None:
         """連を構成する石の数を1つ増やす。
         """
         self.size += 1
 
-    def add_size(self, size: int) -> NoReturn:
+    def add_size(self, size: int) -> None:
         """連を構成する石の個数を加算する。
 
         Args:
@@ -158,7 +158,7 @@ class String: # pylint: disable=R0902
 
         return pos
 
-    def remove_liberty(self, pos: int) -> NoReturn:
+    def remove_liberty(self, pos: int) -> None:
         """指定した座標の呼吸点を取り除く。
 
         Args:
@@ -175,7 +175,7 @@ class String: # pylint: disable=R0902
         self.lib[pos] = 0
         self.libs -= 1
 
-    def add_neighbor(self, string_id: int) -> NoReturn:
+    def add_neighbor(self, string_id: int) -> None:
         """隣接する敵連IDを追加する。
 
         Args:
@@ -195,7 +195,7 @@ class String: # pylint: disable=R0902
         self.neighbor[neighbor] = string_id
         self.neighbors += 1
 
-    def remove_neighbor(self, remove_id: int) -> NoReturn:
+    def remove_neighbor(self, remove_id: int) -> None:
         """指定した隣接する敵連IDを除去する。
 
         Args:
@@ -266,7 +266,7 @@ class StringData:
         self.POS = pos_func # pylint: disable=C0103
         self.get_neighbor4 = get_neighbor4
 
-    def clear(self) -> NoReturn:
+    def clear(self) -> None:
         """全ての連を削除する。
         """
         self.string_id = [0] * len(self.string_id)
@@ -274,7 +274,7 @@ class StringData:
         for string in self.string:
             string.remove()
 
-    def remove_liberty(self, pos: int, lib: int) -> NoReturn:
+    def remove_liberty(self, pos: int, lib: int) -> None:
         """指定した座標の連の呼吸点を除去する。
 
         Args:
@@ -283,7 +283,7 @@ class StringData:
         """
         self.string[self.get_id(pos)].remove_liberty(lib)
 
-    def remove_string(self, board: List[Stone], remove_pos: int) -> NoReturn:
+    def remove_string(self, board: List[Stone], remove_pos: int) -> List[int]:
         """連を盤上から除去する。
 
         Args:
@@ -364,7 +364,7 @@ class StringData:
         """
         return self.string[self.get_id(pos)].get_num_liberties()
 
-    def make_string(self, board: List[Stone], pos: int, color: Stone) -> NoReturn:
+    def make_string(self, board: List[Stone], pos: int, color: Stone) -> None:
         """連を作成する。
 
         Args:
@@ -394,7 +394,7 @@ class StringData:
                 self.string[string_id].add_neighbor(neighbor_id)
                 self.string[neighbor_id].add_neighbor(string_id)
 
-    def _add_stone_to_string(self, string_id: int, pos: int) -> NoReturn:
+    def _add_stone_to_string(self, string_id: int, pos: int) -> None:
         """指定した座標を連に追加する。
 
         Args:
@@ -416,7 +416,7 @@ class StringData:
 
         self.string[string_id].add_stone()
 
-    def add_stone(self, board: List[Stone], pos: int, color: Stone, string_id: int) -> NoReturn:
+    def add_stone(self, board: List[Stone], pos: int, color: Stone, string_id: int) -> None:
         """連に石を1つ追加する。
 
         Args:
@@ -440,8 +440,8 @@ class StringData:
                 self.string[string_id].add_neighbor(neighbor_id)
                 self.string[neighbor_id].add_neighbor(string_id)
 
-    def connect_string(self, board: List[Stone], pos: int, \
-        color: Stone, ids: List[int]) -> NoReturn:
+    def connect_string(self, board: List[Stone], pos: int,
+        color: Stone, ids: List[int]) -> None:
         """連を接続する。
 
         Args:
@@ -457,7 +457,7 @@ class StringData:
         if len(unique_ids) > 1:
             self._merge_string(unique_ids[0], unique_ids[1:])
 
-    def _merge_string(self, dst_id: int, src_ids: List[int]) -> NoReturn:
+    def _merge_string(self, dst_id: int, src_ids: List[int]) -> None:
         """複数の連を接続する。
 
         Args:
@@ -470,7 +470,7 @@ class StringData:
             self._merge_neighbor(dst_id, src_id)
             self.string[src_id].remove()
 
-    def _merge_stones(self, dst_id: int, src_id: int) -> NoReturn:
+    def _merge_stones(self, dst_id: int, src_id: int) -> None:
         """連を構成する石の座標を連結する。
 
         Args:
@@ -500,7 +500,7 @@ class StringData:
 
         self.string[dst_id].add_size(self.string[src_id].get_size())
 
-    def _merge_liberty(self, dst_id: int, src_id: int) -> NoReturn:
+    def _merge_liberty(self, dst_id: int, src_id: int) -> None:
         """連が持つ呼吸点の座標を連結する。
 
         Args:
@@ -519,7 +519,7 @@ class StringData:
                 self.string[dst_id].libs += 1
             src_lib = self.string[src_id].lib[src_lib]
 
-    def _merge_neighbor(self, dst_id: int, src_id: int) -> NoReturn:
+    def _merge_neighbor(self, dst_id: int, src_id: int) -> None:
         """隣接する敵連IDを連結する。
 
         Args:
@@ -545,7 +545,7 @@ class StringData:
             neighbor = self.string[src_id].neighbor[neighbor]
 
 
-    def _remove_neighbor_string(self, neighbor_id: int, remove_id: int) -> NoReturn:
+    def _remove_neighbor_string(self, neighbor_id: int, remove_id: int) -> None:
         """指定した敵連IDを削除する。
 
         Args:
@@ -554,7 +554,7 @@ class StringData:
         """
         self.string[neighbor_id].remove_neighbor(remove_id)
 
-    def _add_neighbor(self, neighbor_id: int, add_id: int) -> NoReturn:
+    def _add_neighbor(self, neighbor_id: int, add_id: int) -> None:
         """隣接する敵連IDを追加する。
 
         Args:
@@ -563,7 +563,7 @@ class StringData:
         """
         self.string[neighbor_id].add_neighbor(add_id)
 
-    def display(self) -> NoReturn:
+    def display(self) -> None:
         """盤上に存在する全ての連の情報を表示する。（デバッグ用）
         """
         coordinate = Coordinate(self.board_size)
@@ -597,7 +597,7 @@ class StringData:
                 print_err(f"\tNeighbor {len(neighbors)} : {neighbors}")
 
 
-def copy_string(dst: String, src: String) -> NoReturn:
+def copy_string(dst: String, src: String) -> None:
     """連の情報をコピーする。
 
     Args:
@@ -614,7 +614,7 @@ def copy_string(dst: String, src: String) -> NoReturn:
     dst.flag = src.flag
 
 
-def copy_strings(dst: StringData, src: StringData) -> NoReturn:
+def copy_strings(dst: StringData, src: StringData) -> None:
     """全ての連の情報をコピーする。ただし、存在しない場合は存在フラグをオフにするだけにする。
 
     Args:

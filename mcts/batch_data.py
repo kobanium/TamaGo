@@ -14,7 +14,7 @@ class BatchQueue:
         self.path = []
         self.node_index = []
 
-    def push(self, input_plane: np.array, path: List[Tuple[int, int]], node_index: int):
+    def push(self, input_plane: np.ndarray, path: List[Tuple[int, int]], node_index: int) -> None:
         """キューにデータをプッシュする。
 
         Args:
@@ -26,7 +26,7 @@ class BatchQueue:
         self.path.append(path)
         self.node_index.append(node_index)
 
-    def clear(self):
+    def clear(self) -> None:
         """キューのデータを全て削除する。
         """
         self.input_plane = []

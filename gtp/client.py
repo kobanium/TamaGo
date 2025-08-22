@@ -3,7 +3,7 @@
 import os
 import random
 import sys
-from typing import List, NoReturn
+from typing import List, NoReturn, Tuple
 
 from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
 from board.constant import PASS, RESIGN
@@ -115,7 +115,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             print_err(f"Failed to load {model_file_path}")
 
 
-    def _known_command(self, command: str) -> NoReturn:
+    def _known_command(self, command: str) -> None:
         """known_commandコマンドを処理する。
         対応しているコマンドの場合は'true'を表示し、対応していないコマンドの場合は'unknown command'を表示する
 
@@ -127,7 +127,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         else:
             respond_failure("unknown command")
 
-    def _list_commands(self) -> NoReturn:
+    def _list_commands(self) -> None:
         """list_commandsコマンドを処理する。
         対応している全てのコマンドを表示する。
         """
@@ -136,7 +136,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             response += '\n' + command
         respond_success(response)
 
-    def _komi(self, s_komi: str) -> NoReturn:
+    def _komi(self, s_komi: str) -> None:
         """komiコマンドを処理する。
         入力されたコミを設定する。
 
@@ -147,7 +147,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.board.set_komi(komi)
         respond_success("")
 
-    def _play(self, color: str, pos: str) -> NoReturn:
+    def _play(self, color: str, pos: str) -> None:
         """playコマンドを処理する。
         入力された座標に指定された色の石を置く。
 
@@ -173,7 +173,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         respond_success("")
 
-    def _undo(self) -> NoReturn:
+    def _undo(self) -> None:
         """undoコマンドを処理する。
         """
         history = self.board.get_move_history()
@@ -187,7 +187,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         respond_success("")
 
-    def _genmove(self, color: str) -> NoReturn:
+    def _genmove(self, color: str) -> None:
         """genmoveコマンドを処理する。
         入力された手番で思考し、着手を生成する。
 
@@ -231,7 +231,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         respond_success(self.coordinate.convert_to_gtp_format(pos))
 
-    def _boardsize(self, size: str) -> NoReturn:
+    def _boardsize(self, size: str) -> None:
         """boardsizeコマンドを処理する。
         指定したサイズの碁盤に設定する。
 
@@ -244,7 +244,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.time_manager.initialize()
         respond_success("")
 
-    def _clear_board(self) -> NoReturn:
+    def _clear_board(self) -> None:
         """clear_boardコマンドを処理する。
         盤面を初期化する。
         """
@@ -252,7 +252,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.time_manager.initialize()
         respond_success("")
 
-    def _time_settings(self, arg_list: List[str]) -> NoReturn:
+    def _time_settings(self, arg_list: List[str]) -> None:
         """time_settingsコマンドを処理する。
         持ち時間のみを設定する。
 
@@ -264,7 +264,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.time_manager.set_remaining_time(Stone.WHITE, time)
         respond_success("")
 
-    def _time_left(self, arg_list: List[str]) -> NoReturn:
+    def _time_left(self, arg_list: List[str]) -> None:
         """time_leftコマンドを処理する。
         指定した手番の残りの時間を設定する。
 
@@ -281,19 +281,19 @@ class GtpClient: # pylint: disable=R0902,R0903
         self.time_manager.set_remaining_time(color, float(arg_list[1]))
         respond_success("")
 
-    def _get_komi(self) -> NoReturn:
+    def _get_komi(self) -> None:
         """get_komiコマンドを処理する。
         """
         respond_success(str(self.board.get_komi()))
 
-    def _showboard(self) -> NoReturn:
+    def _showboard(self) -> None:
         """showboardコマンドを処理する。
         現在の盤面を表示する。
         """
         self.board.display()
         respond_success("")
 
-    def _loadsgf(self, arg_list: List[str]) -> NoReturn:
+    def _loadsgf(self, arg_list: List[str]) -> None:
         """loadsgfコマンドを処理する。
         指定したSGFファイルの指定手番まで進めた局面にする。
 
@@ -311,7 +311,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             moves = int(arg_list[1])
         self._load_sgf_data(sgf_data, moves)
 
-    def _readsgf(self, arg_list: List[str]) -> NoReturn:
+    def _readsgf(self, arg_list: List[str]) -> None:
         """tamago-readsgfコマンドを処理する。
         指定したSGF文字列の局面にする。
 
@@ -322,7 +322,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         sgf_data = SGFReader(sgf_text, board_size=self.board.get_board_size(), literal=True)
         self._load_sgf_data(sgf_data)
 
-    def _load_sgf_data(self, sgf_data: SGFReader, moves: int=9999) -> NoReturn:
+    def _load_sgf_data(self, sgf_data: SGFReader, moves: int=9999) -> None:
         """SGFデータを読み込み、指定手番まで進めた局面にする。
 
         Args:
@@ -339,7 +339,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         respond_success("")
 
-    def _fixed_handicap(self, handicaps: str) -> NoReturn:
+    def _fixed_handicap(self, handicaps: str) -> None:
         """fixed_handicapコマンドを処理する。
         指定した数の置き石を置く。
 
@@ -365,7 +365,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         respond_success(" ".join(handicap_list))
 
-    def _decode_analyze_arg(self, arg_list: List[str]) -> (Stone, float):
+    def _decode_analyze_arg(self, arg_list: List[str]) -> Tuple[Stone, float]:
         """analyzeコマンド（lz-analyze, cgos-analyze）の引数を解釈する。
         不正な引数の場合は更新間隔として負値を返す。
 
@@ -376,7 +376,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             (Stone, float): 手番の色、更新間隔（秒）
         """
         to_move = self.board.get_to_move()
-        interval = 0
+        interval = 0.0
         error_value = (to_move, -1.0)
         # 受けつける形式の例
         # lz-analyze B 10
@@ -404,19 +404,19 @@ class GtpClient: # pylint: disable=R0902,R0903
             return error_value
         return (to_move, interval)
 
-    def _analyze_or_animate(self, mode: str, arg_list: List[str]) -> NoReturn:
+    def _analyze_or_animate(self, mode: str, arg_list: List[str]) -> None:
         if max(self.animation_pv_wait, self.animation_move_wait) >= 0:
             self._animate(arg_list, self.animation_pv_wait, self.animation_move_wait)
         else:
             self._analyze(mode, arg_list)
 
-    def _animate(self, arg_list: List[str], pv_wait: float, move_wait: float) -> NoReturn:
+    def _animate(self, arg_list: List[str], pv_wait: float, move_wait: float) -> None:
         to_move, _ = self._decode_analyze_arg(arg_list)
         respond_success("", ongoing=True)
         animate_mcts(self.mcts, self.board, to_move, pv_wait, move_wait)
         print_out("")
 
-    def _analyze(self, mode: str, arg_list: List[str]) -> NoReturn:
+    def _analyze(self, mode: str, arg_list: List[str]) -> None:
         """analyzeコマンド（lz-analyze, cgos-analyze）を実行する。
 
         Args:
@@ -437,7 +437,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         }
         self.mcts.ponder(self.board, to_move, analysis_query)
 
-    def _genmove_analyze(self, mode: str, arg_list: List[str]) -> NoReturn:
+    def _genmove_analyze(self, mode: str, arg_list: List[str]) -> None:
         """genmove_analyzeコマンド（lz-genmove_analyze, cgos-genmove_analyze）を実行する。
 
         Args:
@@ -475,7 +475,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         print_out(f"play {self.coordinate.convert_to_gtp_format(pos)}\n")
 
 
-    def _dump_tree(self) -> NoReturn:
+    def _dump_tree(self) -> None:
         """tamago-dump_treeコマンドを実行する。現在のMCTSツリーの状態をJSON形式で出力する。
         """
         json_str = self.mcts.dump_to_json(self.board, self.superko)
@@ -598,7 +598,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             else:
                 respond_failure("unknown_command")
 
-def respond_success(response: str, ongoing: bool = False) -> NoReturn:
+def respond_success(response: str, ongoing: bool = False) -> None:
     """コマンド処理成功時の応答メッセージを表示する。
 
     Args:
@@ -608,7 +608,7 @@ def respond_success(response: str, ongoing: bool = False) -> NoReturn:
     terminator = "" if ongoing else '\n'
     print(f"={gtp_command_id} " + response + terminator)
 
-def respond_failure(response: str) -> NoReturn:
+def respond_failure(response: str) -> None:
     """コマンド処理失敗時の応答メッセージを表示する。
 
     Args:
@@ -616,25 +616,25 @@ def respond_failure(response: str) -> NoReturn:
     """
     print(f"?{gtp_command_id} " + response + '\n')
 
-def _version() -> NoReturn:
+def _version() -> None:
     """versionコマンドを処理する。
     プログラムのバージョンを表示する。
     """
     respond_success(VERSION)
 
-def _protocol_version() -> NoReturn:
+def _protocol_version() -> None:
     """protocol_versionコマンドを処理する。
     GTPのプロトコルバージョンを表示する。
     """
     respond_success(PROTOCOL_VERSION)
 
-def _name() -> NoReturn:
+def _name() -> None:
     """nameコマンドを処理する。
     プログラム名を表示する。
     """
     respond_success(PROGRAM_NAME)
 
-def _quit() -> NoReturn:
+def _quit() -> None:
     """quitコマンドを処理する。
     プログラムを終了する。
     """

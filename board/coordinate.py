@@ -38,9 +38,9 @@ class Coordinate:
                 x_coord = i
         y_coord = self.board_size - int(pos[1:])
 
-        pos = x_coord + OB_SIZE + (y_coord + OB_SIZE) * self.board_size_with_ob
+        p = x_coord + OB_SIZE + (y_coord + OB_SIZE) * self.board_size_with_ob
 
-        return pos
+        return p
 
     def convert_to_gtp_format(self, pos: int) -> str:
         """プログラム内部の座標からGTP形式に変換する。

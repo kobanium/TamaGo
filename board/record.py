@@ -1,6 +1,6 @@
 """着手の履歴の保持。
 """
-from typing import NoReturn, Tuple
+from typing import Tuple
 import numpy as np
 
 from board.constant import PASS, MAX_RECORDS
@@ -19,7 +19,7 @@ class Record:
         self.hash_value = np.zeros(shape=MAX_RECORDS, dtype=np.uint64)
         self.handicap_pos = []
 
-    def clear(self) -> NoReturn:
+    def clear(self) -> None:
         """データを初期化する。
         """
         self.color = [Stone.EMPTY] * MAX_RECORDS
@@ -27,7 +27,7 @@ class Record:
         self.hash_value.fill(0)
         self.handicap_pos = []
 
-    def save(self, moves: int, color: Stone, pos: int, hash_value: np.array) -> NoReturn:
+    def save(self, moves: int, color: Stone, pos: int, hash_value: np.ndarray) -> None:
         """着手の履歴の記録する。
 
         Args:
@@ -43,7 +43,7 @@ class Record:
         else:
             print_err("Cannot save move record.")
 
-    def save_handicap(self, pos: int) -> NoReturn:
+    def save_handicap(self, pos: int) -> None:
         """置き石の座標を記録する。
 
         Args:
@@ -51,7 +51,7 @@ class Record:
         """
         self.handicap_pos.append(pos)
 
-    def has_same_hash(self, hash_value: np.array) -> bool:
+    def has_same_hash(self, hash_value: np.ndarray) -> bool:
         """同じハッシュ値があるかを確認する。
 
         Args:
@@ -60,9 +60,9 @@ class Record:
         Returns:
             bool: 同じハッシュ値がある場合はTrue、なければFalse。
         """
-        return np.any(self.hash_value == hash_value)
+        return np.any(self.hash_value == hash_value).item()
 
-    def get(self, moves: int) -> Tuple[Stone, int, np.array]:
+    def get(self, moves: int) -> Tuple[Stone, int, np.ndarray]:
         """指定した着手を取得する。
 
         Args:
@@ -73,7 +73,7 @@ class Record:
         """
         return (self.color[moves], self.pos[moves], self.hash_value[moves])
 
-    def get_hash_history(self) -> np.array:
+    def get_hash_history(self) -> np.ndarray:
         """ハッシュ値の履歴を取得する。
 
         Returns:
@@ -82,7 +82,7 @@ class Record:
         return self.hash_value
 
 
-def copy_record(dst: Record, src: Record) -> NoReturn:
+def copy_record(dst: Record, src: Record) -> None:
     """着手履歴をコピーする。
 
     Args:
