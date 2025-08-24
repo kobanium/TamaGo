@@ -15,17 +15,23 @@ Hyperparameters for reinforcement learning is defined in [learning_param.py](../
 
 | Hyperparameter | Description | Example of value | Note |
 | --- | --- | --- | --- |
-| RL_LEARNING_RATE | Learning rate for reinforcement learning. | 0.01 | 学習がある程度進んだ時に小さな値に変更すると良いです。 |
-| BATCH_SIZE | Mini-batch size for training. | 256 | GPUメモリが小さい場合はこの値を小さめに設定してください。 |
+| RL_LEARNING_RATE | Learning rate for reinforcement learning. | 0.01 | Consider decaying after some progress. |
+| BATCH_SIZE | Mini-batch size for training. | 256 | Reduce if GPU memory is limited. |
 | MOMENTUM | Momentum parameter for an optimizer. | 0.9 | |
 | WEIGHT_DECAY | Weight of L2-regularization. | 1e-4 (0.0001) | |
 | DATA_SET_SIZE | Number of data to be stored in a npz file. | BATCH_SIZE * 4000 | |
 | RL_VALUE_WEIGHT | Weight of value loss against policy loss. | 1.0 | This must be more than 0.0. |
 | SELF_PLAY_VISITS | The number of visits per move for self-play. | 16 | This must be more than 1. |
 | NUM_SELF_PLAY_WORKERS | The number of self-play workers. | 4 | |
-| NUM_SELF_PLAY_GAMES | The number of self-play games generated. | 10000 | |
+| NUM_SELF_PLAY_GAMES | Total number of games generated per selfplay run (sum across workers). | 10000 | |
 
 Since these hyperparameters are used to confirm that reinforcement learning progresses well, please use the set values as they are at first and gradually change the values to check the learning status when you try it out.
+
+Related settings for parallel self-play (defined outside learning_param.py):
+
+| Setting | Description | Example of value | Note |
+| --- | --- | --- | --- |
+| NN_SELFPLAY_BATCH_SIZE | Batch size for asynchronous NN inference during self-play. | 64 | Defined in [mcts/constant.py](../../mcts/constant.py). Larger values improve GPU utilization but increase latency/memory. |
 
 # Definition of neural network structure.
 Neural network is defined using the following four files.
@@ -59,6 +65,27 @@ Reinforcement learning pipeline is defined in [pipeline.sh](../../pipeline.sh).
 | `--use-gpu` | Flag to use a GPU. | true | true | Value is true of false. |
 | `--visits` | The number of visits per move for self-play. | 100 | SELF_PLAY_VISITS |  |
 | `--model` | Path to a model file. | model/rl-model.bin | model/rl-model.bin | |
+| `--async-mode` | Enable asynchronous self-play with batched NN inference. | true | true | Most effective with GPU; CPU-only may benefit less. |
+
+## Parallelization and asynchronous self-play
+Self-play parallelizes MCTS and batches neural network inference to improve device utilization.
+
+- Asynchronous mode:
+  - Launches `NUM_SELF_PLAY_WORKERS` processes; each handles roughly `NN_SELFPLAY_BATCH_SIZE * 10` concurrent games (upper bound; see [selfplay/worker.py](../../selfplay/worker.py)).
+  - Asynchronous MCTS ([mcts/tree_async.py](../../mcts/tree_async.py)) submits requests to a shared evaluator ([mcts/nneval.py](../../mcts/nneval.py)).
+  - A background task groups requests from multiple games and runs a single batch on the device.
+  - The self-play batch size is controlled by `NN_SELFPLAY_BATCH_SIZE` in [mcts/constant.py](../../mcts/constant.py).
+  - `selfplay_worker_async` uses `asyncio` to run multiple games concurrently.
+
+- Synchronous mode:
+  - Launches `NUM_SELF_PLAY_WORKERS` processes; each runs one game at a time.
+  - Synchronous MCTS ([mcts/tree.py](../../mcts/tree.py)) queues requests per game and runs inference with `NN_BATCH_SIZE` from [mcts/constant.py](../../mcts/constant.py).
+
+- Guidance:
+  - For GPU-based dataset generation, asynchronous mode improves GPU utilization.
+  - For GTP engine games or lightweight checks, synchronous mode can be more appropriate.
+
+Relevant files: [mcts/tree_async.py](../../mcts/tree_async.py), [mcts/nneval.py](../../mcts/nneval.py), [selfplay/worker.py](../../selfplay/worker.py).
 
 ## Command line options for [train.py](../../train.py)
 

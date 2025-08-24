@@ -27,6 +27,12 @@ apt install gnugo
 
 学習がうまく進むことを確認しているパラメータのため、試行錯誤する際は最初は設定値そのまま利用し、徐々に値を変更して学習状況を確認してください。
 
+自己対戦の並列化に関する関連設定（learning_param.py 以外で定義）:
+
+| 設定 | 概要 | 設定値の例 | 備考 |
+| --- | --- | --- | --- |
+| NN_SELFPLAY_BATCH_SIZE | 自己対戦の非同期推論で用いるバッチサイズ | 64 | [mcts/constant.py](../../mcts/constant.py) で定義。大きくするとGPUの効率は上がりますが、レイテンシやメモリ使用量が増えます。 |
+
 # ニューラルネットワークの定義
 ニューラルネットワークの定義は下記4ファイルを使用して定義しています。
 | ファイル | 定義内容 |
@@ -59,6 +65,28 @@ TamaGoの強化学習パイプラインは以下の順番で実行されます�
 | `--use-gpu` | GPU使用フラグ | true | true | GPUを使用して自己対戦を実行する設定のフラグ。trueかfalseで指定 |
 | `--visits` | 1手あたりの探索回数 | 100 | SELF_PLAY_VISITS | 探索回数を増やすと棋譜の質が向上しますが、生成速度は遅くなります。 |
 | `--model` | 使用するネットワークパラメータファイル | model/rl-model.bin | model/model.bin | |
+| `--async-mode` | 非同期モードで自己対戦しNN推論をバッチ化する | true | true | GPUを利用する場合に効果的です。 |
+
+## 並列化と非同期自己対戦
+
+自己対戦におけるMCTSを並列化し、ニューラルネットワークをバッチ推論することで、デバイスの利用効率を高めます。
+
+- 非同期モード:
+  - `NUM_SELF_PLAY_WORKERS` の数だけプロセスを立ち上げ、各プロセスは`NN_SELFPLAY_BATCH_SIZE * 10` 程度のゲームを同時に処理します（概ねの上限。詳細は [selfplay/worker.py](../../selfplay/worker.py)）。
+  - 非同期MCTS（`mcts/tree_async.py`）はNN推論を共有評価器（`mcts/nneval.py`）へ投入します。
+  - バックグラウンドタスクが複数ゲームからの要求をまとめ、1回のミニバッチとしてデバイスで推論します。
+  - 自己対戦時のバッチサイズは [mcts/constant.py](../../mcts/constant.py) の `NN_SELFPLAY_BATCH_SIZE` で制御します。
+  - `selfplay_worker_async` は `asyncio` で複数ゲームを同時実行します。
+
+- 同期モード:
+  - `NUM_SELF_PLAY_WORKERS` の数だけプロセスを立ち上げ、各プロセスが1ゲームずつ実行します。
+  - 同期MCTS（`mcts/tree.py`）は各ゲームでキュー処理し`NN_BATCH_SIZE`のバッチでNN推論を実行します。
+
+- 使い分けの目安:
+  - GPUで学習用データを生成する場合は、非同期モードでGPUを効率的に利用できます。
+  - GTPエンジンとしての対局や軽量な検証では、同期モード（`mcts/tree.py`）が有効です。
+
+関連ファイル: [mcts/tree_async.py](../../mcts/tree_async.py), [mcts/nneval.py](../../mcts/nneval.py), [selfplay/worker.py](../../selfplay/worker.py)。
 
 ## 強化学習実行スクリプト([train.py](../../train.py))のコマンドラインオプション
 
