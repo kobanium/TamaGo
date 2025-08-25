@@ -1,3 +1,5 @@
+"""MCTSの内部情報収集処理。
+"""
 import json
 from typing import Any, Tuple, List, Dict
 
@@ -32,7 +34,8 @@ def dump_mcts_to_json(tree_dict: Dict[str, Any], board: GoBoard, superko: bool) 
     }
     return json.dumps(state)
 
-def enrich_mcts_dict(state: Dict[str, Any]) -> None:
+
+def enrich_mcts_dict(state: Dict[str, Any]) -> None: # pylint: disable=R0914,R0915
     """MCTSの状態を表す辞書に便利項目をいろいろ追加する。
 
     Args:
@@ -110,11 +113,31 @@ def enrich_mcts_dict(state: Dict[str, Any]) -> None:
         item["raw_black_winrate"] = _black_winrate(item["value"], last_move_color)
         item["mean_black_winrate"] = _black_winrate(item["mean_value"], last_move_color)
 
-def _opposite_color(color):
+
+def _opposite_color(color: str) -> str:
+    """手番を入れ替えた文字列を取得する。
+
+    Args
+       color (str): 手番の色。
+
+    Returns:
+       str: 入れ替えられた手番の文字列。
+    """
     return 'white' if color == 'black' else 'black'
 
-def _black_winrate(value, last_move_color):
+
+def _black_winrate(value: float, last_move_color: str) -> float:
+    """黒番としての勝率を取得する。
+
+    Args:
+        value (float): 最後に着手した手番のValue。
+        last_move_color(str): 最後に着手した手番の色。
+
+    Returns:
+        float: 黒番から見たValueの値。
+    """
     return value if last_move_color == "black" else 1.0 - value
+
 
 def _serializable_move_history(move_history: List[Tuple[Stone, int, Any]]) -> List[Tuple[str, int]]:
     """着手の履歴をシリアライズ可能な値に変換する。ただしハッシュ値は廃棄する。
@@ -127,7 +150,9 @@ def _serializable_move_history(move_history: List[Tuple[Stone, int, Any]]) -> Li
     """
     return [(_stone_to_str(color), pos) for (color, pos, _) in move_history]
 
-def _recovered_move_history(converted_move_history: List[Tuple[str, int]]) -> List[Tuple[Stone, int, Any]]:
+
+def _recovered_move_history(converted_move_history: List[Tuple[str, int]]) \
+    -> List[Tuple[Stone, int, Any]]:
     """_serializable_move_historyで変換された着手履歴から元の着手履歴を復元する。
 ただしハッシュ値はNoneに置きかえられる。
 
@@ -139,13 +164,33 @@ def _recovered_move_history(converted_move_history: List[Tuple[str, int]]) -> Li
     """
     return [(_str_to_stone(color_str), pos, None) for (color_str, pos) in converted_move_history]
 
+
 def _stone_to_str(color: Stone) -> str:
+    """手番を内部表現から文字列に変換する。
+
+    Args:
+        color (Color): 手番を表す内部表現。
+
+    Returns:
+        str: 手番を表す文字列。
+    """
     return 'black' if color == Stone.BLACK else 'white'
 
+
 def _str_to_stone(color_str: str) -> Stone:
+    """手番を文字列から内部表現に変換する。
+
+    Args:
+        color_str (str): 手番を表す文字列。
+
+    Returns:
+        Color: 手番を表す内部表現。
+    """
     return Stone.BLACK if color_str == 'black' else Stone.WHITE
 
-def _get_updated_board_string(root_board: GoBoard, initial_move_color: Stone, gtp_moves_along_path: List[str]) -> str:
+
+def _get_updated_board_string(root_board: GoBoard, initial_move_color: Stone,
+                              gtp_moves_along_path: List[str]) -> str:
     """一連の着手後の盤面を表わす文字列を返す。
 
     Args:
@@ -159,9 +204,10 @@ def _get_updated_board_string(root_board: GoBoard, initial_move_color: Stone, gt
     coord = Coordinate(board_size=root_board.get_board_size())
     move_color = initial_move_color
     # 「board = copy.deepcopy(root_board)」は遅いので避ける。
-    board = GoBoard(board_size=root_board.get_board_size(), komi=root_board.get_komi(), check_superko=root_board.check_superko)
+    board = GoBoard(board_size=root_board.get_board_size(),
+                    komi=root_board.get_komi(), check_superko=root_board.check_superko)
     copy_board(dst=board, src=root_board)
-    for (k, move) in enumerate(gtp_moves_along_path):
+    for (_, move) in enumerate(gtp_moves_along_path):
         pos = coord.convert_from_gtp_format(move)
         board.put_stone(pos, move_color)
         move_color = Stone.get_opponent_color(move_color)

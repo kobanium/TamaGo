@@ -1,5 +1,6 @@
 """モンテカルロ木探索の実装。
 """
+# pylint: disable=R0801
 from typing import Any, Dict, List, Tuple, Callable
 import sys
 import select
@@ -353,7 +354,7 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
 
 
     def search_sequential_halving(self, board: GoBoard, color: Stone, current_index: int, \
-        path: List[Tuple[int, int]], count_threshold: int) -> None: # pylint: disable=R0913
+        path: List[Tuple[int, int]], count_threshold: int) -> None: # pylint: disable=R0913,R0917
         """Sequential Halving探索を実行する。
 
         Args:

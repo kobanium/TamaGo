@@ -213,7 +213,7 @@ class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
             next_node_index = self.node[current_index].get_child_index(next_index)
             await self.search_mcts(board, color, next_node_index, path)
 
-    def apply_policy_and_value( #pylint: disable=R0913, R0914
+    def apply_policy_and_value( #pylint: disable=R0913, R0914, R0917
         self,
         board: GoBoard,
         raw_policy: torch.Tensor,
@@ -352,7 +352,7 @@ class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
                         count_threshold + 1,
                     )
 
-    async def search_sequential_halving( #pylint: disable=R0913
+    async def search_sequential_halving( #pylint: disable=R0913,R0917
         self,
         board: GoBoard,
         color: Stone,

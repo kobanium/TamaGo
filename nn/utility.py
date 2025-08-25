@@ -10,11 +10,22 @@ from nn.network.dual_net import DualNet
 
 
 class GoNet(Protocol):
+    """ニューラルネットワークのプロトコルクラス。
+    """
     def inference(self, input_plane: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        pass
+        """推論を実行する。
 
-    def inference_with_policy_logits(self, input_plane: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        pass
+        Args:
+            input_plane (np.ndarray) : ニューラルネットワークの入力データ。
+        """
+
+    def inference_with_policy_logits(self, input_plane: np.ndarray) \
+        -> Tuple[np.ndarray, np.ndarray]:
+        """推論を実行する。ただしPolicyの出力はSoftmax関数を通さない。
+
+        Args:
+            input_plane (np.ndarray) : ニューラルネットワークの入力データ。
+        """
 
 
 def get_torch_device(use_gpu: bool) -> torch.device:
@@ -62,9 +73,9 @@ def print_learning_process(loss_data: Dict[str, float], epoch: int, index: int, 
     loss, policy_loss, value_loss = _calculate_losses(loss_data, iteration)
     training_time = time.time() - start_time
 
-    print_err(f"epoch {epoch}, data-{index} : loss = {loss:6f}, time = {training_time:3f} seconds.")
-    print_err(f"\tpolicy loss : {policy_loss:6f}")
-    print_err(f"\tvalue loss  : {value_loss:6f}")
+    print_err(f"epoch {epoch}, data-{index} : loss = {loss:.6f}, time = {training_time:.3f} seconds.")
+    print_err(f"\tpolicy loss : {policy_loss:.6f}")
+    print_err(f"\tvalue loss  : {value_loss:.6f}")
 
 
 def print_evaluation_information(loss_data: Dict[str, float], epoch: int, \
@@ -80,9 +91,9 @@ def print_evaluation_information(loss_data: Dict[str, float], epoch: int, \
     loss, policy_loss, value_loss = _calculate_losses(loss_data, iteration)
     testing_time = time.time() - start_time
 
-    print_err(f"Test {epoch} : loss = {loss:6f}, time = {testing_time:3f} seconds.")
-    print_err(f"\tpolicy loss : {policy_loss:6f}")
-    print_err(f"\tvalue loss  : {value_loss:6f}")
+    print_err(f"Test {epoch} : loss = {loss:.6f}, time = {testing_time:.3f} seconds.")
+    print_err(f"\tpolicy loss : {policy_loss:.6f}")
+    print_err(f"\tvalue loss  : {value_loss:.6f}")
 
 
 def save_model(network: torch.nn.Module, path: str) -> None:

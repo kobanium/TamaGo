@@ -22,17 +22,18 @@ from sgf.reader import SGFReader
 from animation.animation import animate_mcts
 
 
-gtp_command_id = ""
+gtp_command_id = "" # pylint: disable=C0103
 
 class GtpClient: # pylint: disable=R0902,R0903
     """_Go Text Protocolクライアントの実装クラス
     """
-    # pylint: disable=R0913
-    def __init__(self, board_size: int, superko: bool, model_file_path: str, \
-        use_gpu: bool, policy_move: bool, use_sequential_halving: bool, \
-        komi: float, mode: TimeControl, visits: int, const_time: float, \
-        time: float, batch_size: int, tree_size: int, cgos_mode: bool, \
-        animation_pv_wait: float, animation_move_wait:float): # pylint: disable=R0913
+    def __init__( # pylint: disable=R0913,R0914,R0917
+            self, board_size: int, superko: bool, model_file_path: str, \
+            use_gpu: bool, policy_move: bool, use_sequential_halving: bool, \
+            komi: float, mode: TimeControl, visits: int, const_time: float, \
+            time: float, batch_size: int, tree_size: int, cgos_mode: bool, \
+            animation_pv_wait: float, animation_move_wait:float
+    ):
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -277,6 +278,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             color = Stone.WHITE
         else:
             respond_failure("invalid color")
+            return
 
         self.time_manager.set_remaining_time(color, float(arg_list[1]))
         respond_success("")
@@ -398,7 +400,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             if arg_list[0].isdigit():
                 interval = int(arg_list[0])/100
                 arg_list.pop(0)
-        except IndexError as e:
+        except IndexError as e: # pylint: disable=W0612
             pass
         if arg_list:
             return error_value
@@ -488,7 +490,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         """Go Text Protocolのクライアントの実行処理。
         入力されたコマンドに対応する処理を実行し、応答メッセージを表示する。
         """
-        global gtp_command_id
+        global gtp_command_id # pylint: disable=W0603
         while True:
             command = input()
 

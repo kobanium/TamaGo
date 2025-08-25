@@ -14,7 +14,7 @@ from board.zobrist_hash import affect_stone_hash, affect_string_hash
 from common.print_console import print_err
 
 
-class GoBoard: # pylint: disable=R0902
+class GoBoard: # pylint: disable=R0902,R0904
     """碁盤クラス
     """
     def __init__(self, board_size: int, komi: float=7.0, check_superko: bool=False):
@@ -552,6 +552,12 @@ class GoBoard: # pylint: disable=R0902
         return self.record.handicap_pos[:]
 
     def set_history(self, move_history, handicap_history):
+        """着手履歴をすべて着手する。
+
+        Args
+            move_history (List[Tuple[Stone, int, np.ndarray]]): 着手の履歴。
+            handicap_history (List[int]): 置き石の履歴。
+        """
         self.clear()
         for handicap in handicap_history:
             self.board.put_handicap_stone(handicap, Stone.BLACK)

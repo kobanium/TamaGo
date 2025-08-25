@@ -36,7 +36,7 @@ class MCTSTreeBase:
         self.cgos_mode = cgos_mode
         self.to_move = Stone.BLACK
 
-        
+
     def expand_node(self, board: GoBoard, color: Stone) -> int:
         """ノードを展開する。
 

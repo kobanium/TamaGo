@@ -1,6 +1,5 @@
 """強化学習用の自己対戦データの記録と出力
 """
-from typing import NoReturn
 import os
 
 from board.constant import MAX_RECORDS
