@@ -8,7 +8,7 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
-from mcts.constant import NN_SELFPLAY_BATCH_SIZE
+from learning_param import NN_SELFPLAY_BATCH_SIZE
 from nn.network.dual_net import DualNet
 
 

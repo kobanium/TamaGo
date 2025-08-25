@@ -13,13 +13,12 @@ from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 
 from sgf.selfplay_record import SelfPlayRecord
-from mcts.constant import NN_SELFPLAY_BATCH_SIZE
 from mcts.nneval import NNEval
 from mcts.tree import MCTSTree
 from mcts.tree_async import MCTSTreeAsync
 from mcts.time_manager import TimeManager, TimeControl
 from nn.utility import load_network
-from learning_param import SELF_PLAY_VISITS
+from learning_param import SELF_PLAY_VISITS, NN_SELFPLAY_BATCH_SIZE
 
 # pylint: disable=R0913,R0914,R0917
 def selfplay_worker(save_dir: str, model_file_path: str, index_list: List[int], \
