@@ -5,7 +5,7 @@ TamaGo has following features,
  - Reinforcement learning with Gumbel AlphaZero method.
  - Move generation using Monte-Carlo tree search and a trained neural network model.
 
-TamaGo runs on Python 3.6 or higher.
+TamaGo runs on Python 3.11 or higher.
 
 日本語は[こちら](doc/ja/README.md)をご覧ください。
 

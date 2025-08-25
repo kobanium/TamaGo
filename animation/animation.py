@@ -1,3 +1,5 @@
+"""描画処理
+"""
 import sys
 import select
 import time
@@ -25,9 +27,12 @@ def _animate_path(path, mcts, board, pv_wait_sec, move_wait_sec, previous_pv):
         return
     coordinate = board.coordinate
     move = coordinate.convert_to_gtp_format(root.action[i])
-    pv = [coordinate.convert_to_gtp_format(mcts.node[index].action[child_index]) for (index, child_index) in path]
-    pv_visits = [str(mcts.node[index].children_visits[child_index]) for (index, child_index) in path]
-    pv_winrate = [str(int(10000 * _get_winrate(mcts, index, child_index, depth))) for depth, (index, child_index) in enumerate(path)]
+    pv = [coordinate.convert_to_gtp_format(mcts.node[index].action[child_index])
+          for (index, child_index) in path]
+    pv_visits = [str(mcts.node[index].children_visits[child_index])
+                 for (index, child_index) in path]
+    pv_winrate = [str(int(10000 * _get_winrate(mcts, index, child_index, depth)))
+                  for depth, (index, child_index) in enumerate(path)]
 
     # lz-analyze の本来の出力内容を加工
     children_status_list = root.get_analysis_status_list(board, mcts.get_pv_lists)

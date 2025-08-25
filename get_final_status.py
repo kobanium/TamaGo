@@ -5,11 +5,12 @@ from concurrent.futures import ThreadPoolExecutor
 import glob
 import os
 import math
+import multiprocessing
 import subprocess
-from typing import NoReturn
+from typing import List
 import click
 
-WORKER_THREAD = 4
+WORKER_THREAD = multiprocessing.cpu_count()
 
 
 def get_gnugo_judgment(filename: str, is_japanese_rule: bool) -> str:
@@ -43,6 +44,9 @@ def get_gnugo_judgment(filename: str, is_japanese_rule: bool) -> str:
     with subprocess.Popen(gnugo_command, stdin=subprocess.PIPE, \
         stdout=subprocess.PIPE, encoding='utf-8') as process:
 
+        assert process.stdin is not None
+        assert process.stdout is not None
+
         process.stdin.write("\n".join(exec_commands))
         process.stdin.flush()
         process.stdout.flush()
@@ -64,7 +68,7 @@ def get_gnugo_judgment(filename: str, is_japanese_rule: bool) -> str:
     return responses[2]
 
 
-def adjust_by_gnugo_judgment(filename: str) -> NoReturn:
+def adjust_by_gnugo_judgment(filename: str) -> None:
     """_summary_
 
     Args:
@@ -78,7 +82,11 @@ def adjust_by_gnugo_judgment(filename: str) -> NoReturn:
 
     current_result = sgf.split('RE[')[1].split(']')[0]
 
-    result = get_gnugo_judgment(filename, False)
+    try:
+        result = get_gnugo_judgment(filename, False)
+    except Exception:
+        print("get_gnugo_judgment failed", filename)
+        os.remove(filename)
 
     current_result_string = "RE[" + current_result + "]"
     adjust_result_string = "RE[" + result + "]"
@@ -88,7 +96,7 @@ def adjust_by_gnugo_judgment(filename: str) -> NoReturn:
     with open(filename, encoding="utf-8", mode="w") as out_file:
         out_file.write(adjusted_sgf)
 
-def judgment_worker(kifu_list: str) -> NoReturn:
+def judgment_worker(kifu_list: List[str]) -> None:
     """_summary_
 
     Args:
@@ -100,7 +108,7 @@ def judgment_worker(kifu_list: str) -> NoReturn:
 
 @click.command()
 @click.option('--kifu-dir', type=click.STRING, default='archive', help='')
-def adjust_result(kifu_dir: str) -> NoReturn:
+def adjust_result(kifu_dir: str) -> None:
     """_summary_
 
     Args:
@@ -112,7 +120,7 @@ def adjust_result(kifu_dir: str) -> NoReturn:
 
     sgf_file_list = sorted(glob.glob(os.path.join(kifu_dir, str(newest_index), '*')))
 
-    split_size = math.ceil(len(sgf_file_list) / WORKER_THREAD)
+    split_size = min(math.ceil(len(sgf_file_list) / WORKER_THREAD), 10)
     split_file_lists = [sgf_file_list[idx:idx+split_size] \
         for idx in range(0, len(sgf_file_list), split_size)]
 

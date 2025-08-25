@@ -1,6 +1,6 @@
 """配石パターンの実装。
 """
-from typing import Callable, List, NoReturn
+from typing import Callable, List
 import numpy as np
 
 from board.constant import OB_SIZE
@@ -19,21 +19,21 @@ pattern_mask = np.array([
 ], dtype=np.uint32)
 
 nb4_empty = [0] * 65536
-for i, _ in enumerate(nb4_empty):
-    if ((i >> 2) & 0x3) == 0:
-        nb4_empty[i] += 1
-    if ((i >> 6) & 0x3) == 0:
-        nb4_empty[i] += 1
-    if ((i >> 8) & 0x3) == 0:
-        nb4_empty[i] += 1
-    if ((i >> 12) & 0x3) == 0:
-        nb4_empty[i] += 1
+for pat3x3, _ in enumerate(nb4_empty):
+    if ((pat3x3 >> 2) & 0x3) == 0:
+        nb4_empty[pat3x3] += 1
+    if ((pat3x3 >> 6) & 0x3) == 0:
+        nb4_empty[pat3x3] += 1
+    if ((pat3x3 >> 8) & 0x3) == 0:
+        nb4_empty[pat3x3] += 1
+    if ((pat3x3 >> 12) & 0x3) == 0:
+        nb4_empty[pat3x3] += 1
 
 
 class Pattern:
     """配石パターンクラス。
     """
-    def __init__(self, board_size: int, pos_func: Callable[[int], int]):
+    def __init__(self, board_size: int, pos_func: Callable[[int, int], int]):
         """Patternクラスのコンストラクタ。
 
         Args:
@@ -49,57 +49,9 @@ class Pattern:
             -1, 1, board_size_with_ob - 1, board_size_with_ob, board_size_with_ob + 1
         ]
 
-        # 眼のパターン
-        eye_pat3 = [
-            # +OO     XOO     +O+     XO+
-            # O*O     O*O     O*O     O*O
-            # OOO     OOO     OOO     OOO
-            0x5554, 0x5556, 0x5544, 0x5546,
-
-            # +OO     XOO     +O+     XO+
-            # O*O     O*O     O*O     O*O
-            # OO+     OO+     OO+     OO+
-            0x1554, 0x1556, 0x1544, 0x1546,
-
-            # +OX     XO+     +OO     OOO
-            # O*O     O*O     O*O     O*O
-            # OO+     +O+     ###     ###
-            0x1564, 0x1146, 0xFD54, 0xFD55,
-
-            # +O#     OO#     XOX     XOX
-            # O*#     O*#     O+O     O+O
-            # ###     ###     OOO     ###
-            0xFF74, 0xFF75, 0x5566, 0xFD66,
-
-            # OOX     OOO     XOO     XO#
-            # O*O     O*O     O*O     O*#
-            # XOO     XOX     ###     ###
-            0x5965, 0x9955, 0xFD56, 0xFF76,
-        ]
-
-        self.eye = [Stone.EMPTY] * 65536
-
-        # OOO
-        # O*O
-        # OOO
-        self.eye[0x5555] = Stone.BLACK
-        self.eye[pat3_reverse(0x5555)] = Stone.WHITE
-
-        # +O+
-        # O*O
-        # +O+
-        self.eye[0x1144] = Stone.BLACK
-        self.eye[pat3_reverse(0x1144)] = Stone.WHITE
-
-        for eye_pat in eye_pat3:
-            sym_eye_pat = get_pat3_symmetry8(eye_pat)
-            for pat3 in sym_eye_pat:
-                self.eye[pat3] = Stone.BLACK
-                self.eye[pat3_reverse(pat3)] = Stone.WHITE
-
         self.clear()
 
-    def clear(self) -> NoReturn:
+    def clear(self) -> None:
         """周囲の石のパターンを初期状態にする。
         """
         board_start = OB_SIZE
@@ -116,7 +68,7 @@ class Pattern:
             self.pat3[self.POS(board_start, y_pos)] = \
                 self.pat3[self.POS(board_start, y_pos)] | 0x0cc3
 
-    def remove_stone(self, pos: int) -> NoReturn:
+    def remove_stone(self, pos: int) -> None:
         """周囲の石のパターンから石を取り除く。
 
         Args:
@@ -125,7 +77,7 @@ class Pattern:
         for i, shift in enumerate(self.update_pos):
             self.pat3[pos + shift] = self.pat3[pos + shift] & pattern_mask[i][0]
 
-    def put_stone(self, pos: int, color: Stone) -> NoReturn:
+    def put_stone(self, pos: int, color: Stone) -> None:
         """周囲の石のパターンの石を追加する。
 
         Args:
@@ -159,9 +111,9 @@ class Pattern:
         Returns:
             Stone: 眼の色。眼でなければStone.EMPTY。
         """
-        return self.eye[self.pat3[pos]]
+        return _eye[self.pat3[pos]]
 
-    def display(self, pos: int) -> NoReturn:
+    def display(self, pos: int) -> None:
         """指定した座標の周囲の石のパターンを表示する。（デバッグ用)
 
         Args:
@@ -299,7 +251,7 @@ def get_pat3_symmetry8(pat3: int) -> List[int]:
     return symmetries
 
 
-def copy_pattern(dst: Pattern, src: Pattern) -> NoReturn:
+def copy_pattern(dst: Pattern, src: Pattern) -> None:
     """配石パターンのデータをコピーする。
 
     Args:
@@ -307,3 +259,58 @@ def copy_pattern(dst: Pattern, src: Pattern) -> NoReturn:
         src (Pattern): コピー元の配石パターンのデータ。
     """
     dst.pat3 = src.pat3.copy()
+
+def create_eye_pat() -> List[Stone]:
+    """目のパターンの作成
+    """
+    # 眼のパターン
+    eye_pat3 = [
+        # +OO     XOO     +O+     XO+
+        # O*O     O*O     O*O     O*O
+        # OOO     OOO     OOO     OOO
+        0x5554, 0x5556, 0x5544, 0x5546,
+
+        # +OO     XOO     +O+     XO+
+        # O*O     O*O     O*O     O*O
+        # OO+     OO+     OO+     OO+
+        0x1554, 0x1556, 0x1544, 0x1546,
+
+        # +OX     XO+     +OO     OOO
+        # O*O     O*O     O*O     O*O
+        # OO+     +O+     ###     ###
+        0x1564, 0x1146, 0xFD54, 0xFD55,
+
+        # +O#     OO#     XOX     XOX
+        # O*#     O*#     O+O     O+O
+        # ###     ###     OOO     ###
+        0xFF74, 0xFF75, 0x5566, 0xFD66,
+
+        # OOX     OOO     XOO     XO#
+        # O*O     O*O     O*O     O*#
+        # XOO     XOX     ###     ###
+        0x5965, 0x9955, 0xFD56, 0xFF76,
+    ]
+
+    eye = [Stone.EMPTY] * 65536
+
+    # OOO
+    # O*O
+    # OOO
+    eye[0x5555] = Stone.BLACK
+    eye[pat3_reverse(0x5555)] = Stone.WHITE
+
+    # +O+
+    # O*O
+    # +O+
+    eye[0x1144] = Stone.BLACK
+    eye[pat3_reverse(0x1144)] = Stone.WHITE
+
+    for eye_pat in eye_pat3:
+        sym_eye_pat = get_pat3_symmetry8(eye_pat)
+        for pat3 in sym_eye_pat:
+            eye[pat3] = Stone.BLACK
+            eye[pat3_reverse(pat3)] = Stone.WHITE
+
+    return eye
+
+_eye = create_eye_pat()

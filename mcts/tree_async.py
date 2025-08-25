@@ -1,33 +1,41 @@
-"""モンテカルロ木探索の実装。
-"""
-# pylint: disable=R0801
-from typing import Any, Dict, List, Tuple, Callable
-import sys
+"""モンテカルロ木探索の実装。"""
+
+from typing import Any, Dict, List, Tuple
 import select
-import copy
+import sys
 import time
-import numpy as np
+
 import torch
 
 from board.constant import PASS, RESIGN
 from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 from common.print_console import print_err
-from mcts.batch_data import BatchQueue
-from mcts.constant import NOT_EXPANDED, PLAYOUTS, NN_BATCH_SIZE, \
-    MAX_CONSIDERED_NODES, RESIGN_THRESHOLD, MCTS_TREE_SIZE
+from mcts.constant import (
+    MAX_CONSIDERED_NODES,
+    MCTS_TREE_SIZE,
+    NN_BATCH_SIZE,
+    NOT_EXPANDED,
+    PLAYOUTS,
+    RESIGN_THRESHOLD,
+)
+from mcts.nneval import NNEval
 from mcts.sequential_halving import get_candidates_and_visit_pairs
+from mcts.time_manager import TimeManager
 from mcts.tree_base import MCTSTreeBase
-from mcts.time_manager import TimeControl, TimeManager
 from nn.feature import generate_input_planes
-from nn.network.dual_net import DualNet
 
 
-class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
-    """モンテカルロ木探索の実装クラス。
-    """
-    def __init__(self, network: DualNet, tree_size: int=MCTS_TREE_SIZE, \
-        batch_size: int=NN_BATCH_SIZE, cgos_mode: bool=False):
+class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
+    """モンテカルロ木探索の実装クラス。"""
+
+    def __init__(
+        self,
+        nneval: NNEval,
+        tree_size: int = MCTS_TREE_SIZE,
+        batch_size: int = NN_BATCH_SIZE,
+        cgos_mode: bool = False,
+    ):
         """MCTSTreeクラスのコンストラクタ。
 
         Args:
@@ -36,20 +44,24 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
             batch_size (int, optional): ニューラルネットワークの前向き伝搬処理のミニバッチサイズ。デフォルトはNN_BATCH_SIZE。
         """
         super().__init__(tree_size=tree_size, batch_size=batch_size, cgos_mode=cgos_mode)
-        self.network = network
-        self.batch_queue = BatchQueue()
+        self.nneval = nneval
 
-
-    def _initialize_search(self, board: GoBoard, color: Stone) -> None:
+    async def _initialize_search(self, board: GoBoard, color: Stone) -> None:
         self.num_nodes = 0
         self.current_root = self.expand_node(board, color)
         input_plane = generate_input_planes(board, color, 0)
-        self.batch_queue.push(input_plane, [], self.current_root)
-        self.process_mini_batch(board)
 
+        fut = self.nneval.push_eval(input_plane)
+        policy, value = await fut
+        self.apply_policy_and_value(board, policy, value, [], self.current_root)
 
-    def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
-        analysis_query: Dict[str, Any]) -> int:
+    async def search_best_move(
+        self,
+        board: GoBoard,
+        color: Stone,
+        time_manager: TimeManager,
+        analysis_query: Dict[str, Any],
+    ) -> int:
         """モンテカルロ木探索を実行して最善手を返す。
 
         Args:
@@ -60,7 +72,7 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
         Returns:
             int: 着手する座標。
         """
-        self._initialize_search(board, color)
+        await self._initialize_search(board, color)
 
         time_manager.start_timer()
 
@@ -71,10 +83,7 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
             return PASS
 
         # 探索を実行する
-        self.search(board, color, time_manager, analysis_query)
-
-        if len(self.batch_queue.node_index) > 0:
-            self.process_mini_batch(board)
+        await self.search(board, color, time_manager, analysis_query)
 
         # 最善手を取得する
         next_move = root.get_best_move()
@@ -98,31 +107,13 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
 
         return next_move
 
-
-    def ponder(self, board: GoBoard, color: Stone, analysis_query: Dict[str, Any]) -> None:
-        """探索回数の制限なく探索を実行する。
-
-        Args:
-            board (GoBoard): 局面情報。
-            color (Stone): 思考する手番の色。
-            analysis_query (Dict): 解析情報。
-        """
-        self._initialize_search(board, color)
-
-        # 探索を実行する
-        max_visits = 999999999
-        mode = TimeControl.CONSTANT_PLAYOUT
-        time_manager = TimeManager(mode=mode, constant_visits=max_visits)
-        time_manager.initialize()
-        time_manager.start_timer()
-        self.search(board, color, time_manager, analysis_query)
-
-        if len(self.batch_queue.node_index) > 0:
-            self.process_mini_batch(board)
-
-
-    def search(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
-        analysis_query: Dict[str, Any]) -> None: # pylint: disable=R0914
+    async def search(
+        self,
+        board: GoBoard,
+        color: Stone,
+        time_manager: TimeManager,
+        analysis_query: Dict[str, Any],
+    ) -> None:  # pylint: disable=R0914
         """探索を実行する。
         Args:
             board (GoBoard): 現在の局面情報。
@@ -132,25 +123,26 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
         """
         self.to_move = color
         analysis_clock = time.time()
-        search_board = copy.deepcopy(board)
+        search_board = GoBoard(board_size=board.get_board_size(), \
+                               komi=board.get_komi(), check_superko=board.check_superko)
 
         interval = analysis_query.get("interval", 0)
         threshold = time_manager.get_num_visits_threshold(color)
 
         for counter in range(threshold):
-            copy_board(dst=search_board,src=board)
+            copy_board(dst=search_board, src=board)
             start_color = color
-            self.search_mcts(search_board, start_color, self.current_root, [])
-            if time_manager.is_time_over() or \
-                time_manager.is_move_decided(self.get_root(), threshold):
+            await self.search_mcts(search_board, start_color, self.current_root, [])
+            if time_manager.is_time_over() or time_manager.is_move_decided(
+                self.get_root(), threshold
+            ):
                 break
 
             if len(analysis_query) > 0:
                 elapsed = time.time() - analysis_clock
                 root = self.node[self.current_root]
 
-                if interval > 0 and \
-                       (counter == threshold - 1 or elapsed > interval):
+                if interval > 0 and (counter == threshold - 1 or elapsed > interval):
                     analysis_clock = time.time()
                     mode = analysis_query.get("mode", "lz")
                     sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
@@ -167,32 +159,13 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
             sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
             sys.stdout.flush()
 
-
-    def search_with_callback(self, board: GoBoard, color: Stone, \
-        callback: Callable[[List[Tuple[int, int]]], bool]) -> None:
-        """探索を実行し、探索系列をコールバック関数へ渡す動作をくり返す。
-        コールバック関数の戻り値が真になれば終了する。
-        Args:
-            board (GoBoard): 現在の局面情報。
-            color (Stone): 現局面の手番の色。
-            callback (Callable[List[Tuple[int, int]], bool]): コールバック関数。
-        """
-        original_batch_size = self.batch_size
-        self.batch_size = 1
-        self._initialize_search(board, color)
-        search_board = copy.deepcopy(board)
-        while True:
-            path: List[Tuple[int, int]] = []
-            copy_board(dst=search_board, src=board)
-            self.search_mcts(search_board, color, self.current_root, path)
-            finished = callback(path)
-            if finished:
-                break
-        self.batch_size = original_batch_size
-
-
-    def search_mcts(self, board: GoBoard, color: Stone, current_index: int, \
-        path: List[Tuple[int, int]]) -> None:
+    async def search_mcts(
+        self,
+        board: GoBoard,
+        color: Stone,
+        current_index: int,
+        path: List[Tuple[int, int]],
+    ) -> None:
         """モンテカルロ木探索を実行する。
 
         Args:
@@ -223,69 +196,80 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
             if pm1 == PASS and pm2 == PASS:
                 expand_threshold = 10000000
 
-        if self.node[current_index].children_visits[next_index] \
-            + self.node[current_index].children_virtual_loss[next_index] < expand_threshold + 1:
+        if (
+            self.node[current_index].children_visits[next_index]
+            + self.node[current_index].children_virtual_loss[next_index]
+            < expand_threshold + 1
+        ):
             if self.node[current_index].children_index[next_index] == NOT_EXPANDED:
                 child_index = self.expand_node(board, color)
                 self.node[current_index].set_child_index(next_index, child_index)
             else:
                 child_index = self.node[current_index].get_child_index(next_index)
             input_plane = generate_input_planes(board, color, 0)
-            self.batch_queue.push(input_plane, path, child_index)
-            if len(self.batch_queue.node_index) >= self.batch_size:
-                self.process_mini_batch(board)
+            policy, value = await self.nneval.push_eval(input_plane)
+            self.apply_policy_and_value(board, policy, value, path, child_index)
         else:
             next_node_index = self.node[current_index].get_child_index(next_index)
-            self.search_mcts(board, color, next_node_index, path)
+            await self.search_mcts(board, color, next_node_index, path)
 
-
-    def process_mini_batch(self, board: GoBoard, use_logit: bool=False): # pylint: disable=R0914
+    def apply_policy_and_value( #pylint: disable=R0913, R0914, R0917
+        self,
+        board: GoBoard,
+        raw_policy: torch.Tensor,
+        value_dist: List[float],
+        path: List[Tuple[int, int]],
+        node_index: int,
+        use_logit: bool = False,
+    ) -> None:
         """ニューラルネットワークの入力をミニバッチ処理して、計算結果を探索結果に反映する。
 
         Args:
             board (GoBoard): 碁盤の情報。
             use_logit (bool): Policyの出力をlogitにするフラグ
         """
-        input_planes = torch.Tensor(np.array(self.batch_queue.input_plane))
 
         if use_logit:
-            raw_policy, value_data = self.network.inference_with_policy_logits(input_planes)
+            policy = raw_policy
         else:
-            raw_policy, value_data = self.network.inference(input_planes)
+            # calc softmax(raw_policy) using numpy
+            # policy = np.exp(raw_policy - np.max(raw_policy))
+            # policy /= np.sum(policy)
+            # print(raw_policy.shape)
+            policy = torch.softmax(raw_policy, dim=0)
 
-        policy_data = []
-        for policy in raw_policy:
-            policy_dict = {}
-            for i, pos in enumerate(board.onboard_pos):
-                policy_dict[pos] = policy[i]
-            policy_dict[PASS] = policy[board.get_board_size() ** 2]
-            if use_logit:
-                policy_dict[PASS] -= 0.5
-            policy_data.append(policy_dict)
+        policy_dict = {}
+        for i, pos in enumerate(board.onboard_pos):
+            policy_dict[pos] = float(policy[i])
+        policy_dict[PASS] = float(policy[board.get_board_size() ** 2])
+        if use_logit:
+            policy_dict[PASS] -= 0.5
 
-        for policy, value_dist, path, node_index in zip(policy_data, \
-            value_data, self.batch_queue.path, self.batch_queue.node_index):
-            self.node[node_index].update_policy(policy)
-            self.node[node_index].set_raw_value(value_dist[1] * 0.5 + value_dist[2])
+        self.node[node_index].update_policy(policy_dict)
+        self.node[node_index].set_raw_value(value_dist[1] * 0.5 + value_dist[2])
 
-            if path:
-                value = value_dist[0] + value_dist[1] * 0.5
+        if path:
+            value = value_dist[0] + value_dist[1] * 0.5
 
-                reverse_path = list(reversed(path))
-                leaf = reverse_path[0]
+            reverse_path = list(reversed(path))
+            leaf = reverse_path[0]
 
-                self.node[leaf[0]].set_leaf_value(leaf[1], value)
+            self.node[leaf[0]].set_leaf_value(leaf[1], value)
 
-                for index, child_index in reverse_path:
-                    self.node[index].update_child_value(child_index, value)
-                    self.node[index].update_node_value(value)
-                    value = 1.0 - value
+            for index, child_index in reverse_path:
+                self.node[index].update_child_value(child_index, value)
+                self.node[index].update_node_value(value)
+                value = 1.0 - value
 
-        self.batch_queue.clear()
+        # self.batch_queue.clear()
 
-
-    def generate_move_with_sequential_halving(self, board: GoBoard, color: Stone, \
-        time_manager: TimeManager, never_resign: bool) -> int:
+    async def generate_move_with_sequential_halving(
+        self,
+        board: GoBoard,
+        color: Stone,
+        time_manager: TimeManager,
+        never_resign: bool,
+    ) -> int:
         """SHOTで探索して着手生成する。
 
         Args:
@@ -300,13 +284,17 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
         start_time = time.time()
         self.current_root = self.expand_node(board, color)
         input_plane = generate_input_planes(board, color)
-        self.batch_queue.push(input_plane, [], self.current_root)
-        self.process_mini_batch(board, use_logit=True)
+        nn_policy, nn_value = await self.nneval.push_eval(input_plane)
+        # self.batch_queue.push(input_plane, [], self.current_root)
+        self.apply_policy_and_value(
+            board, nn_policy, nn_value, [], self.current_root, use_logit=True
+        )
         self.node[self.current_root].set_gumbel_noise()
 
         # 探索を実行
-        self.search_by_sequential_halving(board, color, \
-            time_manager.get_num_visits_threshold(color))
+        await self.search_by_sequential_halving(
+            board, color, time_manager.get_num_visits_threshold(color)
+        )
 
         # 最善の手を取得
         root = self.node[self.current_root]
@@ -317,16 +305,18 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
 
         search_time = time.time() - start_time
 
-        time_manager.set_search_speed(self.node[self.current_root].node_visits, search_time)
+        time_manager.set_search_speed(
+            self.node[self.current_root].node_visits, search_time
+        )
 
         if not never_resign and value < 0.05:
             return RESIGN
 
         return root.get_child_move(next_index)
 
-
-    def search_by_sequential_halving(self, board: GoBoard, color: Stone, \
-        threshold: int) -> None:
+    async def search_by_sequential_halving(
+        self, board: GoBoard, color: Stone, threshold: int
+    ) -> None:
         """指定された探索回数だけSequential Halving探索を実行する。
 
         Args:
@@ -334,12 +324,18 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
             color (Stone): 評価したい局面の手番の色。
             threshold (int): 実行する探索回数。
         """
-        search_board = copy.deepcopy(board)
+        search_board = GoBoard(board_size=board.get_board_size(), \
+                               komi=board.get_komi(), check_superko=board.check_superko)
 
         num_root_children = self.node[self.current_root].get_num_children()
-        base_num_considered = num_root_children \
-            if num_root_children < MAX_CONSIDERED_NODES else MAX_CONSIDERED_NODES
-        search_control_dict = get_candidates_and_visit_pairs(base_num_considered, threshold)
+        base_num_considered = (
+            num_root_children
+            if num_root_children < MAX_CONSIDERED_NODES
+            else MAX_CONSIDERED_NODES
+        )
+        search_control_dict = get_candidates_and_visit_pairs(
+            base_num_considered, threshold
+        )
 
         for num_considered, max_count in search_control_dict.items():
             for count_threshold in range(max_count):
@@ -348,13 +344,22 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
                     start_color = color
 
                     # 探索する
-                    self.search_sequential_halving(search_board, start_color, \
-                        self.current_root, [], count_threshold + 1)
-            self.process_mini_batch(search_board, use_logit=True)
+                    await self.search_sequential_halving(
+                        search_board,
+                        start_color,
+                        self.current_root,
+                        [],
+                        count_threshold + 1,
+                    )
 
-
-    def search_sequential_halving(self, board: GoBoard, color: Stone, current_index: int, \
-        path: List[Tuple[int, int]], count_threshold: int) -> None: # pylint: disable=R0913,R0917
+    async def search_sequential_halving( #pylint: disable=R0913,R0917
+        self,
+        board: GoBoard,
+        color: Stone,
+        current_index: int,
+        path: List[Tuple[int, int]],
+        count_threshold: int,
+    ) -> None:
         """Sequential Halving探索を実行する。
 
         Args:
@@ -366,7 +371,9 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
         """
         current_node = self.node[current_index]
         if current_index == self.current_root:
-            next_index = current_node.select_move_by_sequential_halving_for_root(count_threshold)
+            next_index = current_node.select_move_by_sequential_halving_for_root(
+                count_threshold
+            )
         else:
             next_index = current_node.select_move_by_sequential_halving_for_node()
         next_move = self.node[current_index].get_child_move(next_index)
@@ -382,10 +389,14 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
             # ニューラルネットワークの計算
             input_plane = generate_input_planes(board, color)
             next_node_index = self.node[current_index].get_child_index(next_index)
-            self.batch_queue.push(input_plane, path, next_node_index)
+            # self.batch_queue.push(input_plane, path, next_node_index)
+            policy, value = await self.nneval.push_eval(input_plane)
+            self.apply_policy_and_value(board, policy, value, path, next_node_index)
         else:
             if self.node[current_index].get_child_index(next_index) == NOT_EXPANDED:
                 child_index = self.expand_node(board, color)
                 self.node[current_index].set_child_index(next_index, child_index)
             next_node_index = self.node[current_index].get_child_index(next_index)
-            self.search_sequential_halving(board, color, next_node_index, path, count_threshold)
+            await self.search_sequential_halving(
+                board, color, next_node_index, path, count_threshold
+            )

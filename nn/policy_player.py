@@ -1,6 +1,7 @@
 """Policy Networkのみを使用した着手生成処理
 """
 import random
+from typing import Any, List
 
 import torch
 
@@ -29,13 +30,13 @@ def generate_move_from_policy(network: DualNet, board: GoBoard, color: Stone) ->
     policy = policy[0].numpy().tolist()
 
     # 合法手のみ候補手としてピックアップ
-    candidates = [{"pos": pos, "policy": policy[i]} \
+    candidates: List[Any] = [{"pos": pos, "policy": policy[i]} \
         for i, pos in enumerate(board.onboard_pos) if board.is_legal(pos, color)]
 
     # パスは候補手確定
     candidates.append({ "pos": PASS, "policy": policy[board_size ** 2] })
 
-    max_policy = max([candidate["policy"] for candidate in candidates])
+    max_policy = max(candidate["policy"] for candidate in candidates)
 
     sampled_candidates = [candidate for candidate in candidates \
         if candidate["policy"] > max_policy * 0.1]

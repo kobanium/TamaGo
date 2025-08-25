@@ -13,6 +13,8 @@ PLAYOUTS = 100
 # 探索時のミニバッチサイズ
 NN_BATCH_SIZE = 1
 
+NN_SELFPLAY_BATCH_SIZE = 64
+
 # Gumbel AlphaZero用のパラメータ(C_visit)
 C_VISIT = 50
 
