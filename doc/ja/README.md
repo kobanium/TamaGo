@@ -2,7 +2,7 @@
 TamaGoはPythonで実装された囲碁の思考エンジンです。  
 SGF形式の棋譜ファイルを利用した教師あり学習、Gumbel AlphaZero方式の強化学習をお試しできるプログラムとなっています。  
 学習したニューラルネットワークのモデルを使用したモンテカルロ木探索による着手生成ができます。  
-Python 3.8で動作確認をしています。
+Python 3.11, 3.12, 3.13で動作確認をしています。
 
 * [使用する前提パッケージ](#requirements)
 * [セットアップ手順](#installation)
@@ -23,7 +23,7 @@ Python 3.8で動作確認をしています。
 |matplotlib|探索木の可視化|
 
 # Installation
-Python 3.6が使える環境で下記コマンドで前提パッケージをインストールします。
+Python 3.11以降が使える環境で下記コマンドで前提パッケージをインストールします。
 ```
 pip install -r requirements.txt
 ```
@@ -129,57 +129,3 @@ TamaGoはバージョン0.10.0から探索木の可視化機能をサポート�
 
 # License
 ライセンスはApache License ver 2.0です。
-
-# Todo list
-- 碁盤の実装
-  - [x] 連のデータ構造
-  - [x] 3x3パターンのデータ構造
-  - [x] 着手履歴
-  - [x] Zobrist Hash
-  - [x] Super Koの判定処理
-- 探索部の実装
-  - [x] 木とノードのデータ構造
-  - [x] モンテカルロ木探索
-    - ~~クラシックなMCTS~~
-      - ~~UCT~~
-      - ~~RAVE~~
-      - ~~ランダムシミュレーション~~
-    - [x] PUCT探索
-      - [x] PUCB値の計算
-      - [x] ニューラルネットワークのミニバッチ処理  
-    - [x] Sequential Halving applied to tree探索
-    - [x] CGOS対応
-      - [x] 死石がなくなるまでパスを抑制
-      - [x] cgos_genmove対応
-    - [x] 持ち時間による探索時間制御
-- 学習の実装
-  - [x] SGFファイルの読み込み処理
-  - [x] 学習データ生成
-    - [x] 教師あり学習のデータ生成
-      - [x] 入力特徴生成
-      - [x] Policyの生成
-      - [x] npz形式での保存処理
-    - [x] 強化学習のデータ生成
-      - [x] 入力特徴生成
-      - [x] Improved Policyの生成
-      - [x] npz形式での保存処理
-  - [x] PyTorchを利用した教師あり学習
-  - [x] PyTorchを利用したGumbel AlphaZero方式の強化学習
-- GTPクライアントの実装
-  - 基本的なコマンド
-    - [x] プログラム情報の表示 : name, version, protocol_version
-    - [x] プログラムの終了 : quit
-    - [x] 碁盤の操作 : boardsize, clear_board
-    - [x] 碁盤の表示 : showboard, showstring
-    - [x] 着手 : play, genmove
-    - [x] コミの設定と取得 : komi, get_komi
-    - [x] コマンドの確認 : known_command, list_commands
-    - [x] SGFファイルの読み込み : load_sgf
-  - 大会参加時に必要なコマンド
-    - [x] 持ち時間の初期化 : time_settings
-    - [x] 持ち時間の読み込み : time_left
-  - 分析用のコマンド
-    - [x] Policyの数値の表示
-    - [x] Policyの分布を色で表示
-
-etc...

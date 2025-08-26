@@ -36,7 +36,7 @@ def generate_move_from_policy(network: DualNet, board: GoBoard, color: Stone) ->
     # パスは候補手確定
     candidates.append({ "pos": PASS, "policy": policy[board_size ** 2] })
 
-    max_policy = max([candidate["policy"] for candidate in candidates])
+    max_policy = max(candidate["policy"] for candidate in candidates)
 
     sampled_candidates = [candidate for candidate in candidates \
         if candidate["policy"] > max_policy * 0.1]

@@ -44,3 +44,6 @@ NUM_SELF_PLAY_WORKERS = 4
 
 # 1回の学習ごとに生成する棋譜の数
 NUM_SELF_PLAY_GAMES = 10000
+
+# 非同期実行自己対戦時のニューラルネットワークのミニバッチサイズ
+NN_SELFPLAY_BATCH_SIZE = 64

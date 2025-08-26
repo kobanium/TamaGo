@@ -1,36 +1,14 @@
-"""モンテカルロ木探索の実装。"""
+"""自己対戦用のニューラルネットワークのミニバッチ処理の実装。
+"""
 
 import asyncio
-import copy
 import queue
-import select
-import sys
-import time
-from typing import Any, Callable, Dict, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 import torch
 
-from board.constant import PASS, RESIGN
-from board.coordinate import Coordinate
-from board.go_board import GoBoard, copy_board
-from board.stone import Stone
-from common.print_console import print_err
-from mcts.batch_data import BatchQueue
-from mcts.constant import (
-    MAX_CONSIDERED_NODES,
-    MCTS_TREE_SIZE,
-    NN_SELFPLAY_BATCH_SIZE,
-    NOT_EXPANDED,
-    PLAYOUTS,
-    RESIGN_THRESHOLD,
-)
-from mcts.dump import dump_mcts_to_json
-from mcts.node import MCTSNode
-from mcts.sequential_halving import get_candidates_and_visit_pairs
-from mcts.time_manager import TimeControl, TimeManager
-from mcts.tree import MCTSTree
-from nn.feature import generate_input_planes
+from learning_param import NN_SELFPLAY_BATCH_SIZE
 from nn.network.dual_net import DualNet
 
 
@@ -57,6 +35,14 @@ class NNEval:  # pylint: disable=R0902
     def push_eval(
         self, input_planes: np.ndarray
     ) -> asyncio.Future[Tuple[torch.Tensor, List[float]]]:
+        """ニューラルネットワークの推論処理を実行するイベントループを取得する。
+
+        Args:
+            input_planes (np.ndarray): ニューラルネットワークの入力データ。
+
+        Returns:
+            asyncio.Future[Tuple[torch.Tensor, List[float]]]: 実行中のイベントループ。
+        """
         loop = asyncio.get_running_loop()
         fut: asyncio.Future[Tuple[torch.Tensor, List[float]]] = loop.create_future()
         self.batch_queue.put((fut, input_planes))
@@ -76,11 +62,11 @@ class NNEval:  # pylint: disable=R0902
 
         for _ in range(self.batch_size):
             try:
-                fut, input = self.batch_queue.get_nowait()
+                fut, input_data = self.batch_queue.get_nowait()
             except queue.Empty:
                 break
 
-            input_planes_list.append(input)
+            input_planes_list.append(input_data)
             future_list.append(fut)
 
         if len(input_planes_list) == 0:

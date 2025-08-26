@@ -15,8 +15,8 @@ Hyperparameters for reinforcement learning is defined in [learning_param.py](../
 
 | Hyperparameter | Description | Example of value | Note |
 | --- | --- | --- | --- |
-| RL_LEARNING_RATE | Learning rate for reinforcement learning. | 0.01 | 学習がある程度進んだ時に小さな値に変更すると良いです。 |
-| BATCH_SIZE | Mini-batch size for training. | 256 | GPUメモリが小さい場合はこの値を小さめに設定してください。 |
+| RL_LEARNING_RATE | Learning rate for reinforcement learning. | 0.01 | |
+| BATCH_SIZE | Mini-batch size for training. | 256 | |
 | MOMENTUM | Momentum parameter for an optimizer. | 0.9 | |
 | WEIGHT_DECAY | Weight of L2-regularization. | 1e-4 (0.0001) | |
 | DATA_SET_SIZE | Number of data to be stored in a npz file. | BATCH_SIZE * 4000 | |
@@ -24,6 +24,7 @@ Hyperparameters for reinforcement learning is defined in [learning_param.py](../
 | SELF_PLAY_VISITS | The number of visits per move for self-play. | 16 | This must be more than 1. |
 | NUM_SELF_PLAY_WORKERS | The number of self-play workers. | 4 | |
 | NUM_SELF_PLAY_GAMES | The number of self-play games generated. | 10000 | |
+| NN_SELF_PLAY_BATCH_SIZE | Mini-batch size for async-mode self-play | 64 | This parameter is valid when `--async-mode` option is true |
 
 Since these hyperparameters are used to confirm that reinforcement learning progresses well, please use the set values as they are at first and gradually change the values to check the learning status when you try it out.
 
@@ -56,8 +57,9 @@ Reinforcement learning pipeline is defined in [pipeline.sh](../../pipeline.sh).
 | `--process` | The number of self-play workers. | 2 | NUM_SELF_PLAY_WORKERS | |
 | `--num-data` | The number of self-play games generated. | 5000 | NUM_SELF_PLAY_GAMES | |
 | `--size` | Go board size. | 9 | 9 | |
-| `--use-gpu` | Flag to use a GPU. | true | true | Value is true of false. |
+| `--use-gpu` | Flag to use a GPU. | true | true | Value is true or false. |
 | `--visits` | The number of visits per move for self-play. | 100 | SELF_PLAY_VISITS |  |
+| `--async-mode` | Flag to execute asynchronous self-play. | true | true | Value is true or false. |
 | `--model` | Path to a model file. | model/rl-model.bin | model/rl-model.bin | |
 
 ## Command line options for [train.py](../../train.py)

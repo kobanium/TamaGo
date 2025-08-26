@@ -11,7 +11,7 @@ from mcts.time_manager import TimeControl
 
 default_model_path = os.path.join("model", "model.bin")
 
-# pylint: disable=R0913, R0914
+# pylint: disable=R0913, R0914, R0917
 
 @click.command()
 @click.option('--size', type=click.IntRange(2, BOARD_SIZE), default=BOARD_SIZE, \
@@ -49,8 +49,8 @@ default_model_path = os.path.join("model", "model.bin")
 @click.option('--animation-move-wait', type=click.FLOAT, default=-1.0, \
     help="lz-analyzeの出力をMCTSアニメーションに差しかえて、一手ごとに指定秒停止。")
 def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
-    policy_move: bool, komi: float, visits: int, strict_visits: int, const_time: float, time: float, \
-    batch_size: int, tree_size: int, cgos_mode: bool, \
+    policy_move: bool, komi: float, visits: int, strict_visits: int, const_time: float, \
+    time: float, batch_size: int, tree_size: int, cgos_mode: bool, \
     animation_pv_wait: float, animation_move_wait: float):
     """GTPクライアントの起動。
 

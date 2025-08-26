@@ -17,6 +17,8 @@ from nn.utility import apply_softmax
 MAX_ACTIONS = BOARD_SIZE ** 2 + 1
 PUCT_WEIGHT = 1.0
 
+# pylint: disable=C0325
+
 class MCTSNode: # pylint: disable=R0902, R0904
     """モンテカルロ木探索で使うノード情報のクラス。
     """
@@ -75,11 +77,11 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.num_children = index
 
 
-    def add_virtual_loss(self, index) -> None:
+    def add_virtual_loss(self, index: int) -> None:
         """Virtual Lossを加算する。
 
         Args:
-            index (_type_): 加算する対象の子ノードのインデックス。
+            index (int): 加算する対象の子ノードのインデックス。
         """
         self.virtual_loss += 1
         self.children_virtual_loss[index] += 1
@@ -244,7 +246,7 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self._make_serializable(state)
         return state
 
-    def _make_serializable(self, dic):
+    def _make_serializable(self, dic: Dict[Any, Any]):
         for key in dic:
             val = dic[key]
             if isinstance(val, np.ndarray):
@@ -415,7 +417,17 @@ class MCTSNode: # pylint: disable=R0902, R0904
 
 
     def get_analysis_status_list(self, board: GoBoard,
-        pv_lists_func: Callable[[Self, Coordinate], Dict[str, List[str]]]):
+        pv_lists_func: Callable[[Self, Coordinate], Dict[str, List[str]]]) \
+        -> List[Dict[str, Any]]:
+        """解析結果文字列のリストを生成する。
+
+        Args:
+            board: 局面情報。
+            pv_lists_func (Callable[[Self, Coordinate], Dict[str, List[str]]]): PV情報生成関数。
+
+        Returns:
+            List[Dict[str, Any]]: 解析結果文字列。
+        """
         sorted_list = []
         for i in range(self.num_children):
             sorted_list.append((self.children_visits[i], i))
@@ -450,7 +462,14 @@ class MCTSNode: # pylint: disable=R0902, R0904
         return children_status_list
 
 
-    def get_analysis_from_status_list(self, mode, children_status_list):
+    def get_analysis_from_status_list(self, mode: str,
+        children_status_list: List[Dict[str, Any]]) -> str:
+        """子ノードの解析情報リストから解析情報文字列を取得する。
+
+        Args:
+            mode (str): 動作モード指定文字列。
+            children_status_list (List[Dict[str, Any]]): 子ノードの解析情報文字列リスト。
+        """
         out = ""
         if mode == "cgos":
             cgos_dict = {

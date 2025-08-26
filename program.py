@@ -33,5 +33,6 @@ PROTOCOL_VERSION="2"
 # Version 0.9.2  : list_commandsにundoコマンドが漏れている不具合を修正。
 # Version 0.10.0 : 探索回数の厳密指定、各種可視化機能を実装。
 #                  loadsgfコマンドの修正とSGF文字列読み込みコマンド(tamago-readsgf)を実装。
+# Version 0.11.0 : 並列自己対戦の実装。
 
-VERSION="0.10.0"
+VERSION="0.11.0"

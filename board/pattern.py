@@ -1,6 +1,6 @@
 """配石パターンの実装。
 """
-from typing import Callable, List, NoReturn
+from typing import Callable, List
 import numpy as np
 
 from board.constant import OB_SIZE
@@ -19,15 +19,15 @@ pattern_mask = np.array([
 ], dtype=np.uint32)
 
 nb4_empty = [0] * 65536
-for i, _ in enumerate(nb4_empty):
-    if ((i >> 2) & 0x3) == 0:
-        nb4_empty[i] += 1
-    if ((i >> 6) & 0x3) == 0:
-        nb4_empty[i] += 1
-    if ((i >> 8) & 0x3) == 0:
-        nb4_empty[i] += 1
-    if ((i >> 12) & 0x3) == 0:
-        nb4_empty[i] += 1
+for pat3x3, _ in enumerate(nb4_empty):
+    if ((pat3x3 >> 2) & 0x3) == 0:
+        nb4_empty[pat3x3] += 1
+    if ((pat3x3 >> 6) & 0x3) == 0:
+        nb4_empty[pat3x3] += 1
+    if ((pat3x3 >> 8) & 0x3) == 0:
+        nb4_empty[pat3x3] += 1
+    if ((pat3x3 >> 12) & 0x3) == 0:
+        nb4_empty[pat3x3] += 1
 
 
 class Pattern:
@@ -260,7 +260,9 @@ def copy_pattern(dst: Pattern, src: Pattern) -> None:
     """
     dst.pat3 = src.pat3.copy()
 
-def create_eye_pat():
+def create_eye_pat() -> List[Stone]:
+    """目のパターンの作成
+    """
     # 眼のパターン
     eye_pat3 = [
         # +OO     XOO     +O+     XO+

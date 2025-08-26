@@ -67,7 +67,7 @@ class TimeManager:
         Returns:
             int: 探索回数の閾値。
         """
-        if self.mode == TimeControl.CONSTANT_PLAYOUT or self.mode == TimeControl.STRICT_PLAYOUT:
+        if self.mode in (TimeControl.CONSTANT_PLAYOUT, TimeControl.STRICT_PLAYOUT):
             self.time_limit = 10000.0
             return int(self.constant_visits)
         if self.mode == TimeControl.CONSTANT_TIME:
