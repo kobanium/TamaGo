@@ -1,19 +1,16 @@
 """モンテカルロ木探索の実装。"""
 
+from typing import Any, Dict, List, Tuple
 import select
 import sys
 import time
-from typing import Any, Callable, Dict, List, Tuple
 
-import numpy as np
 import torch
 
 from board.constant import PASS, RESIGN
-from board.coordinate import Coordinate
 from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 from common.print_console import print_err
-from mcts.batch_data import BatchQueue
 from mcts.constant import (
     MAX_CONSIDERED_NODES,
     MCTS_TREE_SIZE,
@@ -22,16 +19,14 @@ from mcts.constant import (
     PLAYOUTS,
     RESIGN_THRESHOLD,
 )
-from mcts.dump import dump_mcts_to_json
 from mcts.nneval import NNEval
-from mcts.node import MCTSNode
 from mcts.sequential_halving import get_candidates_and_visit_pairs
-from mcts.time_manager import TimeControl, TimeManager
+from mcts.time_manager import TimeManager
+from mcts.tree_base import MCTSTreeBase
 from nn.feature import generate_input_planes
-from nn.network.dual_net import DualNet
 
 
-class MCTSTreeAsync:  # pylint: disable=R0902
+class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
     """モンテカルロ木探索の実装クラス。"""
 
     def __init__(
@@ -48,14 +43,8 @@ class MCTSTreeAsync:  # pylint: disable=R0902
             tree_size (int, optional): 木を構成するノードの最大個数。デフォルトは65536。
             batch_size (int, optional): ニューラルネットワークの前向き伝搬処理のミニバッチサイズ。デフォルトはNN_BATCH_SIZE。
         """
-        self.node = [MCTSNode() for i in range(tree_size)]
-        self.num_nodes = 0
-        self.root = 0
+        super().__init__(tree_size=tree_size, batch_size=batch_size, cgos_mode=cgos_mode)
         self.nneval = nneval
-        self.current_root = 0
-        self.batch_size = batch_size
-        self.cgos_mode = cgos_mode
-        self.to_move = Stone.BLACK
 
     async def _initialize_search(self, board: GoBoard, color: Stone) -> None:
         self.num_nodes = 0
@@ -134,7 +123,8 @@ class MCTSTreeAsync:  # pylint: disable=R0902
         """
         self.to_move = color
         analysis_clock = time.time()
-        search_board = GoBoard(board_size=board.get_board_size(), komi=board.get_komi(), check_superko=board.check_superko)
+        search_board = GoBoard(board_size=board.get_board_size(), \
+                               komi=board.get_komi(), check_superko=board.check_superko)
 
         interval = analysis_query.get("interval", 0)
         threshold = time_manager.get_num_visits_threshold(color)
@@ -223,37 +213,7 @@ class MCTSTreeAsync:  # pylint: disable=R0902
             next_node_index = self.node[current_index].get_child_index(next_index)
             await self.search_mcts(board, color, next_node_index, path)
 
-    def expand_node(self, board: GoBoard, color: Stone) -> int:
-        """ノードを展開する。
-
-        Args:
-            board (GoBoard): 現在の局面情報。
-            color (Stone): 現在の手番の色。
-        """
-        node_index = self.num_nodes
-        tree_size = len(self.node)
-        if node_index >= tree_size:
-            self.node.extend([MCTSNode() for i in range(tree_size)])
-            sys.stderr.write(
-                f"Tree is full. Allocate new space {tree_size} -> {len(self.node)}\n"
-            )
-
-        candidates = board.get_all_legal_pos(color)
-        candidates = [
-            candidate
-            for candidate in candidates
-            if (board.check_self_atari_stone(candidate, color) < 7)
-            and not board.is_complete_eye(candidate, color)
-        ]
-        candidates.append(PASS)
-
-        policy = get_tentative_policy(candidates)
-        self.node[node_index].expand(policy)
-
-        self.num_nodes += 1
-        return node_index
-
-    def apply_policy_and_value(
+    def apply_policy_and_value( #pylint: disable=R0913, R0914, R0917
         self,
         board: GoBoard,
         raw_policy: torch.Tensor,
@@ -261,7 +221,7 @@ class MCTSTreeAsync:  # pylint: disable=R0902
         path: List[Tuple[int, int]],
         node_index: int,
         use_logit: bool = False,
-    ):  # pylint: disable=R0914
+    ) -> None:
         """ニューラルネットワークの入力をミニバッチ処理して、計算結果を探索結果に反映する。
 
         Args:
@@ -364,7 +324,8 @@ class MCTSTreeAsync:  # pylint: disable=R0902
             color (Stone): 評価したい局面の手番の色。
             threshold (int): 実行する探索回数。
         """
-        search_board = GoBoard(board_size=board.get_board_size(), komi=board.get_komi(), check_superko=board.check_superko)
+        search_board = GoBoard(board_size=board.get_board_size(), \
+                               komi=board.get_komi(), check_superko=board.check_superko)
 
         num_root_children = self.node[self.current_root].get_num_children()
         base_num_considered = (
@@ -391,14 +352,14 @@ class MCTSTreeAsync:  # pylint: disable=R0902
                         count_threshold + 1,
                     )
 
-    async def search_sequential_halving(
+    async def search_sequential_halving( #pylint: disable=R0913,R0917
         self,
         board: GoBoard,
         color: Stone,
         current_index: int,
         path: List[Tuple[int, int]],
         count_threshold: int,
-    ) -> None:  # pylint: disable=R0913
+    ) -> None:
         """Sequential Halving探索を実行する。
 
         Args:
@@ -439,101 +400,3 @@ class MCTSTreeAsync:  # pylint: disable=R0902
             await self.search_sequential_halving(
                 board, color, next_node_index, path, count_threshold
             )
-
-    def get_root(self) -> MCTSNode:
-        """木のルートを返す。
-
-        Returns:
-            MCTSNode: モンテカルロ木探索で使用する木のルート。
-        """
-        return self.node[self.current_root]
-
-    def get_pv_lists(self, root: MCTSNode, coord: Coordinate) -> Dict[str, List[str]]:
-        """探索した手の最善応手系列を取得する。
-
-        Args:
-            coordinate (Coordinate): 座標変換処理インスタンス。
-
-        Returns:
-            Dict[str, List[str]]: 各手の最善応手系列を記録した辞書。
-        """
-        pv_dict: Dict[str, List[str]] = {}
-
-        for i in range(root.num_children):
-            if root.children_visits[i] > 0:
-                pv_list = self.get_best_move_sequence(
-                    [root.action[i]], root.children_index[i]
-                )
-                pv_dict[coord.convert_to_gtp_format(root.action[i])] = [
-                    coord.convert_to_gtp_format(pv) for pv in pv_list
-                ]
-
-        return pv_dict
-
-    def get_best_move_sequence(self, pv_list: List[int], index: int) -> List[int]:
-        """最善応手系列を取得する。
-
-        Args:
-            pv_list (List[str]): 今までの経路の最善応手系列。
-            index (int): ノードのインデックス。
-
-        Returns:
-            List[str]: 最善応手系列。
-        """
-        node = self.node[index]
-
-        if node.node_visits == 0:
-            return pv_list
-
-        next_index = node.get_child_index(node.get_best_move_index())
-        next_action = node.get_best_move()
-        pv_list.append(next_action)
-
-        if next_index == NOT_EXPANDED:
-            return pv_list
-
-        return self.get_best_move_sequence(pv_list, next_index)
-
-    def dump_to_json(self, board: GoBoard, superko: bool) -> str:
-        """MCTSの状態を表すJSON文字列を返す。
-
-        Args:
-            board (GoBoard): 現在の碁盤。
-            superko (bool): 超劫判定の有効化。
-
-        Returns:
-            str: MCTSの状態を表すJSON文字列。
-        """
-        return dump_mcts_to_json(self.to_dict(), board, superko)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """ツリーの状態を辞書化して返す。
-
-        Returns:
-            Dict[str, Any]: ツリーの状態を表す辞書。
-        """
-        state = {
-            "node": [self.node[i].to_dict() for i in range(self.num_nodes)],
-            "num_nodes": self.num_nodes,
-            "root": self.root,
-            # "network": self.network,  # ダンプに含めない
-            # "batch_queue": self.batch_queue,  # ダンプに含めない
-            "current_root": self.current_root,
-            "batch_size": self.batch_size,
-            "cgos_mode": self.cgos_mode,
-            "to_move": "black" if self.to_move == Stone.BLACK else "white",
-        }
-        return state
-
-
-def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:
-    """ニューラルネットワークの計算が行われるまでに使用するPolicyを取得する。
-
-    Args:
-        candidates (List[int]): パスを含む候補手のリスト。
-
-    Returns:
-        Dict[int, float]: 候補手の座標とPolicyの値のマップ。
-    """
-    score = np.random.dirichlet(alpha=np.ones(len(candidates)))
-    return dict(zip(candidates, score))

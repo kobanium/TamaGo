@@ -27,11 +27,11 @@ from learning_param import SELF_PLAY_VISITS, NUM_SELF_PLAY_WORKERS, \
 @click.option('--visits', type=click.IntRange(min=2), default=SELF_PLAY_VISITS, \
     help=f"自己対戦時の探索回数。デフォルトは{SELF_PLAY_VISITS}。")
 @click.option('--async-mode', type=click.BOOL, default=True, \
-    help=f"自己対戦時の非同期実行。")
+    help="自己対戦時の非同期実行。デフォルトはTrue。")
 @click.option('--model', type=click.STRING, default=os.path.join("model", "rl-model.bin"), \
     help="ニューラルネットワークのモデルファイルパス。デフォルトはmodelディレクトリ内のrl-model.bin。")
 def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
-    use_gpu: bool, visits: int, model: str, async_mode: bool):
+    use_gpu: bool, visits: int, model: str, async_mode: bool): # pylint: disable=R0917
     """自己対戦を実行する。
 
     Args:
@@ -41,6 +41,7 @@ def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
         size (int): 碁盤のサイズ。デフォルトはBOARD_SIZE。
         use_gpu (bool): GPU使用フラグ。デフォルトはTrue
         visits (int): 自己対戦実行時の探索回数。デフォルトはSELF_PLAY_VISITS。
+        async_mode (bool): 自己対戦の非同期実行。デフォルトはTrue。
         model (str): 使用するモデルファイルのパス。デフォルトはmodel/model.bin。
     """
     file_index_list = list(range(1, num_data + 1))
@@ -71,7 +72,7 @@ def selfplay_main(save_dir: str, process: int, num_data: int, size: int, \
 
     finish_time = time.time() - start_time
 
-    print(f"{finish_time:3f} seconds, {(3600.0 * num_data / finish_time):3f} games/hour")
+    print(f"{finish_time:.3f} seconds, {(3600.0 * num_data / finish_time):.3f} games/hour")
 
 
 if __name__ == "__main__":

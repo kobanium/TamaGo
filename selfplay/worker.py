@@ -13,15 +13,14 @@ from board.go_board import GoBoard, copy_board
 from board.stone import Stone
 
 from sgf.selfplay_record import SelfPlayRecord
-from mcts.constant import NN_BATCH_SIZE, NN_SELFPLAY_BATCH_SIZE
 from mcts.nneval import NNEval
 from mcts.tree import MCTSTree
 from mcts.tree_async import MCTSTreeAsync
 from mcts.time_manager import TimeManager, TimeControl
 from nn.utility import load_network
-from learning_param import SELF_PLAY_VISITS
+from learning_param import SELF_PLAY_VISITS, NN_SELFPLAY_BATCH_SIZE
 
-# pylint: disable=R0913,R0914
+# pylint: disable=R0913,R0914,R0917
 def selfplay_worker(save_dir: str, model_file_path: str, index_list: List[int], \
     size: int, visits: int, use_gpu: bool) -> None:
     """自己対戦実行ワーカ。
@@ -97,11 +96,21 @@ def selfplay_worker(save_dir: str, model_file_path: str, index_list: List[int], 
 
 def selfplay_worker_async(save_dir: str, model_file_path: str, index_list: List[int], \
     size: int, visits: int, use_gpu: bool) -> None:
+    """並列自己対戦を実行する。
+
+    Args:
+        save_dir (str): 棋譜ファイルを保存するディレクトリパス。
+        model_file_path (str): 使用するニューラルネットワークモデルファイルパス。
+        index_list (List[int]): 棋譜ファイル保存時に使用するインデックスリスト。
+        size (int): 碁盤の大きさ。
+        visits (int): 自己対戦実行時の探索回数。
+        use_gpu (bool): GPU使用フラグ。
+    """
     asyncio.run(selfplay_worker_async_(save_dir, model_file_path, index_list,
                                        size, visits, use_gpu))
 
 async def selfplay_worker_async_(save_dir: str, model_file_path: str, index_list: List[int], \
-    size: int, visits: int, use_gpu: bool) -> None:
+    size: int, visits: int, use_gpu: bool) -> None: #pylint: disable=R0915
     """自己対戦実行ワーカ。
 
     Args:
@@ -218,5 +227,5 @@ def display_selfplay_progress_worker(save_dir: str, num_data: int) -> NoReturn:
         current_num_data = len(glob.glob(os.path.join(save_dir, "*.sgf")))
         current_time = time.time()
         msg = f"Generating {current_num_data:5d}/{num_data:5d} games "
-        msg += f"({3600 * current_num_data / (current_time - start_time):.4f} games/hour)."
+        msg += f"({3600 * current_num_data / (current_time - start_time):.2f} games/hour)."
         print(msg)

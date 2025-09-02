@@ -59,6 +59,7 @@ TamaGoの強化学習パイプラインは以下の順番で実行されます�
 | `--size` | 碁盤のサイズ | 9 | 9 | |
 | `--use-gpu` | GPU使用フラグ | true | true | GPUを使用して自己対戦を実行する設定のフラグ。trueかfalseで指定 |
 | `--visits` | 1手あたりの探索回数 | 100 | SELF_PLAY_VISITS | 探索回数を増やすと棋譜の質が向上しますが、生成速度は遅くなります。 |
+| `--async-mode` | 自己対戦の非同期実行フラグ | true | true | このフラグをtrueにしておくほうが棋譜生成が高速になります。trueかfalseで指定。|
 | `--model` | 使用するネットワークパラメータファイル | model/rl-model.bin | model/model.bin | |
 | `--async-mode` | 非同期モードで自己対戦しNN推論をバッチ化する | true | true | GPUを利用する場合に効果的です。 |
 

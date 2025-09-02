@@ -24,14 +24,9 @@ Hyperparameters for reinforcement learning is defined in [learning_param.py](../
 | SELF_PLAY_VISITS | The number of visits per move for self-play. | 16 | This must be more than 1. |
 | NUM_SELF_PLAY_WORKERS | The number of self-play workers. | 4 | |
 | NUM_SELF_PLAY_GAMES | Total number of games generated per selfplay run (sum across workers). | 10000 | |
+| NN_SELFPLAY_BATCH_SIZE | Batch size for asynchronous NN inference during self-play. | 64 | Defined in [mcts/constant.py](../../mcts/constant.py). Larger values improve GPU utilization but increase latency/memory. |
 
 Since these hyperparameters are used to confirm that reinforcement learning progresses well, please use the set values as they are at first and gradually change the values to check the learning status when you try it out.
-
-Related settings for parallel self-play (defined outside learning_param.py):
-
-| Setting | Description | Example of value | Note |
-| --- | --- | --- | --- |
-| NN_SELFPLAY_BATCH_SIZE | Batch size for asynchronous NN inference during self-play. | 64 | Defined in [mcts/constant.py](../../mcts/constant.py). Larger values improve GPU utilization but increase latency/memory. |
 
 # Definition of neural network structure.
 Neural network is defined using the following four files.
@@ -62,8 +57,9 @@ Reinforcement learning pipeline is defined in [pipeline.sh](../../pipeline.sh).
 | `--process` | The number of self-play workers. | 2 | NUM_SELF_PLAY_WORKERS | |
 | `--num-data` | The number of self-play games generated. | 5000 | NUM_SELF_PLAY_GAMES | |
 | `--size` | Go board size. | 9 | 9 | |
-| `--use-gpu` | Flag to use a GPU. | true | true | Value is true of false. |
+| `--use-gpu` | Flag to use a GPU. | true | true | Value is true or false. |
 | `--visits` | The number of visits per move for self-play. | 100 | SELF_PLAY_VISITS |  |
+| `--async-mode` | Flag to execute asynchronous self-play. | true | true | Value is true or false. |
 | `--model` | Path to a model file. | model/rl-model.bin | model/rl-model.bin | |
 | `--async-mode` | Enable asynchronous self-play with batched NN inference. | true | true | Most effective with GPU; CPU-only may benefit less. |
 
