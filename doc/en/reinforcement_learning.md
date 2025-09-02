@@ -59,9 +59,8 @@ Reinforcement learning pipeline is defined in [pipeline.sh](../../pipeline.sh).
 | `--size` | Go board size. | 9 | 9 | |
 | `--use-gpu` | Flag to use a GPU. | true | true | Value is true or false. |
 | `--visits` | The number of visits per move for self-play. | 100 | SELF_PLAY_VISITS |  |
-| `--async-mode` | Flag to execute asynchronous self-play. | true | true | Value is true or false. |
 | `--model` | Path to a model file. | model/rl-model.bin | model/rl-model.bin | |
-| `--async-mode` | Enable asynchronous self-play with batched NN inference. | true | true | Most effective with GPU; CPU-only may benefit less. |
+| `--async-mode` | Enable asynchronous self-play with batched NN inference. | true | true | Most effective with GPU; CPU-only may benefit less. Value is true or false. |
 
 ## Parallelization and asynchronous self-play
 Self-play parallelizes MCTS and batches neural network inference to improve device utilization.
