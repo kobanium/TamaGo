@@ -39,7 +39,9 @@ class Record:
         if moves < MAX_RECORDS:
             self.color[moves] = color
             self.pos[moves] = pos
-            self.hash_value[moves] = hash_value
+            # hash_valueは長さ1の配列なので中身のスカラーを取り出す
+            # (numpy 2.5以降は配列からスカラー枠への代入がValueErrorになる)
+            self.hash_value[moves] = hash_value[0]
         else:
             print_err("Cannot save move record.")
 
