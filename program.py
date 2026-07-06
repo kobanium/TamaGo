@@ -34,5 +34,6 @@ PROTOCOL_VERSION="2"
 # Version 0.10.0 : 探索回数の厳密指定、各種可視化機能を実装。
 #                  loadsgfコマンドの修正とSGF文字列読み込みコマンド(tamago-readsgf)を実装。
 # Version 0.11.0 : 並列自己対戦の実装。
+# Version 0.11.1 : 新しいバージョンのnumpyで異常終了するバグを修正。
 
-VERSION="0.11.0"
+VERSION="0.11.1"
