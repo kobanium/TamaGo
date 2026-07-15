@@ -38,8 +38,11 @@ def get_torch_device(use_gpu: bool) -> torch.device:
         torch.device: デバイス情報。
     """
     if use_gpu:
-        torch.cuda.set_device(0)
-        return torch.device("cuda")
+        if torch.cuda.is_available():
+            torch.cuda.set_device(0)
+            return torch.device("cuda")
+        if torch.backends.mps.is_available():
+            return torch.device("mps")
     return torch.device("cpu")
 
 
