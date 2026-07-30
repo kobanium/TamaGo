@@ -162,6 +162,10 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
                         break
 
         if len(analysis_query) > 0 and interval == 0:
+            # 未反映のミニバッチ (最大 batch_size - 1 プレイアウト) を
+            # 反映してから解析結果を出力する
+            if len(self.batch_queue.node_index) > 0:
+                self.process_mini_batch(board)
             root = self.node[self.current_root]
             mode = analysis_query.get("mode", "lz")
             sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
