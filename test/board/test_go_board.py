@@ -58,5 +58,6 @@ def test_count_score_end_position(move_list, expected_score):
         color = Stone.get_opponent_color(color)
     
     board.display()
+    board.strings.display()
 
     assert board.count_score() == expected_score

@@ -389,7 +389,7 @@ class StringData:
         for neighbor in neighbor4:
             if board[neighbor] == Stone.EMPTY:
                 lib_add = self.string[string_id].add_liberty(neighbor, lib_add)
-            elif board[pos] == opponent_color:
+            elif board[neighbor] == opponent_color:
                 neighbor_id = self.string_id[neighbor]
                 self.string[string_id].add_neighbor(neighbor_id)
                 self.string[neighbor_id].add_neighbor(string_id)
