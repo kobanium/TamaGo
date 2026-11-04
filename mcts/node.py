@@ -472,8 +472,11 @@ class MCTSNode: # pylint: disable=R0902, R0904
         """
         out = ""
         if mode == "cgos":
+            # 探索結果が未反映 (node_visits == 0) の場合はゼロ除算を避け、
+            # ニューラルネットワークの評価値で代用する
             cgos_dict = {
-                "winrate" : float(self.node_value_sum) / self.node_visits,
+                "winrate" : float(self.node_value_sum) / self.node_visits \
+                    if self.node_visits > 0 else float(self.raw_value),
                 "visits" : self.node_visits,
                 "moves" : []
             }
