@@ -536,6 +536,7 @@ class StringData:
                 self.string[dst_id].neighbor[src_neighbor] = \
                     self.string[dst_id].neighbor[dst_neighbor]
                 self.string[dst_id].neighbor[dst_neighbor] = src_neighbor
+                self.string[dst_id].neighbors += 1
             src_neighbor = self.string[src_id].neighbor[src_neighbor]
 
         neighbor = self.string[src_id].get_neighbor_origin()
