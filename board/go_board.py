@@ -595,7 +595,7 @@ class GoBoard: # pylint: disable=R0902,R0904
                     neighbor4 = self.get_neighbor4(coord)
                     for neighbor in neighbor4:
                         if board[neighbor] is Stone.EMPTY:
-                            pos_queue.append(coord)
+                            pos_queue.append(neighbor)
                         elif board[neighbor] in [Stone.BLACK, Stone.WHITE]:
                             if color is Stone.EMPTY:
                                 color = board[neighbor]
@@ -604,7 +604,7 @@ class GoBoard: # pylint: disable=R0902,R0904
                     already_check[coord] = True
                     pos_list.append(coord)
                 for coord in pos_list:
-                    board[pos] = color
+                    board[coord] = color
             else:
                 already_check[pos] = True
 
