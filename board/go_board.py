@@ -532,7 +532,11 @@ class GoBoard: # pylint: disable=R0902,R0904
             Stone: 手番の色。
         """
         if self.moves == 1:
-            return Stone.BLACK
+            if self.record.is_even_game():
+                return Stone.BLACK
+            else:
+                return Stone.WHITE
+
         last_move_color, _, _ = self.record.get(self.moves - 1)
         return Stone.get_opponent_color(last_move_color)
 
