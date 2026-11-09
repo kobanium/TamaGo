@@ -322,6 +322,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         """
         if not os.path.exists(arg_list[0]):
             respond_failure(f"cannot load {arg_list[0]}")
+            return
 
         sgf_data = SGFReader(arg_list[0], board_size=self.board.get_board_size())
 
