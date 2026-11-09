@@ -78,6 +78,15 @@ class GtpClient: # pylint: disable=R0902,R0903
             "cgos-analyze",
             "cgos-genmove_analyze",
             "tamago-dump_tree",
+            "display_policy_black",
+            "display_policy_white",
+            "display_policy_black_color",
+            "display_policy_white_color",
+            "showstring",
+            "showpattern",
+            "eye",
+            "self-atari",
+            "hash_record",
         ]
         self.superko = superko
         self.board = GoBoard(board_size=board_size, komi=komi, check_superko=superko)
@@ -118,7 +127,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
     def _known_command(self, command: str) -> None:
         """known_commandコマンドを処理する。
-        対応しているコマンドの場合は'true'を表示し、対応していないコマンドの場合は'unknown command'を表示する
+        対応しているコマンドの場合は'true'を表示し、対応していないコマンドの場合は'false'を表示する
 
         Args:
             command (str): 対応確認をしたいGTPコマンド。
@@ -126,7 +135,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         if command in self.gtp_commands:
             respond_success("true")
         else:
-            respond_failure("unknown command")
+            respond_success("false")
 
     def _list_commands(self) -> None:
         """list_commandsコマンドを処理する。
@@ -556,7 +565,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             elif input_gtp_command == "fixed_handicap":
                 self._fixed_handicap(command_list[1])
             elif input_gtp_command == "final_score":
-                respond_success("?")
+                respond_failure("unknown command")
             elif input_gtp_command == "showstring":
                 self.board.strings.display()
                 respond_success("")
