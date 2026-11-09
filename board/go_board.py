@@ -268,6 +268,10 @@ class GoBoard: # pylint: disable=R0902,R0904
         Returns:
             bool: 合法手の判定結果。合法手ならTrue、そうでなければFalse。
         """
+        # パスは常に合法手
+        if pos == PASS:
+            return True
+
         # 既に石がある
         if self.board[pos] != Stone.EMPTY:
             return False
@@ -282,7 +286,7 @@ class GoBoard: # pylint: disable=R0902,R0904
             return False
 
         # 超劫の確認
-        if self.check_superko and pos != PASS:
+        if self.check_superko:
             opponent = Stone.get_opponent_color(color)
             neighbor4 = self.get_neighbor4(pos)
             neighbor_ids = [self.strings.get_id(neighbor) for neighbor in neighbor4]
@@ -300,7 +304,6 @@ class GoBoard: # pylint: disable=R0902,R0904
 
             if self.record.has_same_hash(current_hash):
                 return False
-
 
         return True
 
