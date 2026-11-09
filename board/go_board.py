@@ -561,7 +561,7 @@ class GoBoard: # pylint: disable=R0902,R0904
         """
         self.clear()
         for handicap in handicap_history:
-            self.board.put_handicap_stone(handicap, Stone.BLACK)
+            self.put_handicap_stone(handicap, Stone.BLACK)
         for (color, pos, _) in move_history:
             self.put_stone(pos, color)
 
