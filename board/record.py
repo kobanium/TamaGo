@@ -94,3 +94,4 @@ def copy_record(dst: Record, src: Record) -> None:
     dst.color = src.color[:]
     dst.pos = src.pos[:]
     dst.hash_value = src.hash_value.copy()
+    dst.handicap_pos = src.handicap_pos[:]
