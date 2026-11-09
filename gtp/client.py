@@ -6,7 +6,7 @@ import sys
 from typing import List, NoReturn, Tuple
 
 from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
-from board.constant import PASS, RESIGN
+from board.constant import BOARD_SIZE, PASS, RESIGN
 from board.coordinate import Coordinate
 from board.go_board import GoBoard
 from board.handicap import get_handicap_coordinates
@@ -78,6 +78,15 @@ class GtpClient: # pylint: disable=R0902,R0903
             "cgos-analyze",
             "cgos-genmove_analyze",
             "tamago-dump_tree",
+            "display_policy_black",
+            "display_policy_white",
+            "display_policy_black_color",
+            "display_policy_white_color",
+            "showstring",
+            "showpattern",
+            "eye",
+            "self-atari",
+            "hash_record",
         ]
         self.superko = superko
         self.board = GoBoard(board_size=board_size, komi=komi, check_superko=superko)
@@ -118,7 +127,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
     def _known_command(self, command: str) -> None:
         """known_commandコマンドを処理する。
-        対応しているコマンドの場合は'true'を表示し、対応していないコマンドの場合は'unknown command'を表示する
+        対応しているコマンドの場合は'true'を表示し、対応していないコマンドの場合は'false'を表示する
 
         Args:
             command (str): 対応確認をしたいGTPコマンド。
@@ -126,7 +135,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         if command in self.gtp_commands:
             respond_success("true")
         else:
-            respond_failure("unknown command")
+            respond_success("false")
 
     def _list_commands(self) -> None:
         """list_commandsコマンドを処理する。
@@ -166,13 +175,13 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         coord = self.coordinate.convert_from_gtp_format(pos)
 
-        if coord != PASS and not self.board.is_legal(coord, play_color):
-            print(f"illigal {color} {pos}")
-
-        if pos.upper != "RESIGN":
-            self.board.put_stone(coord, play_color)
-
-        respond_success("")
+        if coord != PASS and coord != RESIGN and \
+           not self.board.is_legal(coord, play_color):
+            respond_failure("illegal move")
+        else:
+            if coord != RESIGN:
+                self.board.put_stone(coord, play_color)
+            respond_success("")
 
     def _undo(self) -> None:
         """undoコマンドを処理する。
@@ -240,7 +249,16 @@ class GtpClient: # pylint: disable=R0902,R0903
             size (str): 設定する碁盤のサイズ。
         """
         board_size = int(size)
-        self.board = GoBoard(board_size=board_size, check_superko=self.superko)
+
+        if board_size < 2 or BOARD_SIZE < board_size:
+            respond_failure(f"board size must be between 2 and {BOARD_SIZE}, inclusive.")
+            return
+
+        self.board = GoBoard(
+            board_size=board_size,
+            komi=self.board.get_komi(),
+            check_superko=self.superko
+        )
         self.coordinate = Coordinate(board_size=board_size)
         self.time_manager.initialize()
         respond_success("")
@@ -304,6 +322,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         """
         if not os.path.exists(arg_list[0]):
             respond_failure(f"cannot load {arg_list[0]}")
+            return
 
         sgf_data = SGFReader(arg_list[0], board_size=self.board.get_board_size())
 
@@ -547,7 +566,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             elif input_gtp_command == "fixed_handicap":
                 self._fixed_handicap(command_list[1])
             elif input_gtp_command == "final_score":
-                respond_success("?")
+                respond_failure("unknown command")
             elif input_gtp_command == "showstring":
                 self.board.strings.display()
                 respond_success("")

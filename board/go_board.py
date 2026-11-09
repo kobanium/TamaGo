@@ -268,6 +268,10 @@ class GoBoard: # pylint: disable=R0902,R0904
         Returns:
             bool: 合法手の判定結果。合法手ならTrue、そうでなければFalse。
         """
+        # パスは常に合法手
+        if pos == PASS:
+            return True
+
         # 既に石がある
         if self.board[pos] != Stone.EMPTY:
             return False
@@ -282,7 +286,7 @@ class GoBoard: # pylint: disable=R0902,R0904
             return False
 
         # 超劫の確認
-        if self.check_superko and pos != PASS:
+        if self.check_superko:
             opponent = Stone.get_opponent_color(color)
             neighbor4 = self.get_neighbor4(pos)
             neighbor_ids = [self.strings.get_id(neighbor) for neighbor in neighbor4]
@@ -291,7 +295,8 @@ class GoBoard: # pylint: disable=R0902,R0904
 
             # 打ち上げる石があれば打ち上げたと仮定
             for string_id in unique_ids:
-                if self.strings.get_num_liberties(self.strings.string[string_id].get_origin()) == 1:
+                if self.strings.string[string_id].get_color() == opponent and \
+                   self.strings.get_num_liberties(self.strings.string[string_id].get_origin()) == 1:
                     stones = self.strings.get_stone_coordinates(string_id)
                     current_hash = affect_string_hash(current_hash, stones, opponent)
             # 石を置く
@@ -299,7 +304,6 @@ class GoBoard: # pylint: disable=R0902,R0904
 
             if self.record.has_same_hash(current_hash):
                 return False
-
 
         return True
 
@@ -531,7 +535,11 @@ class GoBoard: # pylint: disable=R0902,R0904
             Stone: 手番の色。
         """
         if self.moves == 1:
-            return Stone.BLACK
+            if self.record.is_even_game():
+                return Stone.BLACK
+            else:
+                return Stone.WHITE
+
         last_move_color, _, _ = self.record.get(self.moves - 1)
         return Stone.get_opponent_color(last_move_color)
 
@@ -560,7 +568,7 @@ class GoBoard: # pylint: disable=R0902,R0904
         """
         self.clear()
         for handicap in handicap_history:
-            self.board.put_handicap_stone(handicap, Stone.BLACK)
+            self.put_handicap_stone(handicap, Stone.BLACK)
         for (color, pos, _) in move_history:
             self.put_stone(pos, color)
 
@@ -595,7 +603,7 @@ class GoBoard: # pylint: disable=R0902,R0904
                     neighbor4 = self.get_neighbor4(coord)
                     for neighbor in neighbor4:
                         if board[neighbor] is Stone.EMPTY:
-                            pos_queue.append(coord)
+                            pos_queue.append(neighbor)
                         elif board[neighbor] in [Stone.BLACK, Stone.WHITE]:
                             if color is Stone.EMPTY:
                                 color = board[neighbor]
@@ -604,7 +612,7 @@ class GoBoard: # pylint: disable=R0902,R0904
                     already_check[coord] = True
                     pos_list.append(coord)
                 for coord in pos_list:
-                    board[pos] = color
+                    board[coord] = color
             else:
                 already_check[pos] = True
 

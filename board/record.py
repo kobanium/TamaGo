@@ -53,6 +53,14 @@ class Record:
         """
         self.handicap_pos.append(pos)
 
+    def is_even_game(self) -> bool:
+        """置き石がないかを確認する。
+
+        Returns:
+            bool: 置き石がない場合はTrue、あればFalse。
+        """
+        return len(self.handicap_pos) == 0
+
     def has_same_hash(self, hash_value: np.ndarray) -> bool:
         """同じハッシュ値があるかを確認する。
 
@@ -94,3 +102,4 @@ def copy_record(dst: Record, src: Record) -> None:
     dst.color = src.color[:]
     dst.pos = src.pos[:]
     dst.hash_value = src.hash_value.copy()
+    dst.handicap_pos = src.handicap_pos[:]
