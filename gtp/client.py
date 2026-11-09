@@ -6,7 +6,7 @@ import sys
 from typing import List, NoReturn, Tuple
 
 from program import PROGRAM_NAME, VERSION, PROTOCOL_VERSION
-from board.constant import PASS, RESIGN
+from board.constant import BOARD_SIZE, PASS, RESIGN
 from board.coordinate import Coordinate
 from board.go_board import GoBoard
 from board.handicap import get_handicap_coordinates
@@ -240,7 +240,16 @@ class GtpClient: # pylint: disable=R0902,R0903
             size (str): 設定する碁盤のサイズ。
         """
         board_size = int(size)
-        self.board = GoBoard(board_size=board_size, check_superko=self.superko)
+
+        if board_size < 2 or BOARD_SIZE < board_size:
+            respond_failure(f"board size must be between 2 and {BOARD_SIZE}, inclusive.")
+            return
+
+        self.board = GoBoard(
+            board_size=board_size,
+            komi=self.board.get_komi(),
+            check_superko=self.superko
+        )
         self.coordinate = Coordinate(board_size=board_size)
         self.time_manager.initialize()
         respond_success("")
