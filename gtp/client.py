@@ -166,13 +166,13 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         coord = self.coordinate.convert_from_gtp_format(pos)
 
-        if coord != PASS and not self.board.is_legal(coord, play_color):
-            print(f"illigal {color} {pos}")
-
-        if pos.upper != "RESIGN":
-            self.board.put_stone(coord, play_color)
-
-        respond_success("")
+        if coord != PASS and coord != RESIGN and \
+           not self.board.is_legal(coord, play_color):
+            respond_failure("illegal move")
+        else:
+            if coord != RESIGN:
+                self.board.put_stone(coord, play_color)
+            respond_success("")
 
     def _undo(self) -> None:
         """undoコマンドを処理する。
