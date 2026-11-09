@@ -291,7 +291,8 @@ class GoBoard: # pylint: disable=R0902,R0904
 
             # 打ち上げる石があれば打ち上げたと仮定
             for string_id in unique_ids:
-                if self.strings.get_num_liberties(self.strings.string[string_id].get_origin()) == 1:
+                if self.strings.string[string_id].get_color() == opponent and \
+                   self.strings.get_num_liberties(self.strings.string[string_id].get_origin()) == 1:
                     stones = self.strings.get_stone_coordinates(string_id)
                     current_hash = affect_string_hash(current_hash, stones, opponent)
             # 石を置く
