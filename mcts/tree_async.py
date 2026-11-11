@@ -301,7 +301,7 @@ class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
 
         # 最善の手を取得
         root = self.node[self.current_root]
-        next_index = root.select_move_by_sequential_halving_for_root(PLAYOUTS)
+        next_index = root.select_final_action_by_sequential_halving()
 
         # 勝率に基づいて投了するか否かを決める
         value = root.calculate_value_evaluation(next_index)
