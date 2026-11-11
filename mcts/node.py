@@ -414,6 +414,45 @@ class MCTSNode: # pylint: disable=R0902, R0904
         return int(candidate_indices[best])
 
 
+    def select_final_action_by_sequential_halving(self) -> int:
+        """探索終了後、最大訪問回数の候補から最終行動を選ぶ。"""
+        if self.num_children <= 0:
+            raise RuntimeError("Root has no children")
+
+        visits = self.children_visits[:self.num_children]
+        pending = self.children_virtual_loss[:self.num_children]
+
+        # 評価結果がすべて反映されていることを確認する。
+        if self.virtual_loss != 0 or np.any(pending != 0):
+            raise RuntimeError("Cannot select final action with pending simulations")
+
+        max_visits = int(np.max(visits))
+
+        if max_visits <= 0:
+            raise RuntimeError("Cannot select final action without simulations")
+
+        # Sequential Halvingで最後まで残った候補に限定する。
+        candidate_indices = np.flatnonzero(visits == max_visits)
+
+        completed_q = self.calculate_completed_q_value()
+
+        sigma_base = (C_VISIT + max_visits) * C_SCALE
+
+        scores = (
+            self.children_policy[:self.num_children]
+            + self.noise[:self.num_children]
+            + sigma_base * completed_q
+        )
+
+        candidate_scores = scores[candidate_indices]
+
+        if not np.all(np.isfinite(candidate_scores)):
+            raise ValueError("Final action scores contain NaN or infinity")
+
+        best = int(np.argmax(candidate_scores))
+        return int(candidate_indices[best])
+
+
     def calculate_value_evaluation(self, index: int) -> float:
         """指定した子ノードのValueを計算する。
 
