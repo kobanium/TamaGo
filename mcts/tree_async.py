@@ -6,6 +6,7 @@ import sys
 import time
 
 import torch
+import numpy as np
 
 from board.constant import PASS, RESIGN
 from board.go_board import GoBoard, copy_board
@@ -18,6 +19,8 @@ from mcts.constant import (
     NOT_EXPANDED,
     PLAYOUTS,
     RESIGN_THRESHOLD,
+    C_VISIT,
+    C_SCALE,
 )
 from mcts.nneval import NNEval
 from mcts.sequential_halving import get_candidates_and_visit_pairs
@@ -315,7 +318,10 @@ class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
         return root.get_child_move(next_index)
 
     async def search_by_sequential_halving(
-        self, board: GoBoard, color: Stone, threshold: int
+            self,
+            board: GoBoard,
+            color: Stone,
+            threshold: int,
     ) -> None:
         """指定された探索回数だけSequential Halving探索を実行する。
 
@@ -324,6 +330,101 @@ class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
             color (Stone): 評価したい局面の手番の色。
             threshold (int): 実行する探索回数。
         """
+        if threshold <= 0:
+            raise ValueError("threshold must be positive")
+
+        root = self.node[self.current_root]
+        num_children = root.get_num_children()
+
+        if num_children <= 0:
+            raise RuntimeError("Root has no children")
+
+        if root.node_visits != 0:
+            raise RuntimeError("Sequential Halving must start from a fresh root")
+
+        if np.any(root.children_virtual_loss != 0):
+            raise RuntimeError("Root has pending simulations")
+
+        search_board = GoBoard(
+            board_size=board.get_board_size(),
+            komi=board.get_komi(),
+            check_superko=board.check_superko,
+        )
+
+        base_num_considered = min(
+            num_children,
+            MAX_CONSIDERED_NODES,
+        )
+
+        search_control = get_candidates_and_visit_pairs(
+            base_num_considered,
+            threshold,
+        )
+
+        visit_offset = 0
+
+        for num_considered, num_rounds in search_control.items():
+            visits = root.children_visits[:num_children]
+
+            # 前段階を生き残った候補だけを対象にする。
+            eligible_indices = np.flatnonzero(visits == visit_offset)
+
+            if eligible_indices.size < num_considered:
+                raise RuntimeError(
+                    "Insufficient candidates for halving stage: "
+                    f"required={num_considered}, "
+                    f"available={eligible_indices.size}"
+                )
+
+            # 段階開始時の評価で候補を固定する。
+            completed_q = root.calculate_completed_q_value()
+
+            sigma_base = (C_VISIT + int(np.max(visits))) * C_SCALE
+
+            scores = (
+                root.children_policy[:num_children]
+                + root.noise[:num_children]
+                + sigma_base * completed_q
+            )
+
+            eligible_scores = scores[eligible_indices]
+
+            if not np.all(np.isfinite(eligible_scores)):
+                raise ValueError("Root scores contain NaN or infinity")
+
+            order = np.argsort(-eligible_scores, kind="stable")
+
+            stage_indices = eligible_indices[order[:num_considered]]
+
+            for round_index in range(num_rounds):
+                considered_visit = visit_offset + round_index
+
+                for action_index in stage_indices:
+                    action_index = int(action_index)
+
+                    if root.children_visits[action_index] != considered_visit:
+                        raise RuntimeError("Unexpected root visit count")
+
+                    copy_board(dst=search_board, src=board)
+
+                    await self.search_sequential_halving(
+                        search_board,
+                        color,
+                        self.current_root,
+                        [],
+                        considered_visit,
+                        root_action_index=action_index,
+                    )
+
+            visit_offset += num_rounds
+
+            if root.virtual_loss != 0 or np.any(root.children_virtual_loss != 0):
+                raise RuntimeError("Pending simulations remain after stage")
+
+    """
+    async def search_by_sequential_halving(
+        self, board: GoBoard, color: Stone, threshold: int
+    ) -> None:
         search_board = GoBoard(board_size=board.get_board_size(), \
                                komi=board.get_komi(), check_superko=board.check_superko)
 
@@ -351,6 +452,7 @@ class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
                         [],
                         count_threshold + 1,
                     )
+    """
 
     async def search_sequential_halving( #pylint: disable=R0913,R0917
         self,
@@ -359,6 +461,7 @@ class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
         current_index: int,
         path: List[Tuple[int, int]],
         count_threshold: int,
+        root_action_index: int | None = None,
     ) -> None:
         """Sequential Halving探索を実行する。
 
@@ -370,13 +473,19 @@ class MCTSTreeAsync(MCTSTreeBase):  # pylint: disable=R0902
             count_threshold (int): 評価対象とする探索回数の閾値。
         """
         current_node = self.node[current_index]
+
         if current_index == self.current_root:
-            next_index = current_node.select_move_by_sequential_halving_for_root(
-                count_threshold
-            )
+            if root_action_index is None:
+                raise RuntimeError("Root action must be provided by stage scheduler")
+
+            next_index = root_action_index
+
+            if not 0 <= next_index < current_node.num_children:
+                raise IndexError("Invalid root action index")
         else:
             next_index = current_node.select_move_by_sequential_halving_for_node()
-        next_move = self.node[current_index].get_child_move(next_index)
+
+        next_move = current_node.get_child_move(next_index)
 
         path.append((current_index, next_index))
 

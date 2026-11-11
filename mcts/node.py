@@ -367,6 +367,53 @@ class MCTSNode: # pylint: disable=R0902, R0904
         return int(np.argmax(evaluation_value))
 
 
+    def select_root_action_for_considered_visit(self, considered_visit: int) -> int:
+        """指定の累積訪問回数を持つ候補から、探索する手を選ぶ。
+
+        評価待ちの探索も訪問回数に含める。
+        """
+        if considered_visit < 0:
+            raise ValueError("considered_visit must be non-negative")
+
+        if self.num_children <= 0:
+            raise RuntimeError("Root has no children")
+
+        visits = self.children_visits[:self.num_children]
+        pending = self.children_virtual_loss[:self.num_children]
+
+        counts = visits + pending
+
+        candidate_indices = np.flatnonzero(
+            counts == considered_visit
+        )
+
+        if candidate_indices.size == 0:
+            raise RuntimeError(
+                "No eligible root action: "
+                f"considered_visit={considered_visit}, "
+                f"counts={counts.tolist()}"
+            )
+
+        completed_q = self.calculate_completed_q_value()
+
+        # この段階の評価が完了するまでは確定値を使用する。
+        sigma_base = (C_VISIT + int(np.max(visits))) * C_SCALE
+
+        scores = (
+            self.children_policy[:self.num_children]
+            + self.noise[:self.num_children]
+            + sigma_base * completed_q
+        )
+
+        candidate_scores = scores[candidate_indices]
+
+        if not np.all(np.isfinite(candidate_scores)):
+            raise ValueError("Root action scores contain NaN or infinity")
+
+        best = int(np.argmax(candidate_scores))
+        return int(candidate_indices[best])
+
+
     def calculate_value_evaluation(self, index: int) -> float:
         """指定した子ノードのValueを計算する。
 
@@ -399,6 +446,20 @@ class MCTSNode: # pylint: disable=R0902, R0904
             msg += f"\tchildren_virtual_loss : {self.children_virtual_loss[i]}\n"
             msg += f"\tchildren_value_sum : {self.children_value_sum[i]}\n"
             msg += f"\tnoise : {self.children_value_sum[i]}\n"
+        print_err(msg)
+
+    def print_visits_count(self, board: GoBoard) -> None:
+        """子ノードの探索回数を表示する。
+
+        Args:
+            board (GoBoard): 局面情報。
+        """
+        msg = ""
+        msg += f"node_visits : {self.node_visits}\n"
+        for i in range(self.num_children):
+            if self.children_visits[i] > 0:
+                msg += f"\taction : {board.coordinate.convert_to_gtp_format(self.action[i])}\n"
+                msg += f"\tchildren_visits : {self.children_visits[i]}\n"
         print_err(msg)
 
 
