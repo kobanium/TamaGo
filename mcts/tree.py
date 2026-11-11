@@ -326,11 +326,13 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
         if not never_resign and value < 0.05:
             return RESIGN
 
+        root.print_visits_count(board)
+
         return root.get_child_move(next_index)
 
 
     def search_by_sequential_halving(self, board: GoBoard, color: Stone, \
-        threshold: int) -> None:
+        threshold: int,) -> None:
         """指定された探索回数だけSequential Halving探索を実行する。
 
         Args:
@@ -338,23 +340,53 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
             color (Stone): 評価したい局面の手番の色。
             threshold (int): 実行する探索回数。
         """
+        if threshold <= 0:
+            raise ValueError("threshold must be positive")
+
+        root = self.node[self.current_root]
+
+        if root.get_num_children() <= 0:
+            raise RuntimeError("Root has no children")
+
+        if root.node_visits != 0:
+            raise RuntimeError("Sequential Halving must start from a fresh root")
+
+        if self.batch_queue.node_index:
+            raise RuntimeError("Evaluation queue must be empty before search")
+
         search_board = copy.deepcopy(board)
 
-        num_root_children = self.node[self.current_root].get_num_children()
-        base_num_considered = num_root_children \
-            if num_root_children < MAX_CONSIDERED_NODES else MAX_CONSIDERED_NODES
+        base_num_considered = min(root.get_num_children(), MAX_CONSIDERED_NODES)
+
         search_control_dict = get_candidates_and_visit_pairs(base_num_considered, threshold)
 
-        for num_considered, max_count in search_control_dict.items():
-            for count_threshold in range(max_count):
-                for _ in range(num_considered):
-                    copy_board(search_board, board)
-                    start_color = color
+        # 生存候補の、段階開始時点での累積訪問回数。
+        visit_offset = 0
 
-                    # 探索する
-                    self.search_sequential_halving(search_board, start_color, \
-                        self.current_root, [], count_threshold + 1)
-            self.process_mini_batch(search_board, use_logit=True)
+        for num_considered, num_rounds in search_control_dict.items():
+            for round_index in range(num_rounds):
+                considered_visit = visit_offset + round_index
+
+                for _ in range(num_considered):
+                    copy_board(dst=search_board, src=board)
+
+                    self.search_sequential_halving(
+                        search_board,
+                        color,
+                        self.current_root,
+                        [],
+                        considered_visit,
+                    )
+
+            # この段階で予約した探索をまとめて評価する。
+            if self.batch_queue.node_index:
+                self.process_mini_batch(search_board, use_logit=True)
+
+            # 次の段階は、今回増えた回数から開始する。
+            visit_offset += num_rounds
+
+            if root.virtual_loss != 0:
+                raise RuntimeError("Pending root simulations remain after stage")
 
 
     def search_sequential_halving(self, board: GoBoard, color: Stone, current_index: int, \
@@ -370,7 +402,7 @@ class MCTSTree(MCTSTreeBase): # pylint: disable=R0902
         """
         current_node = self.node[current_index]
         if current_index == self.current_root:
-            next_index = current_node.select_move_by_sequential_halving_for_root(count_threshold)
+            next_index = current_node.select_root_action_for_considered_visit(count_threshold)
         else:
             next_index = current_node.select_move_by_sequential_halving_for_node()
         next_move = self.node[current_index].get_child_move(next_index)
