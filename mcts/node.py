@@ -291,22 +291,24 @@ class MCTSNode: # pylint: disable=R0902, R0904
         Returns:
             np.array: Completed-Q value.
         """
-        policy = apply_softmax(self.children_policy[:self.num_children])
+        visits = self.children_visits[:self.num_children]
+        value_sum = self.children_value_sum[:self.num_children]
+        logits = self.children_policy[:self.num_children]
+        
+        q = np.divide(value_sum, visits, out=np.zeros_like(value_sum), where=visits > 0)
 
-        q_value = np.divide(self.children_value_sum, self.children_visits, \
-            out=np.zeros_like(self.children_value_sum), \
-            where=(self.children_visits > 0))[:self.num_children]
+        visited = visits > 0
+        n = int(visits.sum())
+        
+        mixed_value = float(self.raw_value)
 
-        sum_prob = np.sum(policy)
-        v_pi = np.sum(policy * q_value)
-
-        if use_mixed_value:
-            value = (self.raw_value * np.ones_like(self.children_policy[:self.num_children]) + \
-                self.node_visits * v_pi / sum_prob) / (self.node_visits + 1.0)
-        else:
-            value = self.raw_value
-
-        return np.where(self.children_visits[:self.num_children] > 0, q_value, value)
+        if use_mixed_value and np.any(visited):
+            weights = apply_softmax(logits[visited])
+            weighted_q = float(np.sum(weights * q[visited]))
+            
+            mixed_value = (float(self.raw_value) + n * weighted_q) / (n + 1.0)
+            
+        return np.where(visited, q, mixed_value)
 
 
     def calculate_improved_policy(self) -> np.ndarray:
